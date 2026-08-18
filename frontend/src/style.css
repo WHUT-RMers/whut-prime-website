@@ -1,9 +1,8 @@
 /* ============================================================
-   WHUT PRIME · Motion-Driven Rebuild
-   设计系统：电影感暗色（cinema dark）
-   - 自托管 Russo One / Chakra Petch（latin 子集），中文回退系统无衬线
-   - 荧光青绿主强调 × 电光蓝/暖橙环境光
-   - 玻璃拟态、辉光、HUD 细节、expo 动效曲线
+   WHUT PRIME · Motion-Driven Rebuild — FLAT PASS
+   扁平化设计系统：利落色块 / 细线边框 / 几何细节 / 克制的动效
+   - 去除重玻璃拟态与辉光渐变，保留结构、字体层级与 HUD 细节
+   - 鼠标互动：自定义光标、data-tilt / data-spot / data-magnet
    ============================================================ */
 
 /* ---- 字体（latin 子集自托管；中文走系统回退） ---- */
@@ -38,25 +37,27 @@
 
 /* ---- Tokens ---- */
 :root {
-  --bg: #06070d;
-  --bg-soft: #0a0d17;
-  --bg-glass: rgba(8, 11, 20, 0.62);
+  --bg: #07080d;
+  --surface: #0c0e15;
+  --surface-2: #10131c;
+  --bg-soft: var(--surface); /* 旧名别名（部分子页面组件仍引用） */
+  --bg-glass: rgba(8, 10, 17, 0.62);
   --ink: #eef2f9;
-  --ink-dim: #98a4b8;
-  --ink-faint: #525d70;
-  --line: rgba(150, 168, 214, 0.13);
+  --ink-dim: #97a3b6;
+  --ink-faint: #4d5766;
+  --line: rgba(233, 241, 255, 0.09);
+  --line-strong: rgba(233, 241, 255, 0.17);
   --accent: #2de2a6;
   --accent-2: #4da3ff;
   --accent-warm: #ffb45e;
   --accent-ink: #04130c;
-  --accent-glow: 0 0 28px rgba(45, 226, 166, 0.38);
   --display: "Russo One", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
   --sans: "Chakra Petch", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
   --serif: var(--display);
   --mono: "Chakra Petch", "SFMono-Regular", Consolas, "Courier New", monospace;
   --maxw: 1200px;
   --nav-h: 72px;
-  --radius: 18px;
+  --radius: 14px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -87,7 +88,7 @@ button { font-family: inherit; }
   border-radius: 4px;
 }
 
-/* ---- 环境光背景：多层径向光晕 + 深空底色 + 噪点 ---- */
+/* ---- 背景：扁平点缀（细点阵 + 极淡环境色块，无模糊） ---- */
 body::before {
   content: "";
   position: fixed;
@@ -95,10 +96,9 @@ body::before {
   z-index: -2;
   pointer-events: none;
   background:
-    radial-gradient(52vw 40vh at 88% -6%, rgba(45, 226, 166, 0.09), transparent 62%),
-    radial-gradient(46vw 38vh at 2% 12%, rgba(77, 163, 255, 0.08), transparent 62%),
-    radial-gradient(36vw 32vh at 94% 82%, rgba(255, 180, 94, 0.05), transparent 64%),
-    linear-gradient(180deg, #080a13 0%, var(--bg) 42%);
+    linear-gradient(180deg, rgba(13, 16, 24, 0.6), transparent 30%),
+    radial-gradient(880px 480px at 88% -8%, rgba(45, 226, 166, 0.05), transparent 62%),
+    radial-gradient(820px 460px at 2% 14%, rgba(77, 163, 255, 0.045), transparent 62%);
 }
 body::after {
   content: "";
@@ -106,21 +106,17 @@ body::after {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  opacity: 0.8;
+  background-image: radial-gradient(rgba(238, 242, 249, 0.075) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(90% 70% at 50% 12%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(90% 70% at 50% 12%, #000 0%, transparent 78%);
 }
 
 .container { width: min(var(--maxw), calc(100% - 48px)); margin-inline: auto; }
 section { position: relative; }
 
 /* ---- 通用件 ---- */
-.glass {
-  background: var(--bg-glass);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid var(--line);
-}
-
 .eyebrow {
   font-family: var(--mono);
   font-size: 0.72rem;
@@ -133,23 +129,22 @@ section { position: relative; }
 }
 .eyebrow::before {
   content: "";
-  width: 34px;
+  width: 30px;
   height: 1px;
-  background: linear-gradient(90deg, var(--accent), transparent);
-  box-shadow: 0 0 10px rgba(45, 226, 166, 0.7);
+  background: var(--accent);
 }
 
-h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: 0.02em; line-height: 1.25; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: 0.02em; line-height: 1.25; text-wrap: balance; }
 
 .char { display: inline-block; will-change: transform; }
 
-/* ---- 按钮：motion-driven（悬停抬升 + 按下回弹 0.96） ---- */
+/* ---- 按钮：扁平（实色填充 / 细边幽灵），磁吸由 JS 负责 ---- */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 14px 26px;
+  padding: 13px 26px;
   border-radius: 999px;
   font-family: var(--mono);
   font-size: 0.9rem;
@@ -158,73 +153,58 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: 0.02em
   cursor: pointer;
   border: 1px solid transparent;
   user-select: none;
-  transition: transform 0.4s var(--ease-expo), box-shadow 0.4s var(--ease-expo),
-    color 0.3s, border-color 0.3s, background 0.3s;
+  transition: transform 0.4s var(--ease-expo), background 0.25s, color 0.25s, border-color 0.25s;
 }
 .btn:active { transform: scale(0.96); }
-.btn-primary {
-  background: linear-gradient(120deg, var(--accent), #7cf0c8);
-  color: var(--accent-ink);
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: #7cf0c8; transform: translateY(-2px); }
+.btn-ghost { border-color: var(--line-strong); color: var(--ink-dim); background: transparent; }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: rgba(45, 226, 166, 0.06); transform: translateY(-2px); }
+
+/* ---- 鼠标聚光（data-spot）：光标处的扁平径向色斑 ---- */
+[data-spot] { position: relative; }
+[data-spot]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), rgba(45, 226, 166, 0.09), transparent 58%);
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+  z-index: 0;
 }
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--accent-glow), 0 16px 44px -14px rgba(45, 226, 166, 0.65);
+[data-spot]:hover::before { opacity: 1; }
+[data-spot] > * { position: relative; z-index: 1; }
+
+/* ---- 自定义光标：仅精细指针桌面启用（JS 加 html.mc-active） ---- */
+@media (pointer: fine) {
+  html.mc-active, html.mc-active a, html.mc-active button, html.mc-active [role="button"], html.mc-active select { cursor: none; }
 }
-.btn-ghost {
-  border-color: var(--line);
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-.btn-ghost:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: inset 0 0 26px rgba(45, 226, 166, 0.1);
+.mc { display: none; }
+@media (pointer: fine) {
+  html.mc-active .mc { display: block; }
 }
 
-/* ---- 自定义滚动条：承袭夜黑 × 荧光青绿 × 电光蓝 ---- */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-  border-left: 1px solid var(--line);
-}
-::-webkit-scrollbar-thumb {
-  border-radius: 99px;
-  border: 2px solid transparent;
-  background: linear-gradient(180deg, rgba(45, 226, 166, 0.7), rgba(77, 163, 255, 0.35)) padding-box;
-  box-shadow: 0 0 10px rgba(45, 226, 166, 0.3);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(45, 226, 166, 0.95), rgba(77, 163, 255, 0.55)) padding-box;
-  box-shadow: 0 0 14px rgba(45, 226, 166, 0.5);
-}
+/* ---- 滚动条（扁平实色） ---- */
+::-webkit-scrollbar { width: 9px; }
+::-webkit-scrollbar-track { background: var(--bg); border-left: 1px solid var(--line); }
+::-webkit-scrollbar-thumb { background: rgba(45, 226, 166, 0.45); border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(45, 226, 166, 0.85); background-clip: padding-box; }
 ::-webkit-scrollbar-corner { background: transparent; }
 html { scrollbar-width: thin; scrollbar-color: rgba(45, 226, 166, 0.5) rgba(255, 255, 255, 0.03); }
 
 /* ---- 关键帧 ---- */
-@keyframes scan-move {
-  from { transform: translateY(-18vh); }
-  to { transform: translateY(118vh); }
-}
-@keyframes hue-drift {
-  0%, 100% { filter: hue-rotate(0deg) blur(90px); }
-  50% { filter: hue-rotate(30deg) blur(90px); }
-}
+@keyframes scan-move { from { transform: translateY(-18vh); } to { transform: translateY(118vh); } }
+@keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes cue {
   0% { transform: scaleY(0); transform-origin: top; }
   45% { transform: scaleY(1); transform-origin: top; }
   55% { transform: scaleY(1); transform-origin: bottom; }
   100% { transform: scaleY(0); transform-origin: bottom; }
 }
-@keyframes pulse-dot {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 1; }
-}
-@keyframes flow-x {
-  to { background-position-x: -24px; }
-}
+@keyframes pulse-dot { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+@keyframes flow-x { to { background-position-x: -24px; } }
 
 /* ---- 无障碍：尊重系统减弱动态 ---- */
 @media (prefers-reduced-motion: reduce) {

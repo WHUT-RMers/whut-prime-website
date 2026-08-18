@@ -73,13 +73,12 @@ onMounted(() => {
   height: 30px;
   display: grid;
   place-items: center;
-  background: linear-gradient(140deg, var(--accent), #7cf0c8);
+  background: var(--accent);
   color: var(--accent-ink);
-  border-radius: 9px;
+  border-radius: 8px;
   font-family: var(--serif);
   font-weight: 400;
   font-size: 1.05rem;
-  box-shadow: 0 0 16px rgba(45, 226, 166, 0.4);
 }
 .brand-name { font-family: var(--mono); letter-spacing: 0.14em; font-size: 0.86rem; }
 .footer-nav { display: flex; gap: 24px; }

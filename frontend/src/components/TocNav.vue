@@ -94,8 +94,7 @@ onBeforeUnmount(() => cleanup?.())
   height: 100%;
   transform: scaleY(0);
   transform-origin: top;
-  background: linear-gradient(180deg, var(--accent), var(--accent-2));
-  box-shadow: 0 0 10px rgba(45, 226, 166, 0.5);
+  background: var(--accent);
 }
 .toc-item {
   position: relative;
@@ -107,11 +106,11 @@ onBeforeUnmount(() => cleanup?.())
   font-family: var(--mono);
   font-size: 0.68rem;
   letter-spacing: 0.18em;
-  color: var(--ink-faint);
+  color: var(--ink-dim);
   text-decoration: none;
   transition: color 0.3s, background 0.3s;
 }
-.toc-no { opacity: 0.55; transition: opacity 0.3s; }
+.toc-no { opacity: 0.8; transition: opacity 0.3s; }
 .toc-item::before {
   content: "";
   position: absolute;
@@ -133,7 +132,6 @@ onBeforeUnmount(() => cleanup?.())
 .toc-item.active::before {
   background: var(--accent);
   transform: translate(-70%, -50%) scale(1);
-  box-shadow: 0 0 10px rgba(45, 226, 166, 0.9);
 }
 
 @media (max-width: 1150px) {

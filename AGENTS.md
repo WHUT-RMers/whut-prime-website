@@ -83,10 +83,11 @@ npm run build        # 产物到 frontend/dist
 
 ## 6. 设计系统（frontend/src/style.css）
 
-- **风格**：motion-driven（电影感暗色 cinema dark）——深空蓝黑底 × 荧光青绿主强调，电光蓝 / 暖橙环境光分层，玻璃拟态（backdrop blur）+ 辉光 + HUD 细节。
+- **风格**：motion-driven + **扁平化**（flat）：深空蓝黑底（`--bg: #07080d`）× 荧光青绿主强调（`--accent`），`--surface` 实色面板 + 1px 细线边框，几何装饰（点阵/线框方块/描边字），**无重玻璃拟态与辉光**。
 - **配色**：`--bg: #06070d`、`--accent: #2de2a6`（主强调）、`--accent-2: #4da3ff`（电光蓝）、`--accent-warm: #ffb45e`（暖橙点缀）。
 - **字体**：标题/展示用 `Russo One`，正文/等宽用 `Chakra Petch`（均为自托管 latin woff2 子集，@font-face 优先 `local()` 回退打包文件）；中文由系统无衬线（PingFang SC / HarmonyOS Sans SC / Microsoft YaHei / Noto Sans SC）回退。
 - **动效曲线**：`--ease-expo: cubic-bezier(0.16,1,0.3,1)`（expo 系），入场 expo.out、退场比入场快；按钮按下 scale(0.96) 回弹微交互。
+- **鼠标互动**：`MouseCursor.vue`（自定义光标：点 + 迟滞环，difference 混合）；`composables/useMouseFx.ts` 提供 `data-tilt`（3D 跟手倾斜）/ `data-spot`（光标聚光斑 --mx/--my）/ `data-magnet`（磁吸按钮），仅桌面 fine 指针生效、尊重减弱动态。
 - **无障碍**：全局尊重 `prefers-reduced-motion`（CSS 与 JS 双重降级），`:focus-visible` 焦点环、点击元素 cursor:pointer。
 - **滚动条**：WebKit + Firefox 主题化（青绿→电光蓝渐变）。
 

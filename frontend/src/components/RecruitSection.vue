@@ -112,10 +112,8 @@ const groups = ['机械组', '电控组', '视觉算法组', '商业运营组', 
 .recruit-form {
   position: relative;
   border: 1px solid var(--line);
-  border-radius: 20px;
-  background:
-    radial-gradient(80% 50% at 50% 0%, rgba(45, 226, 166, 0.07), transparent 70%),
-    var(--bg-soft);
+  border-radius: var(--radius);
+  background: var(--surface);
   padding: 36px;
   display: flex;
   flex-direction: column;
@@ -137,7 +135,7 @@ const groups = ['机械组', '电控组', '视觉算法组', '商业运营组', 
     linear-gradient(var(--accent), var(--accent)) left bottom / 2px 18px no-repeat,
     linear-gradient(var(--accent), var(--accent)) right bottom / 18px 2px no-repeat,
     linear-gradient(var(--accent), var(--accent)) right bottom / 2px 18px no-repeat;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 .field { display: flex; flex-direction: column; gap: 9px; }
 .field label { font-size: 0.86rem; color: var(--ink-dim); }
@@ -158,8 +156,7 @@ const groups = ['机械组', '电控组', '视觉算法组', '商业运营组', 
 .field textarea:focus {
   outline: none;
   border-color: var(--accent);
-  background: rgba(45, 226, 166, 0.045);
-  box-shadow: 0 0 0 3px rgba(45, 226, 166, 0.14), 0 0 18px rgba(45, 226, 166, 0.12);
+  background: rgba(45, 226, 166, 0.05);
 }
 .field input::placeholder,
 .field textarea::placeholder { color: var(--ink-faint); }
@@ -173,11 +170,7 @@ const groups = ['机械组', '电控组', '视觉算法组', '商业运营组', 
   padding: 12px 14px;
 }
 .submit-btn { align-self: flex-start; margin-top: 4px; }
-.submit-tip {
-  font-size: 0.82rem;
-  color: var(--accent);
-  text-shadow: 0 0 12px rgba(45, 226, 166, 0.4);
-}
+.submit-tip { font-size: 0.82rem; color: var(--accent); }
 
 @media (max-width: 880px) {
   .recruit-inner { grid-template-columns: 1fr; gap: 48px; }

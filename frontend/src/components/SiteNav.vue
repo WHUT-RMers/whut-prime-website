@@ -23,7 +23,7 @@ let onScroll: (() => void) | undefined
 
 onMounted(() => {
   if (nav.value && !reduced) {
-    gsap.from(nav.value, { y: -28, opacity: 0, duration: 0.9, ease: 'expo.out', delay: 0.15 })
+    gsap.from(nav.value, { y: -26, opacity: 0, duration: 0.8, ease: 'expo.out', delay: 0.15 })
   }
   onScroll = () => {
     scrolled.value = window.scrollY > 28
@@ -39,7 +39,7 @@ onBeforeUnmount(() => {
   if (onScroll) window.removeEventListener('scroll', onScroll)
 })
 
-/** 移动端抽屉：从导航下缘翻出 + 链接阶梯错落 */
+/** 移动端抽屉 */
 watch(open, (v) => {
   const el = drawer.value
   if (!el) return
@@ -48,18 +48,18 @@ watch(open, (v) => {
     el.setAttribute('aria-hidden', 'false')
     el.style.pointerEvents = 'auto'
     if (reduced) return
-    gsap.fromTo(el, { clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)', duration: 0.55, ease: 'expo.out' })
+    gsap.fromTo(el, { clipPath: 'inset(0 0 100% 0)' }, { clipPath: 'inset(0 0 0% 0)', duration: 0.5, ease: 'expo.out' })
     gsap.fromTo(
       el.querySelectorAll('.drawer-link'),
-      { y: 26, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.5, stagger: 0.055, delay: 0.16, ease: 'power3.out' },
+      { y: 22, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.45, stagger: 0.05, delay: 0.14, ease: 'power3.out' },
     )
   } else {
     el.setAttribute('aria-hidden', 'true')
     el.style.pointerEvents = 'none'
     gsap.to(el, {
       clipPath: 'inset(0 0 100% 0)',
-      duration: 0.4,
+      duration: 0.35,
       ease: 'expo.in',
       onComplete: () => el.classList.remove('is-open'),
     })
@@ -84,7 +84,7 @@ watch(open, (v) => {
       </nav>
 
       <div class="nav-right">
-        <RouterLink to="/recruit" class="btn btn-primary nav-cta">
+        <RouterLink to="/recruit" class="btn btn-primary nav-cta" data-magnet>
           加入战队 <i class="cta-dot" aria-hidden="true"></i>
         </RouterLink>
         <button
@@ -128,57 +128,40 @@ watch(open, (v) => {
   right: 0;
   z-index: 60;
   height: var(--nav-h);
+  background: var(--bg);
   border-bottom: 1px solid transparent;
-  transition: background 0.45s var(--ease-expo), border-color 0.45s var(--ease-expo),
-    backdrop-filter 0.45s var(--ease-expo);
+  transition: background 0.35s var(--ease-expo), border-color 0.35s var(--ease-expo);
 }
 .nav.scrolled {
-  background: var(--bg-glass);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  background: rgba(8, 10, 17, 0.94);
   border-bottom-color: var(--line);
 }
 
-/* 阅读进度条 */
-.nav-progress {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  height: 2px;
-  pointer-events: none;
-}
+/* 阅读进度条：扁平实色 */
+.nav-progress { position: absolute; left: 0; top: 0; right: 0; height: 2px; pointer-events: none; }
 .nav-progress span {
   display: block;
   height: 100%;
   transform: scaleX(0);
   transform-origin: left;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  box-shadow: 0 0 12px rgba(45, 226, 166, 0.65);
+  background: var(--accent);
 }
 
 .nav-inner { height: 100%; display: flex; align-items: center; gap: 32px; position: relative; }
-
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand-mark {
   width: 30px;
   height: 30px;
   display: grid;
   place-items: center;
-  background: linear-gradient(140deg, var(--accent), #7cf0c8);
+  background: var(--accent);
   color: var(--accent-ink);
-  border-radius: 9px;
+  border-radius: 8px;
   font-family: var(--serif);
   font-weight: 400;
   font-size: 1.05rem;
-  box-shadow: 0 0 16px rgba(45, 226, 166, 0.45);
 }
-.brand-name {
-  font-family: var(--mono);
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  font-size: 0.86rem;
-}
+.brand-name { font-family: var(--mono); font-weight: 600; letter-spacing: 0.16em; font-size: 0.86rem; }
 .brand-name .dot { color: var(--accent); margin: 0 2px; }
 
 .nav-links { display: flex; gap: 26px; margin-inline: auto; }
@@ -198,7 +181,7 @@ watch(open, (v) => {
   letter-spacing: 0.1em;
   color: var(--accent);
   opacity: 0.7;
-  transition: opacity 0.3s, transform 0.4s var(--ease-expo);
+  transition: opacity 0.3s;
 }
 .nav-link::after {
   content: "";
@@ -206,12 +189,11 @@ watch(open, (v) => {
   left: 0;
   bottom: 0;
   width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  height: 2px;
+  background: var(--accent);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.4s var(--ease-expo);
-  box-shadow: 0 0 10px rgba(45, 226, 166, 0.6);
+  transition: transform 0.35s var(--ease-expo);
 }
 .nav-link:hover { color: var(--ink); }
 .nav-link:hover .nav-idx { opacity: 1; }
@@ -221,13 +203,8 @@ watch(open, (v) => {
 .nav-link.router-link-active::after { transform: scaleX(1); }
 
 .nav-right { display: flex; align-items: center; gap: 14px; }
-.cta-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent-ink);
-  animation: pulse-dot 1.6s ease-in-out infinite;
-}
+.cta-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-ink); animation: pulse-dot 1.6s ease-in-out infinite; }
+
 .nav-burger {
   display: none;
   flex-direction: column;
@@ -236,23 +213,16 @@ watch(open, (v) => {
   width: 42px;
   height: 42px;
   padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
   background: transparent;
 }
-.nav-burger span {
-  display: block;
-  height: 2px;
-  width: 100%;
-  background: var(--ink);
-  border-radius: 2px;
-  transition: transform 0.4s var(--ease-expo), opacity 0.3s;
-}
+.nav-burger span { display: block; height: 2px; width: 100%; background: var(--ink); border-radius: 2px; transition: transform 0.35s var(--ease-expo), opacity 0.25s; }
 .nav-burger.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .nav-burger.active span:nth-child(2) { opacity: 0; }
 .nav-burger.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-/* 移动端抽屉 */
+/* 移动端抽屉：扁平实色 */
 .drawer {
   position: fixed;
   top: var(--nav-h);
@@ -263,10 +233,8 @@ watch(open, (v) => {
   flex-direction: column;
   gap: 24px;
   padding: 18px 24px 34px;
-  background: var(--bg-glass);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  border-bottom: 1px solid var(--line);
+  background: #0a0c13;
+  border-bottom: 1px solid var(--line-strong);
   clip-path: inset(0 0 100% 0);
   pointer-events: none;
   visibility: hidden;
@@ -281,14 +249,9 @@ watch(open, (v) => {
   border-bottom: 1px solid var(--line);
   font-size: 1.02rem;
 }
-.drawer-no {
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-}
+.drawer-no { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; color: var(--accent); }
 .drawer-label { flex: 1; }
-.drawer-arrow { font-style: normal; color: var(--ink-faint); transition: transform 0.35s var(--ease-expo), color 0.3s; }
+.drawer-arrow { font-style: normal; color: var(--ink-faint); transition: transform 0.3s var(--ease), color 0.25s; }
 .drawer-link:hover .drawer-arrow { color: var(--accent); transform: translateX(5px); }
 .drawer-cta { align-self: flex-start; }
 

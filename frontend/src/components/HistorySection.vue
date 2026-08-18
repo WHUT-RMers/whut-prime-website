@@ -160,8 +160,7 @@ onMounted(() => {
   top: 4px;
   bottom: 4px;
   width: 2px;
-  background: linear-gradient(180deg, var(--accent), var(--accent-2));
-  box-shadow: 0 0 14px rgba(45, 226, 166, 0.6);
+  background: var(--accent);
   transform-origin: top;
 }
 
@@ -176,14 +175,12 @@ onMounted(() => {
   border-radius: 50%;
   border: 2px solid var(--accent);
   background: var(--bg);
-  box-shadow: 0 0 12px rgba(45, 226, 166, 0.55);
 }
 .year {
   font-family: var(--mono);
   font-size: 0.84rem;
   letter-spacing: 0.24em;
   color: var(--accent);
-  text-shadow: 0 0 16px rgba(45, 226, 166, 0.5);
 }
 .milestone-title { margin-top: 10px; font-size: 1.45rem; }
 .milestone-desc { margin-top: 10px; color: var(--ink-dim); font-size: 0.96rem; max-width: 520px; }
@@ -196,16 +193,15 @@ onMounted(() => {
   font-size: 0.76rem;
   letter-spacing: 0.06em;
   padding: 7px 14px;
-  border: 1px solid rgba(45, 226, 166, 0.35);
+  border: 1px solid transparent;
   border-radius: 999px;
   color: var(--ink);
-  background: rgba(45, 226, 166, 0.06);
-  transition: border-color 0.3s, box-shadow 0.3s, transform 0.35s var(--ease-expo);
+  background: rgba(45, 226, 166, 0.08);
+  transition: border-color 0.25s, background 0.25s;
 }
 .honor-chip:hover {
   border-color: var(--accent);
-  box-shadow: 0 0 18px rgba(45, 226, 166, 0.35);
-  transform: translateY(-3px);
+  background: rgba(45, 226, 166, 0.16);
 }
 
 .honor-stats {
@@ -216,20 +212,20 @@ onMounted(() => {
 }
 .hstat {
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
   padding: 20px 14px;
   text-align: center;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.025), transparent 70%);
-  transition: border-color 0.3s, transform 0.35s var(--ease-expo);
+  background: var(--surface);
+  transition: border-color 0.25s, background 0.25s;
 }
-.hstat:hover { border-color: rgba(45, 226, 166, 0.45); transform: translateY(-4px); }
+.hstat:hover { border-color: var(--accent); background: var(--surface-2); }
 .hstat-num {
   font-family: var(--mono);
   font-size: 1.7rem;
   font-weight: 700;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 18px rgba(45, 226, 166, 0.45);
 }
 .hstat-label { margin-top: 8px; font-size: 0.78rem; color: var(--ink-dim); }
 

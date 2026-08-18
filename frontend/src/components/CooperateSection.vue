@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
+import { useMouseFx } from '../composables/useMouseFx'
 
 const root = ref<HTMLElement | null>(null)
-useScrollReveal(root, { stagger: 0.06, blur: 8 })
+useScrollReveal(root, { stagger: 0.06, blur: 4 })
+useMouseFx(root)
 
 const tiers = [
   { name: '冠名赞助商', seats: '1 席', amount: '合计 10w+', top: true },
@@ -50,6 +52,8 @@ const contact = {
           class="tier"
           :class="{ primary: t.top }"
           data-reveal
+          data-tilt
+          data-spot
         >
           <span v-if="t.top" class="tier-flag">主力</span>
           <h3 class="tier-name">{{ t.name }}</h3>
@@ -105,18 +109,16 @@ const contact = {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 24px 18px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 70%);
-  transition: border-color 0.4s, transform 0.45s var(--ease-expo), box-shadow 0.45s var(--ease-expo);
+  background: var(--surface);
+  transform-style: preserve-3d;
+  transition: border-color 0.3s, background 0.3s;
 }
-.tier:hover {
-  border-color: rgba(45, 226, 166, 0.55);
-  transform: translateY(-6px);
-  box-shadow: 0 22px 50px -22px rgba(45, 226, 166, 0.3);
-}
+.tier:hover { border-color: var(--accent); background: var(--surface-2); }
 .tier.primary {
-  border-color: rgba(45, 226, 166, 0.55);
-  background: radial-gradient(80% 60% at 50% 0%, rgba(45, 226, 166, 0.14), transparent 72%);
+  border-color: rgba(45, 226, 166, 0.6);
+  background: rgba(45, 226, 166, 0.08);
 }
+.tier.primary:hover { background: rgba(45, 226, 166, 0.14); }
 .tier-flag {
   position: absolute;
   top: -10px;
@@ -128,7 +130,6 @@ const contact = {
   background: var(--accent);
   border-radius: 999px;
   padding: 3px 10px;
-  box-shadow: 0 0 14px rgba(45, 226, 166, 0.5);
 }
 .tier-name { font-size: 1.05rem; }
 .tier-seats {
@@ -137,7 +138,6 @@ const contact = {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--accent);
-  text-shadow: 0 0 16px rgba(45, 226, 166, 0.4);
 }
 .tier-amount { margin-top: 6px; font-size: 0.82rem; color: var(--ink-dim); }
 
@@ -150,15 +150,13 @@ const contact = {
 .benefit-card,
 .contact-card {
   border: 1px solid var(--line);
-  border-radius: 20px;
-  background:
-    radial-gradient(70% 40% at 50% 0%, rgba(45, 226, 166, 0.05), transparent 70%),
-    var(--bg-soft);
+  border-radius: var(--radius);
+  background: var(--surface);
   padding: 30px 32px;
-  transition: border-color 0.4s, transform 0.45s var(--ease-expo);
+  transition: border-color 0.3s, background 0.3s;
 }
 .benefit-card:hover,
-.contact-card:hover { border-color: rgba(45, 226, 166, 0.35); transform: translateY(-4px); }
+.contact-card:hover { border-color: var(--accent); background: var(--surface-2); }
 .benefit-title,
 .contact-title { font-size: 1.3rem; }
 .benefit-list { list-style: none; margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
@@ -172,7 +170,6 @@ const contact = {
   height: 9px;
   border-radius: 2px;
   background: var(--accent);
-  box-shadow: 0 0 8px rgba(45, 226, 166, 0.7);
   transform: rotate(45deg);
 }
 .benefit-note { margin-top: 20px; font-size: 0.78rem; color: var(--ink-faint); }
@@ -182,8 +179,8 @@ const contact = {
 .contact-list dt { flex-shrink: 0; width: 42px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; color: var(--accent); padding-top: 2px; }
 .contact-list dd { font-size: 0.95rem; color: var(--ink); transition: color 0.3s; }
 .contact-list div:hover dd { color: var(--ink); }
-.contact-list a { color: var(--accent); transition: opacity 0.3s, text-shadow 0.3s; }
-.contact-list a:hover { opacity: 0.85; text-shadow: 0 0 12px rgba(45, 226, 166, 0.5); }
+.contact-list a { color: var(--accent); transition: opacity 0.25s; }
+.contact-list a:hover { opacity: 0.8; }
 
 @media (max-width: 1000px) {
   .tier-grid { grid-template-columns: repeat(3, 1fr); }

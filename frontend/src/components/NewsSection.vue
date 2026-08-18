@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
+import { useMouseFx } from '../composables/useMouseFx'
 import PlaceholderImage from './PlaceholderImage.vue'
 
 const props = withDefaults(defineProps<{ limit?: number }>(), { limit: 4 })
 
 const root = ref<HTMLElement | null>(null)
-useScrollReveal(root, { stagger: 0.08, blur: 8 })
+useScrollReveal(root, { stagger: 0.08, blur: 4 })
+useMouseFx(root)
 
 const news = [
   {
@@ -48,10 +50,11 @@ const shown = computed(() => news.slice(0, props.limit))
       <div class="news-head">
         <p class="eyebrow" data-reveal>02 / 战队资讯</p>
         <h2 class="news-title" data-reveal>最新动态</h2>
+        <p class="news-hint" data-reveal aria-hidden="true">HOVER 卡片跟随光标 · 点击进入详情</p>
       </div>
 
       <div class="news-grid" :class="{ fewer: shown.length <= 2 }">
-        <article v-for="n in shown" :key="n.date + n.title" class="news-card" data-reveal>
+        <article v-for="n in shown" :key="n.date + n.title" class="news-card" data-reveal data-tilt data-spot>
           <RouterLink :to="n.to" class="news-inner">
             <div class="news-media">
               <PlaceholderImage :label="'资讯图片 / ' + n.tag" ratio="16 / 10" />
@@ -78,6 +81,14 @@ const shown = computed(() => news.slice(0, props.limit))
   margin-top: 22px;
   font-size: clamp(1.9rem, 4vw, 3.1rem);
 }
+.news-hint {
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
 
 .news-grid {
   margin-top: 54px;
@@ -91,48 +102,37 @@ const shown = computed(() => news.slice(0, props.limit))
   position: relative;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 70%);
+  background: var(--surface);
   overflow: hidden;
-  transition: transform 0.45s var(--ease-expo), border-color 0.4s, box-shadow 0.45s var(--ease-expo);
+  transform-style: preserve-3d;
+  transition: border-color 0.3s, background 0.3s;
 }
 .news-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(45, 226, 166, 0.5);
-  box-shadow: 0 24px 56px -22px rgba(45, 226, 166, 0.28);
+  border-color: var(--accent);
+  background: var(--surface-2);
 }
-/* 高光扫过 */
-.news-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.06) 46%, transparent 62%);
-  transform: translateX(-120%);
-  transition: transform 0.85s var(--ease-expo);
-}
-.news-card:hover::after { transform: translateX(120%); }
+.news-card:active { border-color: var(--accent-2); }
 
 .news-inner { display: flex; flex-direction: column; height: 100%; }
-.news-media { overflow: hidden; aspect-ratio: 16 / 10; }
+.news-media { overflow: hidden; aspect-ratio: 16 / 10; border-bottom: 1px solid var(--line); }
 .news-media :deep(.ph) {
   height: 100%;
   border-radius: 0;
-  transition: transform 0.9s var(--ease-expo);
+  transition: transform 0.8s var(--ease-expo);
 }
-.news-card:hover .news-media :deep(.ph) { transform: scale(1.08); }
+.news-card:hover .news-media :deep(.ph) { transform: scale(1.06); }
 
-.news-body { display: flex; flex-direction: column; gap: 12px; padding: 22px 20px 20px; flex: 1; }
+.news-body { display: flex; flex-direction: column; gap: 12px; padding: 20px; flex: 1; }
 .news-meta { display: flex; align-items: center; justify-content: space-between; }
 .news-tag {
   font-family: var(--mono);
   font-size: 0.66rem;
   letter-spacing: 0.12em;
   color: var(--accent);
-  border: 1px solid rgba(45, 226, 166, 0.4);
+  border: 1px solid transparent;
   border-radius: 999px;
   padding: 3px 10px;
-  background: rgba(45, 226, 166, 0.05);
+  background: rgba(45, 226, 166, 0.1);
 }
 .news-date { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); }
 .news-card-title { font-size: 1.08rem; line-height: 1.4; }
@@ -142,7 +142,7 @@ const shown = computed(() => news.slice(0, props.limit))
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   color: var(--ink-dim);
-  transition: color 0.3s, letter-spacing 0.4s var(--ease-expo);
+  transition: color 0.25s, letter-spacing 0.35s var(--ease-expo);
 }
 .news-card:hover .news-more { color: var(--accent); letter-spacing: 0.16em; }
 

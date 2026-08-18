@@ -3,10 +3,12 @@ import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
 import { prefersReducedMotion, countUp } from '../utils/motion'
+import { useMouseFx } from '../composables/useMouseFx'
 import PlaceholderImage from './PlaceholderImage.vue'
 
 const root = ref<HTMLElement | null>(null)
-useScrollReveal(root, { blur: 8, stagger: 0.08 })
+useScrollReveal(root, { blur: 4, stagger: 0.08 })
+useMouseFx(root)
 
 const events = [
   {
@@ -92,7 +94,7 @@ onMounted(() => {
             </div>
           </article>
         </div>
-        <div class="event-media" data-reveal>
+        <div class="event-media" data-reveal data-spot>
           <PlaceholderImage label="赛事现场 / 赛场照片" ratio="16 / 10" accent />
           <div class="event-impact">
             <div v-for="s in impact" :key="s.label" class="imp">
@@ -130,20 +132,17 @@ onMounted(() => {
   gap: 22px;
   padding: 8px 16px 30px 8px;
   border-bottom: 1px solid var(--line);
-  transition: transform 0.45s var(--ease-expo);
 }
 .event-item:last-child { border-bottom: none; padding-bottom: 8px; }
-.event-item:hover { transform: translateX(8px); }
+.event-item:hover .event-item-head { transform: translateX(6px); }
 
 .event-marker {
   position: absolute;
   left: 0;
   top: 10px;
-  width: 2px;
+  width: 3px;
   height: calc(100% - 40px);
-  border-radius: 2px;
-  background: linear-gradient(180deg, var(--accent), rgba(45, 226, 166, 0.05));
-  box-shadow: 0 0 12px rgba(45, 226, 166, 0.55);
+  background: var(--accent);
   transform-origin: top;
 }
 .event-index {
@@ -152,9 +151,8 @@ onMounted(() => {
   color: var(--accent);
   letter-spacing: 0.1em;
   padding: 6px 0 0 26px;
-  text-shadow: 0 0 14px rgba(45, 226, 166, 0.55);
 }
-.event-item-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.event-item-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; transition: transform 0.35s var(--ease-expo); }
 .event-tag {
   font-family: var(--mono);
   font-size: 0.72rem;
@@ -177,7 +175,8 @@ onMounted(() => {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   padding: 22px 16px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.025), transparent 70%);
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
 }
 .imp { text-align: center; }
 .imp-num {

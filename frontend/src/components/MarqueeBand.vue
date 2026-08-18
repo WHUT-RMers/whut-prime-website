@@ -20,7 +20,7 @@ onMounted(() => {
     if (tween) gsap.to(tween, { timeScale: v, duration: 0.7, ease: 'power2.out', overwrite: 'auto' })
   }
 
-  /* 滚动速度 → 跑马灯速率：向下滚动加速、向上滚动减速/轻微倒放 */
+  /* 滚动速度 → 跑马灯速率 */
   const st = ScrollTrigger.create({
     start: 0,
     end: 'max',
@@ -63,9 +63,9 @@ onBeforeUnmount(() => {
   position: relative;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(180deg, var(--bg-soft), rgba(10, 13, 23, 0.4));
+  background: var(--surface);
   overflow: hidden;
-  padding: 22px 0;
+  padding: 20px 0;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
@@ -77,18 +77,12 @@ onBeforeUnmount(() => {
   gap: 16px;
   padding: 0 30px;
   font-family: var(--serif);
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   letter-spacing: 0.12em;
   color: var(--ink-dim);
   white-space: nowrap;
   transition: color 0.3s;
 }
 .marquee:hover .word { color: var(--ink); }
-.star {
-  font-style: normal;
-  color: var(--accent);
-  font-size: 0.72rem;
-  opacity: 0.85;
-  text-shadow: 0 0 10px rgba(45, 226, 166, 0.8);
-}
+.star { font-style: normal; color: var(--accent); font-size: 0.72rem; opacity: 0.85; }
 </style>

@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useRoute } from 'vue-router'
 import SiteNav from './components/SiteNav.vue'
 import AppFooter from './components/AppFooter.vue'
+import MouseCursor from './components/MouseCursor.vue'
 import { prefersReducedMotion } from './utils/motion'
 
 const route = useRoute()
@@ -82,4 +83,6 @@ function onEnter(el: Element, done: () => void) {
     </RouterView>
   </main>
   <AppFooter />
+
+  <MouseCursor />
 </template>
