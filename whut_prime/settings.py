@@ -120,6 +120,9 @@ STATIC_URL = 'static/'
 # Vite 构建产物目录：frontend/dist 由 staticfiles 在 /static/ 下托管
 STATICFILES_DIRS = [BASE_DIR / 'frontend' / 'dist']
 
+# collectstatic 输出目录（后台 SimpleUI/Admin 静态资源），部署时执行 manage.py collectstatic
+STATIC_ROOT = BASE_DIR / 'static_root'
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration

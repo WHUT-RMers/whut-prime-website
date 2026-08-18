@@ -6,12 +6,12 @@ const nav = ref<HTMLElement | null>(null)
 const scrolled = ref(false)
 
 const links = [
-  { href: '#event', label: '赛事介绍' },
-  { href: '#news', label: '战队资讯' },
-  { href: '#history', label: '历史荣誉' },
-  { href: '#groups', label: '组别技术' },
-  { href: '#recruit', label: '投递简历' },
-  { href: '#cooperate', label: '商业合作' },
+  { to: '/', label: '主页' },
+  { to: '/news', label: '战队资讯' },
+  { to: '/history', label: '历史荣誉' },
+  { to: '/groups', label: '组别技术' },
+  { to: '/recruit', label: '投递简历' },
+  { to: '/cooperate', label: '商业合作' },
 ]
 
 let onScroll: (() => void) | undefined
@@ -31,14 +31,14 @@ onBeforeUnmount(() => {
 <template>
   <header ref="nav" class="nav" :class="{ scrolled }">
     <div class="container nav-inner">
-      <a href="#top" class="brand">
+      <RouterLink to="/" class="brand">
         <span class="brand-mark">P</span>
         <span class="brand-name">WHUT<span class="dot">·</span>PRIME</span>
-      </a>
+      </RouterLink>
       <nav class="nav-links">
-        <a v-for="l in links" :key="l.href" :href="l.href" class="nav-link">{{ l.label }}</a>
+        <RouterLink v-for="l in links" :key="l.to" :to="l.to" class="nav-link">{{ l.label }}</RouterLink>
       </nav>
-      <a href="#recruit" class="btn btn-primary nav-cta">加入战队</a>
+      <RouterLink to="/recruit" class="btn btn-primary nav-cta">加入战队</RouterLink>
     </div>
   </header>
 </template>
@@ -76,7 +76,12 @@ onBeforeUnmount(() => {
 .brand-name { font-family: var(--mono); font-weight: 600; letter-spacing: 0.14em; font-size: 0.86rem; }
 .brand-name .dot { color: var(--accent); margin: 0 2px; }
 .nav-links { display: flex; gap: 24px; margin-inline: auto; }
-.nav-link { position: relative; font-size: 0.9rem; color: var(--ink-dim); transition: color 0.3s; }
+.nav-link {
+  position: relative;
+  font-size: 0.9rem;
+  color: var(--ink-dim);
+  transition: color 0.3s;
+}
 .nav-link::after {
   content: "";
   position: absolute;
@@ -91,6 +96,8 @@ onBeforeUnmount(() => {
 }
 .nav-link:hover { color: var(--ink); }
 .nav-link:hover::after { transform: scaleX(1); }
+.nav-link.router-link-active { color: var(--ink); }
+.nav-link.router-link-active::after { transform: scaleX(1); }
 @media (max-width: 980px) {
   .nav-links { gap: 16px; }
   .nav-cta { display: none; }

@@ -6,10 +6,10 @@ const root = ref<HTMLElement | null>(null)
 useScrollReveal(root)
 
 const navLinks = [
-  { href: '#event', label: '赛事介绍' },
-  { href: '#history', label: '历史荣誉' },
-  { href: '#groups', label: '组别技术' },
-  { href: '#recruit', label: '投递简历' },
+  { to: '/event', label: '赛事介绍' },
+  { to: '/history', label: '历史荣誉' },
+  { to: '/groups', label: '组别技术' },
+  { to: '/recruit', label: '投递简历' },
 ]
 </script>
 
@@ -21,7 +21,7 @@ const navLinks = [
         <span class="brand-name">WHUT·PRIME — ROBOMASTER</span>
       </div>
       <nav class="footer-nav" data-reveal>
-        <a v-for="l in navLinks" :key="l.href" :href="l.href">{{ l.label }}</a>
+        <RouterLink v-for="l in navLinks" :key="l.to" :to="l.to">{{ l.label }}</RouterLink>
       </nav>
       <p class="footer-line" data-reveal>
         武汉理工大学机甲大师 PRIME 战队官网 · 2027 赛季 · Vue 3 + GSAP + Django

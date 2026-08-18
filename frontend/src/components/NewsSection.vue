@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
 import PlaceholderImage from './PlaceholderImage.vue'
+
+const props = withDefaults(defineProps<{ limit?: number }>(), { limit: 4 })
 
 const root = ref<HTMLElement | null>(null)
 useScrollReveal(root, { stagger: 0.08 })
@@ -12,30 +14,32 @@ const news = [
     tag: '招商',
     title: '2027 赛季招商开启：五档赞助席位开放',
     desc: '冠名赞助商 1 席、特约 4 席、高级 7 席、合作伙伴与行业支持若干，队服、车体、社媒全场景品牌露出。',
-    href: '#cooperate',
+    to: '/cooperate',
   },
   {
     date: '2026.07',
     tag: '赛报',
     title: '高校联盟赛再传捷报：全国二等奖累计 9 次',
     desc: '连续四年征战全国大学生机器人大赛 RoboMaster 机甲大师高校联盟赛，累计获全国二等奖 9 次、全国三等奖 17 次。',
-    href: '#history',
+    to: '/history',
   },
   {
     date: '2026.06',
     tag: '媒体',
     title: '全媒体矩阵粉丝突破 1500，累计流量 31w+',
     desc: '微信公众号、视频号、B 站、抖音、小红书五大账号同步运营，内容聚焦赛事高光、技术研发与科创故事。',
-    href: '#news',
+    to: '/news',
   },
   {
     date: '2026.05',
     tag: '招新',
     title: '新赛季招新启动：四大组别开放投递',
     desc: '机械 / 电控 / 视觉算法 / 商业运营，简历投递通道已开启。',
-    href: '#recruit',
+    to: '/recruit',
   },
 ]
+
+const shown = computed(() => news.slice(0, props.limit))
 </script>
 
 <template>
@@ -46,9 +50,9 @@ const news = [
         <h2 class="news-title" data-reveal>最新动态</h2>
       </div>
 
-      <div class="news-grid">
-        <article v-for="n in news" :key="n.date + n.title" class="news-card" data-reveal>
-          <a :href="n.href" class="news-inner">
+      <div class="news-grid" :class="{ fewer: shown.length <= 2 }">
+        <article v-for="n in shown" :key="n.date + n.title" class="news-card" data-reveal>
+          <RouterLink :to="n.to" class="news-inner">
             <div class="news-media">
               <PlaceholderImage :label="'资讯图片 / ' + n.tag" ratio="16 / 10" />
             </div>
@@ -61,7 +65,7 @@ const news = [
               <p class="news-desc">{{ n.desc }}</p>
               <span class="news-more">阅读全文 <span aria-hidden="true">→</span></span>
             </div>
-          </a>
+          </RouterLink>
         </article>
       </div>
     </div>
@@ -69,7 +73,7 @@ const news = [
 </template>
 
 <style scoped>
-.news { padding: 0 0 150px; }
+.news { padding: 0 0 130px; }
 .news-title {
   margin-top: 22px;
   font-size: clamp(1.9rem, 4vw, 3.1rem);
@@ -81,6 +85,7 @@ const news = [
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
+.news-grid.fewer { grid-template-columns: repeat(2, 1fr); }
 
 .news-card {
   border: 1px solid var(--line);
@@ -123,10 +128,10 @@ const news = [
 .news-card:hover .news-more { color: var(--accent); }
 
 @media (max-width: 1080px) {
-  .news-grid { grid-template-columns: repeat(2, 1fr); }
+  .news-grid, .news-grid.fewer { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 560px) {
-  .news-grid { grid-template-columns: 1fr; }
-  .news { padding: 0 0 110px; }
+  .news-grid, .news-grid.fewer { grid-template-columns: 1fr; }
+  .news { padding: 0 0 90px; }
 }
 </style>

@@ -19,10 +19,10 @@ CHAR_SOURCES = [
     ROOT / "src",
 ]
 
-# GB2312 一级字库（3755 常用汉字）程序化生成
-def gb2312_level1():
+# GB2312 一级 + 二级字库（共 6763 汉字）程序化生成
+def gb2312_chars():
     chars = []
-    for b1 in range(0xB0, 0xD8):
+    for b1 in range(0xB0, 0xF8):
         for b2 in range(0xA1, 0xFF):
             try:
                 chars.append(bytes([b1, b2]).decode("gb2312"))
@@ -45,7 +45,7 @@ def collect_chars() -> str:
             for f in p.rglob("*"):
                 if f.is_file() and f.suffix in {".vue", ".ts", ".css", ".html"}:
                     add(f.read_text(encoding="utf-8", errors="ignore"))
-    add(gb2312_level1())
+    add(gb2312_chars())
     add(EXTRA)
     ascii_chars = "".join(chr(i) for i in range(0x20, 0x7F))
     add(ascii_chars)

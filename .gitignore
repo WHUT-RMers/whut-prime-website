@@ -5,6 +5,7 @@ __pycache__/
 *.sqlite3
 db.sqlite3
 staticfiles/
+static_root/
 media/
 
 # Node / Vite（frontend/.gitignore 已覆盖 node_modules/dist/fonts-src）
