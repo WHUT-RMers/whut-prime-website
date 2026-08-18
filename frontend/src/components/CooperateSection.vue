@@ -3,49 +3,79 @@ import { ref } from 'vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
 
 const root = ref<HTMLElement | null>(null)
-useScrollReveal(root, { stagger: 0.08 })
+useScrollReveal(root, { stagger: 0.06 })
 
-const partners = [
-  {
-    t: '技术合作',
-    en: 'R&D PARTNERSHIP',
-    d: '联合实验室、课题合作与技术人才对接。',
-  },
-  {
-    t: '商业赞助',
-    en: 'SPONSORSHIP',
-    d: '冠名、联名与赛季赞助，让品牌出现在赛场与镜头前。',
-  },
-  {
-    t: '媒体传播',
-    en: 'MEDIA & CONTENT',
-    d: '内容共创、赛事直播与校园传播合作。',
-  },
+const tiers = [
+  { name: '冠名赞助商', seats: '1 席', amount: '合计 10w+', top: true },
+  { name: '特约赞助商', seats: '4 席', amount: '合计 5w+', top: false },
+  { name: '高级赞助商', seats: '7 席', amount: '合计 3w+', top: false },
+  { name: '合作伙伴', seats: '若干', amount: '合计 1w+', top: false },
+  { name: '行业支持', seats: '若干', amount: '资金或技术支持', top: false },
 ]
+
+const benefits = [
+  '战队冠名权',
+  '队服广告位',
+  '机器人车体广告位',
+  '赛季纪录片独家致谢片段',
+  '社媒平台图文视频发布（最高 ≥8 篇）',
+  '提供宣传素材（照片、视频）',
+  '接待参观战队实验室',
+  '校内活动分发品牌物料',
+]
+
+const contact = {
+  name: '战队经理 卞彦博',
+  phone: '13326243419（微信同号）',
+  email: 'whut_prime@foxmail.com',
+  address: '湖北省武汉市洪山区珞狮路122号 · 武汉理工大学马房山校区东院自动化学院求实楼东附楼102室',
+}
 </script>
 
 <template>
   <section id="cooperate" ref="root" class="cooperate">
     <div class="container">
       <p class="eyebrow" data-reveal>06 / 商业合作</p>
-      <h2 class="cooperate-title" data-reveal>与 PRIME 同行</h2>
+      <h2 class="cooperate-title" data-reveal>2027 赛季招商开启</h2>
+      <p class="cooperate-lead" data-reveal>
+        凡是严格遵守国家法律法规、恪守商业诚信、合规合法经营的企业及社会组织，
+        皆热忱欢迎携手成为武汉理工大学机甲大师 PRIME 战队的赞助商。合作不限地域，
+        可选择单赛事赛季或全年深度共建模式，具体权益由双方友好洽谈。
+      </p>
 
-      <div class="partner-grid">
-        <article v-for="p in partners" :key="p.t" class="partner" data-reveal>
-          <span class="partner-en">{{ p.en }}</span>
-          <h3 class="partner-title">{{ p.t }}</h3>
-          <p class="partner-desc">{{ p.d }}</p>
+      <div class="tier-grid">
+        <article
+          v-for="t in tiers"
+          :key="t.name"
+          class="tier"
+          :class="{ primary: t.top }"
+          data-reveal
+        >
+          <h3 class="tier-name">{{ t.name }}</h3>
+          <p class="tier-seats">{{ t.seats }}</p>
+          <p class="tier-amount">{{ t.amount }}</p>
         </article>
       </div>
 
-      <div class="cooperate-contact" data-reveal>
-        <div>
-          <p class="cc-label">合作邮箱</p>
-          <a class="cc-mail" href="mailto:cooperation@whut-prime.demo">
-            cooperation@whut-prime.demo
-          </a>
+      <div class="cooperate-lower">
+        <div class="benefit-card" data-reveal>
+          <h3 class="benefit-title">赞助权益（部分）</h3>
+          <ul class="benefit-list">
+            <li v-for="b in benefits" :key="b">{{ b }}</li>
+          </ul>
+          <p class="benefit-note">注：具体项目经双方洽谈商定，最终权益以双方签署的赞助协议书为准。</p>
         </div>
-        <a class="btn btn-ghost" href="mailto:cooperation@whut-prime.demo">发邮件洽谈 <span aria-hidden="true">→</span></a>
+
+        <div class="contact-card" data-reveal>
+          <h3 class="contact-title">联系我们</h3>
+          <dl class="contact-list">
+            <div><dt>联系人</dt><dd>{{ contact.name }}</dd></div>
+            <div><dt>电话</dt><dd><a :href="'tel:' + contact.phone">{{ contact.phone }}</a></dd></div>
+            <div><dt>邮箱</dt><dd><a href="mailto:whut_prime@foxmail.com">{{ contact.email }}</a></dd></div>
+            <div><dt>地址</dt><dd>{{ contact.address }}</dd></div>
+          </dl>
+          <a class="btn btn-primary" href="mailto:whut_prime@foxmail.com">邮件洽谈 <span aria-hidden="true">→</span></a>
+        </div>
       </div>
     </div>
   </section>
@@ -57,50 +87,83 @@ const partners = [
   margin-top: 22px;
   font-size: clamp(1.9rem, 4vw, 3.1rem);
 }
-
-.partner-grid {
-  margin-top: 54px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+.cooperate-lead {
+  margin-top: 18px;
+  color: var(--ink-dim);
+  max-width: 760px;
 }
-.partner {
-  padding: 30px 28px;
+
+.tier-grid {
+  margin-top: 46px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+.tier {
   border: 1px solid var(--line);
   border-radius: 14px;
+  padding: 22px 18px;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 70%);
   transition: border-color 0.35s, transform 0.35s var(--ease);
 }
-.partner:hover { border-color: rgba(45, 226, 166, 0.5); transform: translateY(-4px); }
-.partner-en { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em; color: var(--accent); }
-.partner-title { margin-top: 16px; font-size: 1.3rem; }
-.partner-desc { margin-top: 12px; color: var(--ink-dim); font-size: 0.92rem; }
-
-.cooperate-contact {
-  margin-top: 44px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  border: 1px solid rgba(45, 226, 166, 0.3);
-  border-radius: 16px;
-  padding: 28px 32px;
-  background: rgba(45, 226, 166, 0.04);
+.tier:hover { border-color: rgba(45, 226, 166, 0.5); transform: translateY(-4px); }
+.tier.primary {
+  border-color: rgba(45, 226, 166, 0.55);
+  background: rgba(45, 226, 166, 0.06);
 }
-.cc-label { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.2em; color: var(--ink-dim); }
-.cc-mail {
-  margin-top: 6px;
-  display: inline-block;
+.tier-name { font-size: 1.05rem; }
+.tier-seats {
+  margin-top: 10px;
   font-family: var(--mono);
-  font-size: 1.18rem;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: var(--accent);
-  transition: opacity 0.3s;
 }
-.cc-mail:hover { opacity: 0.8; }
+.tier-amount { margin-top: 6px; font-size: 0.82rem; color: var(--ink-dim); }
 
-@media (max-width: 880px) {
-  .partner-grid { grid-template-columns: 1fr; }
+.cooperate-lower {
+  margin-top: 44px;
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+  gap: 16px;
+}
+.benefit-card,
+.contact-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--bg-soft);
+  padding: 30px 32px;
+}
+.benefit-title,
+.contact-title { font-size: 1.3rem; }
+.benefit-list { list-style: none; margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+.benefit-list li { position: relative; padding-left: 20px; font-size: 0.92rem; color: var(--ink-dim); }
+.benefit-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.benefit-note { margin-top: 20px; font-size: 0.78rem; color: #5b6673; }
+
+.contact-list { margin: 18px 0 22px; display: flex; flex-direction: column; gap: 14px; }
+.contact-list div { display: flex; gap: 16px; }
+.contact-list dt { flex-shrink: 0; width: 42px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; color: var(--accent); padding-top: 2px; }
+.contact-list dd { font-size: 0.95rem; color: var(--ink); }
+.contact-list a { color: var(--accent); transition: opacity 0.3s; }
+.contact-list a:hover { opacity: 0.8; }
+
+@media (max-width: 1000px) {
+  .tier-grid { grid-template-columns: repeat(3, 1fr); }
+  .cooperate-lower { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .tier-grid { grid-template-columns: repeat(2, 1fr); }
+  .benefit-list { grid-template-columns: 1fr; }
   .cooperate { padding: 0 0 110px; }
 }
 </style>

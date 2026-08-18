@@ -18,25 +18,25 @@ const groups = [
     code: 'ELC',
     name: '电控组',
     en: 'EMBEDDED CONTROL',
-    d: '嵌入式控制与机器人决策：让每一度转角都有依据。',
-    stack: ['STM32', 'FreeRTOS', 'CAN 总线', 'PID', '传感器融合'],
+    d: '嵌入式系统设计与机器人决策：让每一度转角都有依据。',
+    stack: ['STM32', 'FreeRTOS', 'CAN 总线', 'PID', '射频前端'],
     need: '写过驱动，调过 PID',
   },
   {
-    code: 'ALG',
-    name: '算法组',
+    code: 'VIS',
+    name: '视觉算法组',
     en: 'VISION & ALGORITHM',
-    d: '视觉感知与自动瞄准：让机器人看见、判断、开火。',
-    stack: ['C++', 'Python', 'OpenCV', '深度学习', 'ROS'],
+    d: '机器视觉与自主导航：让机器人看见、判断、自主行动。',
+    stack: ['C++', 'Python', 'OpenCV', '深度学习', 'SLAM / 自主导航'],
     need: '跑通过 Demo，更喜欢真枪实弹',
   },
   {
-    code: 'OPR',
-    name: '运营组',
-    en: 'OPERATION & MEDIA',
-    d: '宣传、财务与赛事运营：让战队的战绩被看见。',
-    stack: ['剪辑', '平面设计', '文案', '项目管理'],
-    need: '能写能剪，也能算账',
+    code: 'COM',
+    name: '商业运营组',
+    en: 'COMMERCIAL & OPERATION',
+    d: '赛事运营、商业赞助与媒体矩阵：让战队的战绩被看见。',
+    stack: ['公众号 / 视频号', 'B 站 / 抖音', '平面设计', '项目管理'],
+    need: '能写能剪，也能谈合作',
   },
 ]
 </script>
@@ -115,7 +115,7 @@ const groups = [
   font-family: var(--mono);
   font-size: 0.6rem;
   letter-spacing: 0.12em;
-  color: var(--ink-faint, #5b6673);
+  color: #5b6673;
 }
 .group-name { margin-top: 22px; font-size: 1.3rem; position: relative; }
 .group-desc { margin-top: 12px; font-size: 0.9rem; color: var(--ink-dim); position: relative; }

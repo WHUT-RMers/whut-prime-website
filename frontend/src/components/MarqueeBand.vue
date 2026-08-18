@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 
 const track = ref<HTMLElement | null>(null)
-const words = ['英雄机器人', '步兵机器人', '工程机器人', '哨兵机器人', '无人机', '雷达站', '飞镖系统', '电控', '视觉算法', '机械设计']
+const words = ['超级对抗赛 RMUC', '高校联盟赛 RMUL', '人工智能挑战赛 RMUA', '英雄机器人', '步兵机器人', '工程机器人', '哨兵机器人', '无人机', '雷达站', '机械组', '电控组', '视觉算法组']
 
 onMounted(() => {
   if (!track.value) return
@@ -15,7 +15,7 @@ onMounted(() => {
   <section class="marquee" aria-hidden="true">
     <div class="marquee-track" ref="track">
       <div v-for="n in 2" :key="n" class="marquee-group">
-        <span v-for="w in words" :key="w + n" class="word">{{ w }}<i class="star">✦</i></span>
+        <span v-for="w in words" :key="w + n" class="word">{{ w }}<i class="star">◆</i></span>
       </div>
     </div>
   </section>

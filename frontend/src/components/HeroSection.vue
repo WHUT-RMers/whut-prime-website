@@ -41,7 +41,7 @@ onMounted(() => {
 
     <div class="container hero-inner">
       <div class="hero-main">
-        <p class="eyebrow hero-eyebrow">WUHAN UNIVERSITY OF TECHNOLOGY · ROBOMASTER</p>
+        <p class="eyebrow hero-eyebrow">WHUT PRIME · 精研 覃思 笃志 力行 · 2027 SEASON</p>
 
         <h1 class="hero-title">
           <span class="line" v-html="charsHtml('以代码铸甲')"></span>
@@ -49,8 +49,9 @@ onMounted(() => {
         </h1>
 
         <p class="hero-sub">
-          武汉理工大学 RoboMaster 战队 PRIME：机械、电控、算法、运营，
-          四个组别，一支军团。
+          武汉理工大学机甲大师 PRIME 战队，2022 年成立，隶属人工智能学院。
+          机械、电控、视觉算法、商业运营四大组别，百余名队员，
+          连续四年征战机甲大师高校联盟赛。
         </p>
 
         <div class="hero-actions">
@@ -59,9 +60,9 @@ onMounted(() => {
         </div>
 
         <ul class="hero-notes">
-          <li><span class="k">9</span> 个赛季</li>
-          <li><span class="k">5</span> 大组别</li>
-          <li><span class="k">50+</span> 名队员</li>
+          <li><span class="k">4</span> 大组别</li>
+          <li><span class="k">100+</span> 名队员</li>
+          <li><span class="k">9</span> 项全国二等奖</li>
         </ul>
       </div>
 
@@ -141,7 +142,7 @@ onMounted(() => {
 .spec-label {
   font-size: 0.68rem;
   letter-spacing: 0.34em;
-  color: var(--ink-faint, #5b6673);
+  color: #5b6673;
   writing-mode: vertical-lr;
 }
 .spec-line {

@@ -7,19 +7,20 @@ const root = ref<HTMLElement | null>(null)
 useScrollReveal(root, { stagger: 0.08 })
 
 const milestones = [
-  { year: '2017', t: '建队', d: '武汉理工大学第一支 RoboMaster 战队成立，从一间仓库开始。' },
-  { year: '2019', t: '南部赛区一等奖', d: '首获区域赛一等奖，拿到通往全国赛的门票。' },
-  { year: '2021', t: '全国赛十六强', d: '首次站上全国赛舞台，闯入十六强。' },
-  { year: '2023', t: '全国赛八强', d: '刷新队史最佳战绩，多款机器人完成自研迭代。' },
-  { year: '2026', t: '新赛季', d: '全新赛季开启，整装待发。' },
+  { year: '2022', t: '建队', d: '武汉理工大学机甲大师 PRIME 战队成立，隶属于人工智能学院，得到本科生院、科学技术发展院、团委等多家单位大力支持。' },
+  { year: '2023', t: '首战联盟赛', d: '首次代表学校参加 RoboMaster 机甲大师高校联盟赛，斩获全国奖项。' },
+  { year: '2024', t: '再创佳绩', d: '连续第二年出征，全国获奖数量持续累积，队伍规模突破百人。' },
+  { year: '2025', t: '深耕赛项', d: '第三年参赛，在超级对抗赛、高校联盟赛等赛项中全面练兵。' },
+  { year: '2026', t: '四年磨砺', d: '连续四年征战高校联盟赛，累计全国二等奖 9 次、全国三等奖 17 次。' },
+  { year: '2027', t: '新赛季', d: '2027 赛季招商开启，全新赛季整装待发。' },
 ]
 
-const honors = ['全国八强', '全国十六强 ×2', '南部赛区一等奖 ×3', '最佳工程奖', '最佳新队奖', '优秀指导老师']
+const honors = ['全国二等奖 ×9', '全国三等奖 ×17', '连续四年参赛', '五大平台媒体矩阵', '全网粉丝 1500+', '累计流量 31w+']
 
 const stats = [
-  { v: 9, suffix: '', label: '参赛赛季' },
-  { v: 120, suffix: '+', label: '正式比赛场次' },
-  { v: 6, suffix: ' 项', label: '国家级荣誉' },
+  { v: 9, suffix: ' 次', label: '全国二等奖' },
+  { v: 17, suffix: ' 次', label: '全国三等奖' },
+  { v: 31, suffix: 'w+', label: '全网累计流量' },
 ]
 
 onMounted(() => {
@@ -60,7 +61,7 @@ onMounted(() => {
   <section id="history" ref="root" class="history">
     <div class="container">
       <p class="eyebrow" data-reveal>03 / 历史与荣誉</p>
-      <h2 class="history-title" data-reveal>九年，从仓库到赛场</h2>
+      <h2 class="history-title" data-reveal>四年，从成立到屡获殊荣</h2>
 
       <div class="history-layout">
         <div class="timeline">

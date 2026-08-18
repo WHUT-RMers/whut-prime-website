@@ -24,9 +24,9 @@ const navLinks = [
         <a v-for="l in navLinks" :key="l.href" :href="l.href">{{ l.label }}</a>
       </nav>
       <p class="footer-line" data-reveal>
-        武汉理工大学 RoboMaster 战队官网 demo 版 · Vue 3 + GSAP + Django
+        武汉理工大学机甲大师 PRIME 战队官网 · 2027 赛季 · Vue 3 + GSAP + Django
       </p>
-      <p class="footer-copy" data-reveal>© 2026 WHUT PRIME · 机甲与你，来日方长</p>
+      <p class="footer-copy" data-reveal>© 2027 WHUT PRIME · 精研 覃思 笃志 力行</p>
     </div>
   </footer>
 </template>

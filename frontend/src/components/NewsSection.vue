@@ -8,32 +8,32 @@ useScrollReveal(root, { stagger: 0.08 })
 
 const news = [
   {
-    date: '2026.06',
+    date: '2026.08',
+    tag: '招商',
+    title: '2027 赛季招商开启：五档赞助席位开放',
+    desc: '冠名赞助商 1 席、特约 4 席、高级 7 席、合作伙伴与行业支持若干，队服、车体、社媒全场景品牌露出。',
+    href: '#cooperate',
+  },
+  {
+    date: '2026.07',
     tag: '赛报',
-    title: '全国赛落幕：PRIME 首次闯入全国十六强',
-    desc: '与华南理工、哈工大的三场对决，让我们看清了差距，也看见了方向。',
+    title: '高校联盟赛再传捷报：全国二等奖累计 9 次',
+    desc: '连续四年征战全国大学生机器人大赛 RoboMaster 机甲大师高校联盟赛，累计获全国二等奖 9 次、全国三等奖 17 次。',
+    href: '#history',
+  },
+  {
+    date: '2026.06',
+    tag: '媒体',
+    title: '全媒体矩阵粉丝突破 1500，累计流量 31w+',
+    desc: '微信公众号、视频号、B 站、抖音、小红书五大账号同步运营，内容聚焦赛事高光、技术研发与科创故事。',
     href: '#news',
   },
   {
     date: '2026.05',
     tag: '招新',
     title: '新赛季招新启动：四大组别开放投递',
-    desc: '机械 / 电控 / 算法 / 运营，简历投递通道已开启。',
+    desc: '机械 / 电控 / 视觉算法 / 商业运营，简历投递通道已开启。',
     href: '#recruit',
-  },
-  {
-    date: '2026.03',
-    tag: '备赛',
-    title: '南部赛区开战在即，机器人进入整备期',
-    desc: '两周后出发广州，最后一轮赛场适配与稳定性压测。',
-    href: '#news',
-  },
-  {
-    date: '2025.12',
-    tag: '总结',
-    title: '2025 赛季答谢年会：感谢每一位队员',
-    desc: '赛季收官，发布年度技术复盘与下赛季规划。',
-    href: '#news',
   },
 ]
 </script>
@@ -106,7 +106,7 @@ const news = [
   border-radius: 999px;
   padding: 3px 10px;
 }
-.news-date { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint, #5b6673); }
+.news-date { font-family: var(--mono); font-size: 0.72rem; color: #5b6673; }
 .news-card-title { font-size: 1.08rem; line-height: 1.4; }
 .news-desc {
   font-size: 0.88rem;

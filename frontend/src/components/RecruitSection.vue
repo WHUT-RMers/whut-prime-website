@@ -19,7 +19,7 @@ function onSubmit() {
   submitted.value = true
 }
 
-const groups = ['机械组', '电控组', '算法组', '运营组', '还没想好']
+const groups = ['机械组', '电控组', '视觉算法组', '商业运营组', '还没想好']
 </script>
 
 <template>
@@ -33,8 +33,8 @@ const groups = ['机械组', '电控组', '算法组', '运营组', '还没想�
           我们只要求你肯学、能熬、爱折腾。
         </p>
         <ul class="recruit-list">
-          <li><span class="li-k">基地</span> 南湖校区 · 大学生创业园</li>
-          <li><span class="li-k">通道</span> 邮箱简历 + 问卷表二选一</li>
+          <li><span class="li-k">基地</span> 马房山校区东院 · 自动化学院求实楼东附楼 102 室</li>
+          <li><span class="li-k">通道</span> 简历投递至战队邮箱 whut_prime@foxmail.com</li>
           <li><span class="li-k">流程</span> 简历筛选 → 组内面试 → 试用期一个月</li>
         </ul>
       </div>
@@ -61,7 +61,7 @@ const groups = ['机械组', '电控组', '算法组', '运营组', '还没想�
         </div>
         <div class="field">
           <label>附件简历</label>
-          <div class="file-note">demo 版暂未接入文件上传，请将简历发送至上方简历投递邮箱。</div>
+          <div class="file-note">demo 版暂未接入文件上传，请将简历发送至战队邮箱：whut_prime@foxmail.com</div>
         </div>
 
         <button class="btn btn-primary submit-btn" type="submit">
