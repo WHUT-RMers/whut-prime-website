@@ -24,13 +24,13 @@
 │   ├── vite.config.ts       # base: '/static/'（关键：与 Django 静态托管对齐）
 │   ├── index.html
 │   ├── package.json         # scripts: dev / build / preview / typecheck
-│   ├── scripts/subset_font.py  # Maple Mono NF CN 子集化脚本
+│   ├── scripts/subset_font.py  # 遗留脚本：Maple Mono NF CN 子集化（现不再使用）
 │   └── src/
 │       ├── main.ts          # GSAP + ScrollTrigger 注册、挂载
 │       ├── style.css        # 设计系统变量、@font-face、主题化滚动条
 │       ├── utils/text.ts    # charsHtml() 逐字拆分（GSAP 字符动画）
 │       ├── composables/useGsapReveal.ts  # 滚动入场通用逻辑
-│       ├── assets/fonts/    # 子集 woff2：MapleMonoNF-CN-400/700
+│       ├── assets/fonts/    # woff2：Inter-400/700（latin 子集，中文回退系统字体）
 │       └── components/      # 见 §5 组件清单
 └── db.sqlite3               # ⚠️ 已 gitignore，不提交
 ```
@@ -58,10 +58,9 @@ npm run dev          # Vite HMR 开发服务器（5173 端口）
 npm run typecheck    # vue-tsc 类型检查
 npm run build        # 产物到 frontend/dist
 
-# 字体子集化（新增页面字符超出 woff2 子集时）
-# 将 MapleMono-NF-CN.zip 放入 frontend/scripts/fonts-src/ 后执行：
-..\.venv\Scripts\python scripts\subset_font.py
-# 字符集 = 页面所有字符 ∪ GB2312 一级字库(3755) ∪ ASCII/常用符号
+# 字体：Inter latin 子集已完整覆盖西文/数字，中文由系统无衬线（PingFang SC /
+# HarmonyOS Sans SC / Microsoft YaHei / Noto Sans SC）回退，无需子集化。
+# （subset_font.py 为 Maple Mono NF CN 遗留脚本，仅历史参考）
 ```
 
 ## 5. 前端组件清单（frontend/src/components/）
@@ -83,9 +82,9 @@ npm run build        # 产物到 frontend/dist
 ## 6. 设计系统（frontend/src/style.css）
 
 - **配色**：夜黑底（`--bg: #06080c`）× 荧光青绿（`--accent: #2de2a6`），单强调色 + 颗粒噪点 + 环境光背景。
-- **字体**：全站 `Maple Mono NF CN`（等宽，含中文），自托管子集 woff2（@font-face 优先 `local()` 再回退打包文件）；标题/按钮用 700 字重。
+- **字体**：全站 `Inter`（无衬线，仅覆盖 latin），自托管 woff2（400/700，@font-face 优先 `local()` 再回退打包文件）；中文由系统无衬线（PingFang SC / HarmonyOS Sans SC / Microsoft YaHei / Noto Sans SC）回退；标题/按钮用 700 字重。
 - **滚动条**：WebKit + Firefox 主题化自定义滚动条。
-- **字号体系**：serif→等宽标题 + 等宽小标签（mono，letter-spacing 放大），正文 0.95rem/1.7。
+- **字号体系**：无衬线标题（Inter 700）与小标签（letter-spacing 放大），正文 0.95rem/1.7。
 
 ## 7. GSAP 使用规范
 
@@ -99,7 +98,7 @@ npm run build        # 产物到 frontend/dist
 
 - 页面文案一律中文，风格精炼、机甲主题（如「以代码铸甲，以热血参战」）。
 - 提交信息遵循 Conventional Commits（`feat:` / `fix:` / `docs:` …），推送到 `main`。
-- 新增内容涉及新字符时，需重跑字体子集化脚本并 `npm run build`。
+- 西文/数字由 Inter latin 子集覆盖、中文回退系统字体，新增字符无需子集化；改动样式后需重新 `npm run build`。
 - 官方静态资源不落库：`frontend/dist/`、`frontend/node_modules/`、`.venv/`、`db.sqlite3` 均忽略。
 
 ## 9. 注意事项 / 陷阱

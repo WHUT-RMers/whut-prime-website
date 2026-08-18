@@ -1,16 +1,16 @@
-/* Maple Mono NF CN（自托管子集 woff2） */
+/* Inter（自托管 latin 子集，中文回退系统无衬线） */
 @font-face {
-  font-family: "Maple Mono NF CN";
-  src: local("Maple Mono NF CN"), local("Maple Mono NF CN Regular"),
-    url("./assets/fonts/MapleMonoNF-CN-400.woff2") format("woff2");
+  font-family: "Inter";
+  src: local("Inter"), local("Inter Regular"),
+    url("./assets/fonts/Inter-400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Maple Mono NF CN";
-  src: local("Maple Mono NF CN Bold"),
-    url("./assets/fonts/MapleMonoNF-CN-700.woff2") format("woff2");
+  font-family: "Inter";
+  src: local("Inter Bold"),
+    url("./assets/fonts/Inter-700.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -24,10 +24,10 @@
   --line: rgba(255, 255, 255, 0.09);
   --accent: #2de2a6;
   --accent-ink: #06110c;
-  --maple: "Maple Mono NF CN", "Cascadia Code", Consolas, "JetBrains Mono", "Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif;
-  --serif: var(--maple);
-  --sans: var(--maple);
-  --mono: var(--maple);
+  --inter: "Inter", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  --serif: var(--inter);
+  --sans: var(--inter);
+  --mono: var(--inter);
   --maxw: 1180px;
   --nav-h: 72px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
