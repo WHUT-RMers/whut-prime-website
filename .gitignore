@@ -1,0 +1,18 @@
+# Python / Django
+.venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+staticfiles/
+media/
+
+# Node / Vite（frontend/.gitignore 已覆盖 node_modules/dist/fonts-src）
+node_modules/
+
+# 编辑器 & 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
