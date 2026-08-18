@@ -2,9 +2,10 @@
 import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
+import { prefersReducedMotion, countUp } from '../utils/motion'
 
 const root = ref<HTMLElement | null>(null)
-useScrollReveal(root, { stagger: 0.08 })
+useScrollReveal(root, { stagger: 0.08, blur: 8 })
 
 const milestones = [
   { year: '2022', t: '建队', d: '武汉理工大学机甲大师 PRIME 战队成立，隶属于人工智能学院，得到本科生院、科学技术发展院、团委等多家单位大力支持。' },
@@ -26,8 +27,10 @@ const stats = [
 onMounted(() => {
   const el = root.value
   if (!el) return
+  const q = gsap.utils.selector(el)
 
-  const fill = el.querySelector<HTMLElement>('.history-line-fill')
+  /* 时间线生长（保留） */
+  const fill = q('.history-line-fill')[0]
   if (fill) {
     gsap.fromTo(
       fill,
@@ -41,18 +44,55 @@ onMounted(() => {
     )
   }
 
+  /* 里程碑：左右交替滑入 + 年份视差 */
+  if (!prefersReducedMotion()) {
+    q('.milestone').forEach((m: Element, i: number) => {
+      gsap.fromTo(
+        m,
+        { x: i % 2 ? 64 : -64, opacity: 0, filter: 'blur(6px)' },
+        {
+          x: 0,
+          opacity: 1,
+          filter: 'blur(0px)',
+          duration: 1,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: m, start: 'top 88%', once: true },
+        },
+      )
+      const yr = m.querySelector('.year')
+      if (yr) {
+        gsap.fromTo(
+          yr,
+          { y: 22 },
+          { y: -22, ease: 'none', scrollTrigger: { trigger: m, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
+        )
+      }
+    })
+  }
+
+  /* 荣誉徽章：脉冲弹入 */
+  if (!prefersReducedMotion()) {
+    q('.honor-list li').forEach((li: Element, i: number) => {
+      gsap.fromTo(
+        li,
+        { opacity: 0, scale: 0.7, rotate: i % 2 ? 6 : -6 },
+        {
+          opacity: 1,
+          scale: 1,
+          rotate: 0,
+          duration: 0.6,
+          ease: 'back.out(1.8)',
+          delay: (i % 4) * 0.06,
+          scrollTrigger: { trigger: li, start: 'top 92%', once: true },
+        },
+      )
+    })
+  }
+
+  /* 数据计数 */
   el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
     const target = Number(node.dataset.count)
-    const obj = { v: 0 }
-    gsap.to(obj, {
-      v: target,
-      duration: 1.8,
-      ease: 'power2.out',
-      scrollTrigger: { trigger: node, start: 'top 88%', once: true },
-      onUpdate: () => {
-        node.textContent = String(Math.round(obj.v))
-      },
-    })
+    countUp(node, target, 1.8, 'power2.out', 0.15)
   })
 })
 </script>
@@ -67,7 +107,7 @@ onMounted(() => {
         <div class="timeline">
           <div class="history-line"></div>
           <div class="history-line-fill"></div>
-          <article v-for="m in milestones" :key="m.year" class="milestone" data-reveal>
+          <article v-for="m in milestones" :key="m.year" class="milestone">
             <span class="year">{{ m.year }}</span>
             <h3 class="milestone-title">{{ m.t }}</h3>
             <p class="milestone-desc">{{ m.d }}</p>
@@ -77,7 +117,7 @@ onMounted(() => {
         <aside class="honor-side">
           <h3 class="honor-title" data-reveal>荣誉墙</h3>
           <ul class="honor-list">
-            <li v-for="h in honors" :key="h" data-reveal>{{ h }}</li>
+            <li v-for="h in honors" :key="h" class="honor-chip">{{ h }}</li>
           </ul>
           <div class="honor-stats">
             <div v-for="s in stats" :key="s.label" class="hstat" data-reveal>
@@ -119,9 +159,9 @@ onMounted(() => {
   left: 6px;
   top: 4px;
   bottom: 4px;
-  width: 1px;
-  background: var(--accent);
-  box-shadow: 0 0 12px rgba(45, 226, 166, 0.6);
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 14px rgba(45, 226, 166, 0.6);
   transform-origin: top;
 }
 
@@ -136,12 +176,14 @@ onMounted(() => {
   border-radius: 50%;
   border: 2px solid var(--accent);
   background: var(--bg);
+  box-shadow: 0 0 12px rgba(45, 226, 166, 0.55);
 }
 .year {
   font-family: var(--mono);
-  font-size: 0.82rem;
-  letter-spacing: 0.22em;
+  font-size: 0.84rem;
+  letter-spacing: 0.24em;
   color: var(--accent);
+  text-shadow: 0 0 16px rgba(45, 226, 166, 0.5);
 }
 .milestone-title { margin-top: 10px; font-size: 1.45rem; }
 .milestone-desc { margin-top: 10px; color: var(--ink-dim); font-size: 0.96rem; max-width: 520px; }
@@ -149,7 +191,7 @@ onMounted(() => {
 .honor-side { position: sticky; top: 110px; align-self: start; }
 .honor-title { font-size: 1.35rem; }
 .honor-list { list-style: none; margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
-.honor-list li {
+.honor-chip {
   font-family: var(--mono);
   font-size: 0.76rem;
   letter-spacing: 0.06em;
@@ -157,7 +199,13 @@ onMounted(() => {
   border: 1px solid rgba(45, 226, 166, 0.35);
   border-radius: 999px;
   color: var(--ink);
-  background: rgba(45, 226, 166, 0.05);
+  background: rgba(45, 226, 166, 0.06);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.35s var(--ease-expo);
+}
+.honor-chip:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgba(45, 226, 166, 0.35);
+  transform: translateY(-3px);
 }
 
 .honor-stats {
@@ -166,13 +214,22 @@ onMounted(() => {
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
 }
-.hstat { border: 1px solid var(--line); border-radius: 12px; padding: 20px 14px; text-align: center; }
+.hstat {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 14px;
+  text-align: center;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.025), transparent 70%);
+  transition: border-color 0.3s, transform 0.35s var(--ease-expo);
+}
+.hstat:hover { border-color: rgba(45, 226, 166, 0.45); transform: translateY(-4px); }
 .hstat-num {
   font-family: var(--mono);
   font-size: 1.7rem;
   font-weight: 700;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 18px rgba(45, 226, 166, 0.45);
 }
 .hstat-label { margin-top: 8px; font-size: 0.78rem; color: var(--ink-dim); }
 

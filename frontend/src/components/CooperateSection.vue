@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
 
 const root = ref<HTMLElement | null>(null)
-useScrollReveal(root, { stagger: 0.06 })
+useScrollReveal(root, { stagger: 0.06, blur: 8 })
 
 const tiers = [
   { name: '冠名赞助商', seats: '1 席', amount: '合计 10w+', top: true },
@@ -51,6 +51,7 @@ const contact = {
           :class="{ primary: t.top }"
           data-reveal
         >
+          <span v-if="t.top" class="tier-flag">主力</span>
           <h3 class="tier-name">{{ t.name }}</h3>
           <p class="tier-seats">{{ t.seats }}</p>
           <p class="tier-amount">{{ t.amount }}</p>
@@ -100,16 +101,34 @@ const contact = {
   gap: 12px;
 }
 .tier {
+  position: relative;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 22px 18px;
+  border-radius: var(--radius);
+  padding: 24px 18px;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 70%);
-  transition: border-color 0.35s, transform 0.35s var(--ease);
+  transition: border-color 0.4s, transform 0.45s var(--ease-expo), box-shadow 0.45s var(--ease-expo);
 }
-.tier:hover { border-color: rgba(45, 226, 166, 0.5); transform: translateY(-4px); }
+.tier:hover {
+  border-color: rgba(45, 226, 166, 0.55);
+  transform: translateY(-6px);
+  box-shadow: 0 22px 50px -22px rgba(45, 226, 166, 0.3);
+}
 .tier.primary {
   border-color: rgba(45, 226, 166, 0.55);
-  background: rgba(45, 226, 166, 0.06);
+  background: radial-gradient(80% 60% at 50% 0%, rgba(45, 226, 166, 0.14), transparent 72%);
+}
+.tier-flag {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 999px;
+  padding: 3px 10px;
+  box-shadow: 0 0 14px rgba(45, 226, 166, 0.5);
 }
 .tier-name { font-size: 1.05rem; }
 .tier-seats {
@@ -118,6 +137,7 @@ const contact = {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--accent);
+  text-shadow: 0 0 16px rgba(45, 226, 166, 0.4);
 }
 .tier-amount { margin-top: 6px; font-size: 0.82rem; color: var(--ink-dim); }
 
@@ -130,32 +150,40 @@ const contact = {
 .benefit-card,
 .contact-card {
   border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--bg-soft);
+  border-radius: 20px;
+  background:
+    radial-gradient(70% 40% at 50% 0%, rgba(45, 226, 166, 0.05), transparent 70%),
+    var(--bg-soft);
   padding: 30px 32px;
+  transition: border-color 0.4s, transform 0.45s var(--ease-expo);
 }
+.benefit-card:hover,
+.contact-card:hover { border-color: rgba(45, 226, 166, 0.35); transform: translateY(-4px); }
 .benefit-title,
 .contact-title { font-size: 1.3rem; }
 .benefit-list { list-style: none; margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
-.benefit-list li { position: relative; padding-left: 20px; font-size: 0.92rem; color: var(--ink-dim); }
+.benefit-list li { position: relative; padding-left: 22px; font-size: 0.92rem; color: var(--ink-dim); }
 .benefit-list li::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 0.55em;
-  width: 8px;
-  height: 8px;
+  top: 0.52em;
+  width: 9px;
+  height: 9px;
   border-radius: 2px;
   background: var(--accent);
+  box-shadow: 0 0 8px rgba(45, 226, 166, 0.7);
+  transform: rotate(45deg);
 }
-.benefit-note { margin-top: 20px; font-size: 0.78rem; color: #5b6673; }
+.benefit-note { margin-top: 20px; font-size: 0.78rem; color: var(--ink-faint); }
 
 .contact-list { margin: 18px 0 22px; display: flex; flex-direction: column; gap: 14px; }
 .contact-list div { display: flex; gap: 16px; }
 .contact-list dt { flex-shrink: 0; width: 42px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; color: var(--accent); padding-top: 2px; }
-.contact-list dd { font-size: 0.95rem; color: var(--ink); }
-.contact-list a { color: var(--accent); transition: opacity 0.3s; }
-.contact-list a:hover { opacity: 0.8; }
+.contact-list dd { font-size: 0.95rem; color: var(--ink); transition: color 0.3s; }
+.contact-list div:hover dd { color: var(--ink); }
+.contact-list a { color: var(--accent); transition: opacity 0.3s, text-shadow 0.3s; }
+.contact-list a:hover { opacity: 0.85; text-shadow: 0 0 12px rgba(45, 226, 166, 0.5); }
 
 @media (max-width: 1000px) {
   .tier-grid { grid-template-columns: repeat(3, 1fr); }

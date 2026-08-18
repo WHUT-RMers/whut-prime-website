@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
+import { prefersReducedMotion, countUp } from '../utils/motion'
 import PlaceholderImage from './PlaceholderImage.vue'
 
 const root = ref<HTMLElement | null>(null)
-useScrollReveal(root)
+useScrollReveal(root, { blur: 8, stagger: 0.08 })
 
 const events = [
   {
@@ -29,6 +31,38 @@ const impact = [
   { v: 400, suffix: '+', label: '全球参赛高校' },
   { v: 10, suffix: ' 万+', label: '青年工程师' },
 ]
+
+onMounted(() => {
+  const el = root.value
+  if (!el || prefersReducedMotion()) return
+  const q = gsap.utils.selector(el)
+
+  /* 序号横向漂移视差 + 战役标记线生长 */
+  q('.event-item').forEach((item: Element, i: number) => {
+    const idx = item.querySelector('.event-index')
+    if (idx) {
+      gsap.fromTo(
+        idx,
+        { x: i % 2 ? 26 : -26 },
+        { x: i % 2 ? -26 : 26, ease: 'none', scrollTrigger: { trigger: item, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
+      )
+    }
+    const marker = item.querySelector('.event-marker')
+    if (marker) {
+      gsap.fromTo(
+        marker,
+        { scaleY: 0 },
+        { scaleY: 1, transformOrigin: 'top', ease: 'none', scrollTrigger: { trigger: item, start: 'top 82%', end: 'bottom 55%', scrub: 0.6 } },
+      )
+    }
+  })
+
+  /* 影响数据计数 */
+  el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
+    const target = Number(node.dataset.count)
+    countUp(node, target, 1.8, 'power2.out', 0.2)
+  })
+})
 </script>
 
 <template>
@@ -47,6 +81,7 @@ const impact = [
       <div class="event-grid">
         <div class="event-items">
           <article v-for="(e, i) in events" :key="e.tag" class="event-item" data-reveal>
+            <span class="event-marker" aria-hidden="true"></span>
             <span class="event-index">{{ String(i + 1).padStart(2, '0') }}</span>
             <div class="event-item-body">
               <div class="event-item-head">
@@ -61,7 +96,7 @@ const impact = [
           <PlaceholderImage label="赛事现场 / 赛场照片" ratio="16 / 10" accent />
           <div class="event-impact">
             <div v-for="s in impact" :key="s.label" class="imp">
-              <p class="imp-num">{{ s.v }}<span class="imp-suffix">{{ s.suffix }}</span></p>
+              <p class="imp-num"><span :data-count="s.v">0</span><span class="imp-suffix">{{ s.suffix }}</span></p>
               <p class="imp-label">{{ s.label }}</p>
             </div>
           </div>
@@ -89,14 +124,35 @@ const impact = [
 }
 
 .event-items { display: flex; flex-direction: column; gap: 34px; }
-.event-item { display: flex; gap: 22px; padding-bottom: 30px; border-bottom: 1px solid var(--line); }
-.event-item:last-child { border-bottom: none; padding-bottom: 0; }
+.event-item {
+  position: relative;
+  display: flex;
+  gap: 22px;
+  padding: 8px 16px 30px 8px;
+  border-bottom: 1px solid var(--line);
+  transition: transform 0.45s var(--ease-expo);
+}
+.event-item:last-child { border-bottom: none; padding-bottom: 8px; }
+.event-item:hover { transform: translateX(8px); }
+
+.event-marker {
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 2px;
+  height: calc(100% - 40px);
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent), rgba(45, 226, 166, 0.05));
+  box-shadow: 0 0 12px rgba(45, 226, 166, 0.55);
+  transform-origin: top;
+}
 .event-index {
   font-family: var(--mono);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--accent);
   letter-spacing: 0.1em;
-  padding-top: 6px;
+  padding: 6px 0 0 26px;
+  text-shadow: 0 0 14px rgba(45, 226, 166, 0.55);
 }
 .event-item-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .event-tag {
@@ -107,6 +163,7 @@ const impact = [
   border: 1px solid rgba(45, 226, 166, 0.4);
   border-radius: 6px;
   padding: 3px 10px;
+  background: rgba(45, 226, 166, 0.05);
 }
 .event-item-title { font-size: 1.4rem; }
 .event-item-desc { margin-top: 10px; color: var(--ink-dim); font-size: 0.96rem; }
@@ -118,8 +175,9 @@ const impact = [
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius);
   padding: 22px 16px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.025), transparent 70%);
 }
 .imp { text-align: center; }
 .imp-num {

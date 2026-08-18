@@ -58,9 +58,11 @@ npm run dev          # Vite HMR 开发服务器（5173 端口）
 npm run typecheck    # vue-tsc 类型检查
 npm run build        # 产物到 frontend/dist
 
-# 字体：Inter latin 子集已完整覆盖西文/数字，中文由系统无衬线（PingFang SC /
+# 字体：Russo One / Chakra Petch（latin 子集）覆盖西文与数字西文/数字，中文由系统无衬线（PingFang SC /
 # HarmonyOS Sans SC / Microsoft YaHei / Noto Sans SC）回退，无需子集化。
 # （subset_font.py 为 Maple Mono NF CN 遗留脚本，仅历史参考）
+# 字体现状：Russo One（显示/标题）+ Chakra Petch（正文/等宽，400/600/700）自托管 latin 子集，
+# 中文回退系统无衬线；位移动效辅助见 src/utils/motion.ts（prefersReducedMotion / countUp）
 ```
 
 ## 5. 前端组件清单（frontend/src/components/）
@@ -81,12 +83,21 @@ npm run build        # 产物到 frontend/dist
 
 ## 6. 设计系统（frontend/src/style.css）
 
-- **配色**：夜黑底（`--bg: #06080c`）× 荧光青绿（`--accent: #2de2a6`），单强调色 + 颗粒噪点 + 环境光背景。
-- **字体**：全站 `Inter`（无衬线，仅覆盖 latin），自托管 woff2（400/700，@font-face 优先 `local()` 再回退打包文件）；中文由系统无衬线（PingFang SC / HarmonyOS Sans SC / Microsoft YaHei / Noto Sans SC）回退；标题/按钮用 700 字重。
-- **滚动条**：WebKit + Firefox 主题化自定义滚动条。
-- **字号体系**：无衬线标题（Inter 700）与小标签（letter-spacing 放大），正文 0.95rem/1.7。
+- **风格**：motion-driven（电影感暗色 cinema dark）——深空蓝黑底 × 荧光青绿主强调，电光蓝 / 暖橙环境光分层，玻璃拟态（backdrop blur）+ 辉光 + HUD 细节。
+- **配色**：`--bg: #06070d`、`--accent: #2de2a6`（主强调）、`--accent-2: #4da3ff`（电光蓝）、`--accent-warm: #ffb45e`（暖橙点缀）。
+- **字体**：标题/展示用 `Russo One`，正文/等宽用 `Chakra Petch`（均为自托管 latin woff2 子集，@font-face 优先 `local()` 回退打包文件）；中文由系统无衬线（PingFang SC / HarmonyOS Sans SC / Microsoft YaHei / Noto Sans SC）回退。
+- **动效曲线**：`--ease-expo: cubic-bezier(0.16,1,0.3,1)`（expo 系），入场 expo.out、退场比入场快；按钮按下 scale(0.96) 回弹微交互。
+- **无障碍**：全局尊重 `prefers-reduced-motion`（CSS 与 JS 双重降级），`:focus-visible` 焦点环、点击元素 cursor:pointer。
+- **滚动条**：WebKit + Firefox 主题化（青绿→电光蓝渐变）。
 
-## 7. GSAP 使用规范
+## 7. GSAP 使用规范（motion-driven 要点）
+
+- 路由切换为**方向感知滑动过场**（App.vue）：旧页沿导航方向滑出（0.4s power3.inOut），新页从反侧滑入（0.55s expo.out）；方向由导航顺序数组决定。注意 `:key` 必须挂在 `<component>` 上而非 `<Transition>` 上，否则 leave/enter 钩子不触发。
+- 路由已全部**同步加载**（无懒加载），保证切页零空窗。
+- 桌面端（≥1001px）组别板块为 **pin + scrub 横向穿行**（GroupsSection，gsap.matchMedia 隔离，移动端退化为纵向堆叠）。
+- 跑马灯速率与**滚动速度联动**（MarqueeBand，ScrollTrigger.getVelocity → timeScale）。
+
+## 8. GSAP 历史规范（承上）
 
 - `gsap.registerPlugin(ScrollTrigger)` 只在 `main.ts` 执行一次。
 - 通用滚动入场：组件内 `const root = ref(...)` + `useScrollReveal(root)`，元素加 `data-reveal` 属性；该 composable 基于 `gsap.context` 管理生命周期（卸载自动 revert）。
@@ -94,14 +105,14 @@ npm run build        # 产物到 frontend/dist
 - 逐字动画：`charsHtml()` 生成 `<span class="char">`，配合外层 `overflow:hidden` 行做 yPercent 入场（见 HeroSection）。
 - **文案为先、动效为辅**：demo 页面文字精简，动效编排（入场节奏 + 滚动触发 + 微交互），不要散射式动画。
 
-## 8. 开发约定
+## 9. 开发约定
 
 - 页面文案一律中文，风格精炼、机甲主题（如「以代码铸甲，以热血参战」）。
 - 提交信息遵循 Conventional Commits（`feat:` / `fix:` / `docs:` …），推送到 `main`。
-- 西文/数字由 Inter latin 子集覆盖、中文回退系统字体，新增字符无需子集化；改动样式后需重新 `npm run build`。
+- 西文/数字由 Russo One / Chakra Petch latin 子集覆盖、中文回退系统字体，新增字符无需子集化；改动样式后需重新 `npm run build`。改动页面时注意：强动画（pin/scrub）仅绑定桌面端（≥1001px），移动端已退化，勿全局开启。
 - 官方静态资源不落库：`frontend/dist/`、`frontend/node_modules/`、`.venv/`、`db.sqlite3` 均忽略。
 
-## 9. 注意事项 / 陷阱
+## 10. 注意事项 / 陷阱
 
 - **管理员密码**：`polarbear / 219200` 仅 6 位，低于 Django 默认 8 位校验；创建时必须程序化绕过（`User.objects.create_superuser` + `set_password`），`createsuperuser` 交互命令会被校验拦下。
 - **db.sqlite3 未提交**：clone 后需 `migrate` + 重新创建管理员，才有后台账号。

@@ -1,48 +1,74 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useRoute } from 'vue-router'
 import SiteNav from './components/SiteNav.vue'
 import AppFooter from './components/AppFooter.vue'
+import { prefersReducedMotion } from './utils/motion'
 
 const route = useRoute()
+const reduced = prefersReducedMotion()
 
-/** 导航顺序（对应顶部栏目） */
+/** 导航顺序：决定过场滑动方向（1 前进 / -1 后退） */
 const order = ['home', 'news', 'history', 'groups', 'recruit', 'cooperate']
-const currentIndex = ref(order.indexOf(route.name as string) || 0)
-/** 方向：-1 前进（目标在右边）/ +1 后退（目标在左边） */
+const prevIndex = ref(Math.max(0, order.indexOf(route.name as string)))
 const dir = ref(1)
 
-/** 旧页正文：按点击方向消散（目标在右→向左消散；目标在左→向右消散） */
+/**
+ * 离场：旧页沿前进方向滑出（前进 → 向左滑走；后退 → 向右滑走），
+ * 轻微淡化 + 退场比入场更快，节奏利落。
+ */
 function onLeave(el: Element, done: () => void) {
   const toIndex = order.indexOf(route.name as string)
-  dir.value = toIndex >= currentIndex.value ? -1 : 1
-  currentIndex.value = toIndex
-  gsap.to(el, {
-    x: dir.value * 72,
-    autoAlpha: 0,
-    filter: 'blur(4px)',
-    duration: 0.38,
-    ease: 'power2.in',
-    onComplete: done,
-  })
-}
+  dir.value = toIndex >= prevIndex.value ? 1 : -1
+  prevIndex.value = toIndex
 
-/** 新页正文：从消散的反向弹出 */
-function onEnter(el: Element, done: () => void) {
+  if (reduced) {
+    gsap.to(el, { autoAlpha: 0, duration: 0.15, ease: 'power2.in', onComplete: done })
+    return
+  }
   gsap.fromTo(
     el,
-    { scale: 0.95, autoAlpha: 0, x: -dir.value * 48 },
+    { xPercent: 0, autoAlpha: 1, willChange: 'transform' },
     {
-      scale: 1,
-      autoAlpha: 1,
-      x: 0,
-      duration: 0.55,
-      ease: 'back.out(1.6)',
-      clearProps: 'filter,transform',
+      xPercent: -dir.value * 100,
+      autoAlpha: 0.35,
+      duration: 0.4,
+      ease: 'power3.inOut',
       onComplete: done,
+      clearProps: 'willChange',
     },
   )
+}
+
+/**
+ * 入场：新页从前进方向的反侧滑入（前进 → 自右侧进入；后退 → 自左侧进入），
+ * expo.out 缓出收尾干脆、无拖泥带水。
+ */
+function onEnter(el: Element, done: () => void) {
+  if (reduced) {
+    gsap.fromTo(
+      el,
+      { autoAlpha: 0 },
+      { autoAlpha: 1, duration: 0.25, ease: 'power2.out', onComplete: done },
+    )
+    return
+  }
+  const tl = gsap.timeline({ onComplete: done })
+  tl.fromTo(
+      el,
+      { xPercent: dir.value * 100, autoAlpha: 0, willChange: 'transform' },
+      {
+        xPercent: 0,
+        autoAlpha: 1,
+        duration: 0.55,
+        ease: 'expo.out',
+        clearProps: 'transform,willChange',
+      },
+      0,
+    )
+    .add(() => ScrollTrigger.refresh())
 }
 </script>
 
@@ -51,7 +77,7 @@ function onEnter(el: Element, done: () => void) {
   <main>
     <RouterView v-slot="{ Component }">
       <Transition mode="out-in" @leave="onLeave" @enter="onEnter">
-        <component :is="Component" />
+        <component :is="Component" :key="route.path" />
       </Transition>
     </RouterView>
   </main>

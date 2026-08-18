@@ -6,7 +6,7 @@ import PlaceholderImage from './PlaceholderImage.vue'
 const props = withDefaults(defineProps<{ limit?: number }>(), { limit: 4 })
 
 const root = ref<HTMLElement | null>(null)
-useScrollReveal(root, { stagger: 0.08 })
+useScrollReveal(root, { stagger: 0.08, blur: 8 })
 
 const news = [
   {
@@ -88,17 +88,39 @@ const shown = computed(() => news.slice(0, props.limit))
 .news-grid.fewer { grid-template-columns: repeat(2, 1fr); }
 
 .news-card {
+  position: relative;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--bg-soft);
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 70%);
   overflow: hidden;
-  transition: transform 0.35s var(--ease), border-color 0.35s;
+  transition: transform 0.45s var(--ease-expo), border-color 0.4s, box-shadow 0.45s var(--ease-expo);
 }
 .news-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(45, 226, 166, 0.45);
+  transform: translateY(-6px);
+  border-color: rgba(45, 226, 166, 0.5);
+  box-shadow: 0 24px 56px -22px rgba(45, 226, 166, 0.28);
 }
+/* 高光扫过 */
+.news-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.06) 46%, transparent 62%);
+  transform: translateX(-120%);
+  transition: transform 0.85s var(--ease-expo);
+}
+.news-card:hover::after { transform: translateX(120%); }
+
 .news-inner { display: flex; flex-direction: column; height: 100%; }
+.news-media { overflow: hidden; aspect-ratio: 16 / 10; }
+.news-media :deep(.ph) {
+  height: 100%;
+  border-radius: 0;
+  transition: transform 0.9s var(--ease-expo);
+}
+.news-card:hover .news-media :deep(.ph) { transform: scale(1.08); }
 
 .news-body { display: flex; flex-direction: column; gap: 12px; padding: 22px 20px 20px; flex: 1; }
 .news-meta { display: flex; align-items: center; justify-content: space-between; }
@@ -110,22 +132,19 @@ const shown = computed(() => news.slice(0, props.limit))
   border: 1px solid rgba(45, 226, 166, 0.4);
   border-radius: 999px;
   padding: 3px 10px;
+  background: rgba(45, 226, 166, 0.05);
 }
-.news-date { font-family: var(--mono); font-size: 0.72rem; color: #5b6673; }
+.news-date { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); }
 .news-card-title { font-size: 1.08rem; line-height: 1.4; }
-.news-desc {
-  font-size: 0.88rem;
-  color: var(--ink-dim);
-  flex: 1;
-}
+.news-desc { font-size: 0.88rem; color: var(--ink-dim); flex: 1; }
 .news-more {
   font-family: var(--mono);
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   color: var(--ink-dim);
-  transition: color 0.3s;
+  transition: color 0.3s, letter-spacing 0.4s var(--ease-expo);
 }
-.news-card:hover .news-more { color: var(--accent); }
+.news-card:hover .news-more { color: var(--accent); letter-spacing: 0.16em; }
 
 @media (max-width: 1080px) {
   .news-grid, .news-grid.fewer { grid-template-columns: repeat(2, 1fr); }

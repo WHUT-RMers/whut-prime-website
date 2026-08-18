@@ -42,7 +42,7 @@ withDefaults(
   gap: 12px;
   width: 100%;
   border: 1px dashed var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%) 0 0 / 22px 22px,
     linear-gradient(315deg, rgba(255, 255, 255, 0.025) 25%, transparent 25%) 0 0 / 22px 22px,

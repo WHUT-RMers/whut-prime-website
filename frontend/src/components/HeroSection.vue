@@ -1,51 +1,115 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { charsHtml } from '../utils/text'
+import { prefersReducedMotion } from '../utils/motion'
 
 const root = ref<HTMLElement | null>(null)
+const reduced = prefersReducedMotion()
+let ctx: gsap.Context | undefined
+let cleanup: (() => void) | undefined
 
 onMounted(() => {
   const el = root.value
   if (!el) return
-  const tl = gsap.timeline({ defaults: { ease: 'power3.out' } })
-  tl.from('.hero-eyebrow', { y: 18, opacity: 0, duration: 0.7 })
-    .from(
-      '.hero-title .char',
-      { yPercent: 120, opacity: 0, duration: 0.9, stagger: 0.035 },
-      '-=0.3',
-    )
-    .from('.hero-sub', { y: 22, opacity: 0, duration: 0.8 }, '-=0.55')
-    .from('.hero-actions > *', { y: 16, opacity: 0, duration: 0.6, stagger: 0.12 }, '-=0.5')
-    .from('.hero-notes li', { opacity: 0, x: -12, duration: 0.5, stagger: 0.1 }, '-=0.35')
-    .from('.hero-spec', { opacity: 0, scale: 0.9, duration: 0.9 }, '-=0.5')
-    .from('.scroll-cue', { opacity: 0, duration: 0.8 }, '-=0.25')
 
-  gsap.to('.orb', {
-    x: 'random(-60, 60)',
-    y: 'random(-40, 40)',
-    duration: 'random(7, 11)',
-    repeat: -1,
-    yoyo: true,
-    ease: 'sine.inOut',
-    stagger: 0.4,
-  })
+  if (!reduced) {
+    ctx = gsap.context(() => {
+      /* ---- 入场编排（motion-driven） ---- */
+      const tl = gsap.timeline({ defaults: { ease: 'expo.out' } })
+      tl.from('.hero-eyebrow', { y: 22, opacity: 0, duration: 0.9 }, 0.2)
+        .from(
+          '.hero-title .char',
+          { yPercent: 120, opacity: 0, duration: 1.15, stagger: 0.05 },
+          0.35,
+        )
+        .from('.hero-sub', { y: 26, opacity: 0, filter: 'blur(8px)', duration: 1 }, 0.8)
+        .from('.hero-actions > *', { y: 18, opacity: 0, scale: 0.96, duration: 0.7, stagger: 0.12 }, 1.0)
+        .from('.hero-notes li', { y: 16, opacity: 0, duration: 0.6, stagger: 0.1 }, 1.15)
+        .from('.hero-hud > *', { opacity: 0, y: 14, duration: 0.6, stagger: 0.09 }, 0.85)
+        .from('.scroll-cue', { opacity: 0, duration: 0.9 }, 1.5)
+
+      /* ---- 战队数据计数 ---- */
+      el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
+        const target = Number(node.dataset.count)
+        const obj = { v: 0 }
+        gsap.to(obj, {
+          v: target,
+          duration: 1.9,
+          ease: 'power3.out',
+          delay: 1.35,
+          onUpdate: () => {
+            node.textContent = String(Math.round(obj.v))
+          },
+        })
+      })
+
+      /* ---- 环境光斑漂浮 ---- */
+      gsap.to('.orb', {
+        x: () => gsap.utils.random(-70, 70),
+        y: () => gsap.utils.random(-50, 50),
+        duration: () => gsap.utils.random(8, 13),
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+        stagger: { each: 0.6 },
+      })
+
+      /* ---- 滚动视差（scrub） ---- */
+      gsap
+        .timeline({ scrollTrigger: { trigger: el, start: 'top top', end: 'bottom top', scrub: 0.6 } })
+        .to('.hero-inner', { yPercent: -20, autoAlpha: 0.25, ease: 'none' }, 0)
+        .to('.hero-watermark', { yPercent: 30, ease: 'none' }, 0)
+        .to('.hero-bg', { yPercent: 10, ease: 'none' }, 0)
+        .to('.hero-grid', { opacity: 0.12, ease: 'none' }, 0)
+    }, el)
+
+    /* ---- 指针视差（仅精细指针设备） ---- */
+    if (window.matchMedia('(pointer: fine)').matches) {
+      const bg = el.querySelector('.hero-bg')
+      if (bg) {
+        const xTo = gsap.quickTo(bg, 'x', { duration: 1.2, ease: 'power3.out' })
+        const yTo = gsap.quickTo(bg, 'y', { duration: 1.2, ease: 'power3.out' })
+        const onMove = (e: PointerEvent) => {
+          const nx = e.clientX / window.innerWidth - 0.5
+          const ny = e.clientY / window.innerHeight - 0.5
+          xTo(nx * -26)
+          yTo(ny * -20)
+        }
+        el.addEventListener('pointermove', onMove)
+        cleanup = () => el.removeEventListener('pointermove', onMove)
+      }
+    }
+  }
+})
+
+onBeforeUnmount(() => {
+  cleanup?.()
+  ctx?.revert()
 })
 </script>
 
 <template>
   <section id="top" ref="root" class="hero">
-    <div class="orb orb-1" aria-hidden="true"></div>
-    <div class="orb orb-2" aria-hidden="true"></div>
-    <div class="orb orb-3" aria-hidden="true"></div>
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hero-grid"></div>
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <span class="hero-watermark">PRIME</span>
+      <span class="hero-scan"></span>
+    </div>
 
     <div class="container hero-inner">
       <div class="hero-main">
-        <p class="eyebrow hero-eyebrow">WHUT PRIME · 精研 覃思 笃志 力行 · 2027 SEASON</p>
+        <p class="eyebrow hero-eyebrow">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          WHUT PRIME · 精研 覃思 笃志 力行 · 2027 SEASON
+        </p>
 
         <h1 class="hero-title">
-          <span class="line" v-html="charsHtml('以代码铸甲')"></span>
-          <span class="line line-accent" v-html="charsHtml('以热血参战。')"></span>
+          <span class="line"><span v-html="charsHtml('以代码铸甲')"></span></span>
+          <span class="line line-accent"><span v-html="charsHtml('以热血参战。')"></span></span>
         </h1>
 
         <p class="hero-sub">
@@ -60,20 +124,23 @@ onMounted(() => {
         </div>
 
         <ul class="hero-notes">
-          <li><span class="k">4</span> 大组别</li>
-          <li><span class="k">100+</span> 名队员</li>
-          <li><span class="k">9</span> 项全国二等奖</li>
+          <li><span class="k"><span data-count="4">4</span></span> 大组别</li>
+          <li><span class="k"><span data-count="100">0</span>+</span> 名队员</li>
+          <li><span class="k"><span data-count="9">0</span></span> 项全国二等奖</li>
         </ul>
       </div>
 
-      <div class="hero-spec" aria-hidden="true">
-        <span class="spec-label">UNIT-01</span>
-        <span class="spec-line"></span>
-        <span class="spec-value">PRIME</span>
+      <div class="hero-hud" aria-hidden="true">
+        <span class="hud-label">UNIT-01</span>
+        <span class="hud-line"></span>
+        <span class="hud-value">PRIME</span>
+        <span class="hud-status"><i class="hud-dot"></i>SYSTEM ONLINE</span>
       </div>
     </div>
 
-    <div class="scroll-cue" aria-hidden="true"><span class="cue-line"></span>SCROLL</div>
+    <div class="scroll-cue" aria-hidden="true">
+      <span class="cue-line"></span>SCROLL <i class="cue-tri">▾</i>
+    </div>
   </section>
 </template>
 
@@ -86,6 +153,68 @@ onMounted(() => {
   padding-top: var(--nav-h);
   overflow: hidden;
 }
+
+/* ---- 背景层 ---- */
+.hero-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.hero-grid {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  bottom: -16%;
+  height: 46%;
+  background-image:
+    linear-gradient(rgba(45, 226, 166, 0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 226, 166, 0.13) 1px, transparent 1px);
+  background-size: 46px 46px;
+  transform: perspective(640px) rotateX(62deg);
+  transform-origin: top;
+  opacity: 0.32;
+  -webkit-mask-image: radial-gradient(70% 90% at 50% 0%, rgba(0, 0, 0, 0.9), transparent 75%);
+  mask-image: radial-gradient(70% 90% at 50% 0%, rgba(0, 0, 0, 0.9), transparent 75%);
+}
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+  z-index: 1;
+  pointer-events: none;
+  will-change: transform;
+}
+.orb-1 { width: 460px; height: 460px; background: rgba(45, 226, 166, 0.15); top: 6%; right: -6%; animation: hue-drift 14s ease-in-out infinite; }
+.orb-2 { width: 340px; height: 340px; background: rgba(77, 163, 255, 0.13); bottom: 2%; left: -4%; animation: hue-drift 18s ease-in-out infinite reverse; }
+.orb-3 { width: 200px; height: 200px; background: rgba(255, 180, 94, 0.1); top: 58%; left: 54%; animation: hue-drift 16s ease-in-out infinite 3s; }
+
+.hero-watermark {
+  position: absolute;
+  right: -2%;
+  top: 8%;
+  font-family: var(--display);
+  font-size: clamp(9rem, 24vw, 21rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(238, 242, 249, 0.06);
+  background: linear-gradient(160deg, rgba(45, 226, 166, 0.14), rgba(77, 163, 255, 0.1));
+  background-clip: text;
+  -webkit-background-clip: text;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.hero-scan {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  top: 0;
+  height: 150px;
+  background: linear-gradient(180deg, transparent, rgba(45, 226, 166, 0.055), transparent);
+  animation: scan-move 8s linear infinite;
+  pointer-events: none;
+}
+
+/* ---- 内容层 ---- */
 .hero-inner {
   position: relative;
   z-index: 2;
@@ -94,16 +223,27 @@ onMounted(() => {
   align-items: flex-end;
   gap: 40px;
 }
-
+.eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(45, 226, 166, 0.9);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
 .hero-eyebrow { margin-bottom: 30px; }
 
 .hero-title {
-  font-size: clamp(2.5rem, 8.5vw, 5.6rem);
-  line-height: 1.12;
+  font-size: clamp(2.6rem, 9vw, 6rem);
+  line-height: 1.1;
   letter-spacing: 0.03em;
+  text-shadow: 0 0 60px rgba(45, 226, 166, 0.18);
 }
 .line { display: block; overflow: hidden; padding-bottom: 0.08em; margin-bottom: -0.08em; }
-.line-accent { color: var(--accent); }
+.line-accent {
+  color: var(--accent);
+  text-shadow: 0 0 46px rgba(45, 226, 166, 0.5);
+}
 
 .hero-sub {
   margin-top: 30px;
@@ -122,16 +262,17 @@ onMounted(() => {
   color: var(--ink-dim);
   font-size: 0.95rem;
 }
+.hero-notes li { display: flex; align-items: baseline; gap: 8px; }
 .hero-notes .k {
   font-family: var(--mono);
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   font-weight: 700;
   color: var(--ink);
-  margin-right: 6px;
-  vertical-align: -0.08em;
+  font-variant-numeric: tabular-nums;
 }
 
-.hero-spec {
+/* ---- 右侧 HUD ---- */
+.hero-hud {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -139,37 +280,43 @@ onMounted(() => {
   padding-bottom: 12px;
   font-family: var(--mono);
 }
-.spec-label {
-  font-size: 0.68rem;
+.hud-label {
+  font-size: 0.66rem;
   letter-spacing: 0.34em;
-  color: #5b6673;
+  color: var(--ink-faint);
   writing-mode: vertical-lr;
 }
-.spec-line {
+.hud-line {
   width: 1px;
   height: 90px;
   background: linear-gradient(to bottom, var(--accent), transparent);
+  box-shadow: 0 0 12px rgba(45, 226, 166, 0.5);
 }
-.spec-value {
+.hud-value {
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   color: var(--accent);
   writing-mode: vertical-lr;
+  text-shadow: 0 0 18px rgba(45, 226, 166, 0.6);
 }
-
-.orb {
-  position: absolute;
+.hud-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.56rem;
+  letter-spacing: 0.24em;
+  color: var(--ink-faint);
+}
+.hud-dot {
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.5;
-  z-index: 1;
-  pointer-events: none;
+  background: var(--accent);
+  animation: pulse-dot 1.8s ease-in-out infinite;
 }
-.orb-1 { width: 420px; height: 420px; background: rgba(45, 226, 166, 0.14); top: 8%; right: -6%; }
-.orb-2 { width: 320px; height: 320px; background: rgba(56, 120, 255, 0.12); bottom: 4%; left: -4%; }
-.orb-3 { width: 180px; height: 180px; background: rgba(45, 226, 166, 0.16); top: 55%; left: 52%; }
 
+/* ---- 滚动提示 ---- */
 .scroll-cue {
   position: absolute;
   bottom: 26px;
@@ -182,24 +329,20 @@ onMounted(() => {
   font-family: var(--mono);
   font-size: 0.62rem;
   letter-spacing: 0.3em;
-  color: #5b6673;
+  color: var(--ink-faint);
 }
 .cue-line {
   width: 1px;
   height: 44px;
   background: linear-gradient(to bottom, var(--accent), transparent);
-  animation: cue 1.8s var(--ease) infinite;
+  animation: cue 1.8s var(--ease-expo) infinite;
 }
-@keyframes cue {
-  0% { transform: scaleY(0); transform-origin: top; }
-  45% { transform: scaleY(1); transform-origin: top; }
-  55% { transform: scaleY(1); transform-origin: bottom; }
-  100% { transform: scaleY(0); transform-origin: bottom; }
-}
+.cue-tri { font-style: normal; color: var(--accent); animation: pulse-dot 1.8s ease-in-out infinite; }
 
 @media (max-width: 640px) {
   .hero-notes { gap: 22px; flex-direction: column; margin-top: 44px; }
   .hero-inner { flex-direction: column; align-items: flex-start; }
-  .hero-spec { display: none; }
+  .hero-hud { display: none; }
+  .hero-watermark { opacity: 0.5; }
 }
 </style>
