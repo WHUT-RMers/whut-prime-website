@@ -1,0 +1,10 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<style>
+.prime-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:22px 0}.prime-stat,.prime-panel{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:20px}.prime-stat b{display:block;font-size:30px;color:#18a870;margin-top:8px}.prime-panel{margin-top:18px}.prime-panel table{width:100%;border-collapse:collapse}.prime-panel th,.prime-panel td{text-align:left;padding:11px;border-bottom:1px solid #eee}@media(max-width:700px){.prime-stats{grid-template-columns:1fr}}
+</style>
+<div id="content-main"><h1>资讯运营看板</h1><p>只统计已发布资讯，用于快速判断近期内容表现。</p>
+<div class="prime-stats"><div class="prime-stat">总浏览量<b>{{ total_views }}</b></div><div class="prime-stat">近 7 天浏览<b>{{ views_7d }}</b></div><div class="prime-stat">近 30 天浏览<b>{{ views_30d }}</b></div></div>
+<section class="prime-panel"><h2>热门资讯 Top 10</h2><table><thead><tr><th>标题</th><th>分类</th><th>总浏览</th><th>近 7 天</th></tr></thead><tbody>{% for item in top_articles %}<tr><td><a href="../{{ item.pk }}/change/">{{ item.title }}</a></td><td>{{ item.category }}</td><td>{{ item.view_count }}</td><td>{{ item.views_7d }}</td></tr>{% empty %}<tr><td colspan="4">暂无已发布资讯</td></tr>{% endfor %}</tbody></table></section>
+<section class="prime-panel"><h2>近期发布</h2><table><thead><tr><th>标题</th><th>发布时间</th><th>总浏览</th></tr></thead><tbody>{% for item in recent_articles %}<tr><td>{{ item.title }}</td><td>{{ item.published_at|date:"Y-m-d H:i" }}</td><td>{{ item.view_count }}</td></tr>{% empty %}<tr><td colspan="3">暂无内容</td></tr>{% endfor %}</tbody></table></section></div>
+{% endblock %}

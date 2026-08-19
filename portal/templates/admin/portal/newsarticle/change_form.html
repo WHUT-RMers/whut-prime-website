@@ -1,0 +1,12 @@
+{% extends "admin/change_form.html" %}
+{% block object-tools-items %}
+  {% if original %}
+    {% if original.is_trashed %}
+      <li><form method="post" action="{% url 'admin:portal_news_restore' original.pk %}">{% csrf_token %}<button type="submit" class="button">从回收站恢复</button></form></li>
+      <li><form method="post" action="{% url 'admin:portal_news_purge' original.pk %}" onsubmit="return confirm('确定永久删除？图片和正文也会被删除，无法恢复。');">{% csrf_token %}<button type="submit" class="deletelink">永久删除</button></form></li>
+    {% else %}
+      <li><form method="post" action="{% url 'admin:portal_news_trash' original.pk %}" onsubmit="return confirm('移入回收站后，资讯会从前台隐藏。');">{% csrf_token %}<button type="submit" class="button">移入回收站</button></form></li>
+    {% endif %}
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

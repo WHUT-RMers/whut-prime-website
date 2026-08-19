@@ -1,0 +1,12 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div class="module" style="max-width:760px;padding:32px;margin-top:20px">
+  <h2 style="margin-top:0">在线报名开关</h2>
+  <p style="font-size:16px">当前状态：<strong>{% if setting.is_open %}报名已开放{% else %}报名未开放{% endif %}</strong></p>
+  <div style="display:flex;gap:12px;margin-top:24px">
+    <form method="post" action="{% url 'admin:portal_recruitment_open' %}">{% csrf_token %}<button type="submit" class="button default">开启在线报名</button></form>
+    <form method="post" action="{% url 'admin:portal_recruitment_close' %}" onsubmit="return confirm('关闭后将不再接收新的报名，确定吗？');">{% csrf_token %}<button type="submit" class="button">关闭在线报名</button></form>
+  </div>
+</div>
+{% endblock %}
