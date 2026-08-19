@@ -12,7 +12,7 @@ const route = useRoute()
 const reduced = prefersReducedMotion()
 
 /** 导航顺序：决定过场滑动方向（1 前进 / -1 后退） */
-const order = ['home', 'news', 'history', 'groups', 'recruit', 'cooperate']
+const order = ['home', 'news', 'news-detail', 'history', 'groups', 'recruit', 'cooperate']
 const prevIndex = ref(Math.max(0, order.indexOf(route.name as string)))
 const dir = ref(1)
 

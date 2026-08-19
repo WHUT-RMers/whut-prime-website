@@ -1,30 +1,10 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { gsap } from 'gsap'
+import { ref } from 'vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
 
 const root = ref<HTMLElement | null>(null)
 useScrollReveal(root, { blur: 8, stagger: 0.07 })
 
-const form = reactive({
-  name: '',
-  contact: '',
-  group: '',
-  intro: '',
-})
-
-const submitted = ref(false)
-
-function onSubmit() {
-  // demo 版：仅做前端提示，后端接入后改为真实提交
-  submitted.value = true
-  const btn = root.value?.querySelector('.submit-btn')
-  if (btn) {
-    gsap.fromTo(btn, { scale: 0.96 }, { scale: 1, duration: 0.5, ease: 'back.out(2)' })
-  }
-}
-
-const groups = ['机械组', '电控组', '视觉算法组', '商业运营组', '还没想好']
 </script>
 
 <template>
@@ -39,43 +19,17 @@ const groups = ['机械组', '电控组', '视觉算法组', '商业运营组', 
         </p>
         <ul class="recruit-list">
           <li><span class="li-k">基地</span> 马房山校区东院 · 自动化学院求实楼东附楼 102 室</li>
-          <li><span class="li-k">通道</span> 简历投递至战队邮箱 whut_prime@foxmail.com</li>
+          <li><span class="li-k">通道</span>官网在线投递，提交后可由招新负责人统一审核</li>
           <li><span class="li-k">流程</span> 简历筛选 → 组内面试 → 试用期一个月</li>
         </ul>
       </div>
 
-      <form class="recruit-form" data-reveal @submit.prevent="onSubmit">
-        <div class="field">
-          <label for="r-name">姓名</label>
-          <input id="r-name" v-model="form.name" type="text" placeholder="你的名字" required />
-        </div>
-        <div class="field">
-          <label for="r-contact">联系方式</label>
-          <input id="r-contact" v-model="form.contact" type="text" placeholder="邮箱或微信号" required />
-        </div>
-        <div class="field">
-          <label for="r-group">意向组别</label>
-          <select id="r-group" v-model="form.group" required>
-            <option value="" disabled selected>请选择组别</option>
-            <option v-for="g in groups" :key="g" :value="g">{{ g }}</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="r-intro">一句话介绍自己</label>
-          <textarea id="r-intro" v-model="form.intro" rows="3" placeholder="做过什么项目 / 为什么想加入"></textarea>
-        </div>
-        <div class="field">
-          <label>附件简历</label>
-          <div class="file-note">demo 版暂未接入文件上传，请将简历发送至战队邮箱：whut_prime@foxmail.com</div>
-        </div>
-
-        <button class="btn btn-primary submit-btn" type="submit">
-          {{ submitted ? '已收到（demo）' : '提交简历' }}
-        </button>
-        <p v-if="submitted" class="submit-tip" role="status">
-          demo 版本仅做前端演示，简历不会真的提交；后端接入后这里会变为真实投递通道。
-        </p>
-      </form>
+      <RouterLink to="/recruit" class="recruit-form" data-reveal>
+        <p class="eyebrow">ONLINE / APPLY</p>
+        <h3>在线投递通道</h3>
+        <p class="form-lead">填写完整报名信息、上传 PDF 简历，并在提交前确认个人信息使用说明。</p>
+        <span class="btn btn-primary submit-btn">前往投递 →</span>
+      </RouterLink>
     </div>
   </section>
 </template>
@@ -137,38 +91,8 @@ const groups = ['机械组', '电控组', '视觉算法组', '商业运营组', 
     linear-gradient(var(--accent), var(--accent)) right bottom / 2px 18px no-repeat;
   opacity: 0.6;
 }
-.field { display: flex; flex-direction: column; gap: 9px; }
-.field label { font-size: 0.86rem; color: var(--ink-dim); }
-.field input,
-.field select,
-.field textarea {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--ink);
-  font-family: inherit;
-  font-size: 0.94rem;
-  padding: 12px 14px;
-  transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
-}
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-  background: rgba(45, 226, 166, 0.05);
-}
-.field input::placeholder,
-.field textarea::placeholder { color: var(--ink-faint); }
-.field select { appearance: none; cursor: pointer; }
-.field select option { background: var(--bg-soft); color: var(--ink); }
-.file-note {
-  font-size: 0.82rem;
-  color: var(--ink-dim);
-  border: 1px dashed var(--line);
-  border-radius: 10px;
-  padding: 12px 14px;
-}
+.recruit-form h3 { margin-top: 22px; font-size: 1.6rem; }
+.form-lead { margin-top: 14px; color: var(--ink-dim); max-width: 460px; }
 .submit-btn { align-self: flex-start; margin-top: 4px; }
 .submit-tip { font-size: 0.82rem; color: var(--accent); }
 
