@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,10 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-4gj^f))y26+e0kk7h2w^mq5r_e#wnmer!5o-za3-@9)phva$4^'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+# 本地开发默认开启调试；服务器服务明确设置 DJANGO_DEBUG=0。
+DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
+ALLOWED_HOSTS = [host for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,106.15.197.130').split(',') if host]
 
 
 # Application definition
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'portal',
 ]
 
 MIDDLEWARE = [
@@ -55,7 +56,7 @@ ROOT_URLCONF = 'whut_prime.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,12 +124,35 @@ STATICFILES_DIRS = [BASE_DIR / 'frontend' / 'dist']
 # collectstatic 输出目录（后台 SimpleUI/Admin 静态资源），部署时执行 manage.py collectstatic
 STATIC_ROOT = BASE_DIR / 'static_root'
 
+# Uploads are deliberately not exposed through a blanket /media/ route. Public
+# news images and private resumes are served by permission-aware application views.
+MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = 'media/'
 
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
+# 运营人员的侧边栏：将高频资讯管理与数据查看拆成独立入口，避免在
+# 资讯列表的右上角寻找看板链接。
+SIMPLEUI_CONFIG = {
+    'system_keep': False,
+    'menus': [
+        {
+            'name': '官网运营中心',
+            'icon': 'fas fa-satellite-dish',
+            'models': [
+                {'name': '战队资讯', 'icon': 'fas fa-newspaper', 'url': '/admin/portal/newsarticle/', 'addUrl': '/admin/portal/newsarticle/add/'},
+                {'name': '资讯运营看板', 'icon': 'fas fa-chart-line', 'url': '/admin/portal/newsarticle/dashboard/'},
+                {'name': '招新报名', 'icon': 'fas fa-user-check', 'url': '/admin/portal/recruitmentapplication/'},
+                {'name': '招新设置', 'icon': 'fas fa-cog', 'url': '/admin/portal/recruitmentsettings/'},
+                {'name': '资讯修改记录', 'icon': 'fas fa-history', 'url': '/admin/portal/newsrevision/'},
+            ],
+        },
+        {
+            'name': '认证和授权',
+            'icon': 'fas fa-shield-alt',
+            'models': [
+                {'name': '用户', 'icon': 'fas fa-user', 'url': '/admin/auth/user/', 'addUrl': '/admin/auth/user/add/'},
+                {'name': '组', 'icon': 'fas fa-users', 'url': '/admin/auth/group/', 'addUrl': '/admin/auth/group/add/'},
+            ],
+        },
+    ],
 }

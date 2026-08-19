@@ -15,12 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 
 from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('portal.urls')),
     # SPA 前端路由：非 admin/static 的路径一律交给 Vue（history 模式）
     re_path(r'^(?!admin/|static/).*$', views.demo_page, name='demo'),
 ]

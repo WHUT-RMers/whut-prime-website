@@ -2,11 +2,13 @@ from pathlib import Path
 
 from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 @never_cache
+@ensure_csrf_cookie
 def demo_page(request):
     """渲染 Vue 构建产物 index.html（静态资源由 /static/ 提供）。"""
     index = BASE_DIR / 'frontend' / 'dist' / 'index.html'
