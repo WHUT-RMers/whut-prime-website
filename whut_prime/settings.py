@@ -129,6 +129,10 @@ STATIC_ROOT = BASE_DIR / 'static_root'
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = 'media/'
 
+# 去掉 SimpleUI 默认的版本、Gitee、GitHub 宣传卡片；首页快捷入口会自动
+# 扩展为整行，避免留下右侧空白。
+SIMPLEUI_HOME_INFO = False
+
 
 # 运营人员的侧边栏：将高频资讯管理与数据查看拆成独立入口，避免在
 # 资讯列表的右上角寻找看板链接。
