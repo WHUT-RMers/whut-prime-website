@@ -1,0 +1,32 @@
+{% extends "admin/change_list.html" %}
+{% block search %}
+  <div class="recruitment-filter-bar" data-recruitment-filter>
+    <label>第一志愿
+      <select name="primary_choice"><option value="">全部组别</option><option value="mechanical"{% if request.GET.primary_choice == 'mechanical' %} selected{% endif %}>机械组</option><option value="electrical"{% if request.GET.primary_choice == 'electrical' %} selected{% endif %}>电控组</option><option value="algorithm"{% if request.GET.primary_choice == 'algorithm' %} selected{% endif %}>算法组</option><option value="operations"{% if request.GET.primary_choice == 'operations' %} selected{% endif %}>运营组</option></select>
+    </label>
+    <label>审核状态
+      <select name="status"><option value="">全部状态</option><option value="pending"{% if request.GET.status == 'pending' %} selected{% endif %}>待审核</option><option value="screened"{% if request.GET.status == 'screened' %} selected{% endif %}>初筛通过</option><option value="interview"{% if request.GET.status == 'interview' %} selected{% endif %}>待面试</option><option value="accepted"{% if request.GET.status == 'accepted' %} selected{% endif %}>已录取</option><option value="rejected"{% if request.GET.status == 'rejected' %} selected{% endif %}>未通过</option><option value="talent_pool"{% if request.GET.status == 'talent_pool' %} selected{% endif %}>人才库</option></select>
+    </label>
+    <label>调剂意向
+      <select name="accepts_adjustment"><option value="">全部</option><option value="1"{% if request.GET.accepts_adjustment == '1' %} selected{% endif %}>服从调剂</option><option value="0"{% if request.GET.accepts_adjustment == '0' %} selected{% endif %}>不服从调剂</option></select>
+    </label>
+    <button type="button" data-recruitment-filter-submit>筛选</button><a href="?">重置</a>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var bar = document.querySelector('[data-recruitment-filter]');
+      var button = document.querySelector('[data-recruitment-filter-submit]');
+      if (!bar || !button) return;
+      button.addEventListener('click', function () {
+        var params = new URLSearchParams();
+        bar.querySelectorAll('select').forEach(function (select) { if (select.value) params.set(select.name, select.value); });
+        window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+      });
+    });
+  </script>
+{% endblock %}
+{% block object-tools-items %}
+  <li><a href="export-filtered/?{{ request.GET.urlencode }}" class="addlink">导出当前筛选结果</a></li>
+  <li><a href="export-all/" class="addlink">一键归档全部报名</a></li>
+  {{ block.super }}
+{% endblock %}

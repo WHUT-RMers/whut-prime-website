@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.contrib.admin.views.decorators import staff_member_required
 import json
+import mimetypes
 from django.db.models import F
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -15,7 +16,8 @@ from .models import NewsArticle, NewsCoverSlide, NewsImage, NewsView, Recruitmen
 def image_response(file_field):
     if not file_field:
         raise Http404
-    return FileResponse(file_field.open('rb'), content_type='image/*')
+    content_type = mimetypes.guess_type(file_field.name)[0] or 'application/octet-stream'
+    return FileResponse(file_field.open('rb'), content_type=content_type)
 
 
 def article_data(article, request=None, detail=False):
@@ -25,7 +27,7 @@ def article_data(article, request=None, detail=False):
         'summary': article.summary,
         'category': article.category,
         'cover_url': f'/api/news/{article.slug}/cover/',
-        'cover_images': [{'id': 0, 'caption': '', 'url': f'/api/news/{article.slug}/cover/'}] + [
+        'cover_images': [{'id': 0, 'caption': article.cover_caption, 'url': f'/api/news/{article.slug}/cover/'}] + [
             {'id': slide.id, 'caption': slide.caption, 'url': f'/api/news/{article.slug}/slides/{slide.id}/'}
             for slide in article.cover_slides.all()
         ],
@@ -37,10 +39,6 @@ def article_data(article, request=None, detail=False):
     }
     if detail:
         payload['body'] = article.body
-        payload['images'] = [
-            {'id': image.id, 'caption': image.caption, 'url': f'/api/news/{article.slug}/images/{image.id}/'}
-            for image in article.images.all()
-        ]
     return payload
 
 
@@ -94,6 +92,16 @@ def news_cover(request, slug):
 def news_image(request, slug, image_id):
     article = get_object_or_404(NewsArticle.objects.live(), slug=slug)
     return image_response(get_object_or_404(NewsImage, pk=image_id, article=article).image)
+
+
+@require_GET
+def news_content_image(request, token):
+    image = get_object_or_404(NewsImage.objects.select_related('article'), token=token)
+    # 后台编辑草稿时允许管理员预览；普通访客只能读取已公开资讯引用的图片。
+    if not request.user.is_staff:
+        if not image.article_id or not NewsArticle.objects.live().filter(pk=image.article_id).exists():
+            raise Http404
+    return image_response(image.image)
 
 
 @require_GET

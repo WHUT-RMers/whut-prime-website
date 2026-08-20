@@ -1,4 +1,9 @@
 {% extends "admin/change_form.html" %}
+{% load static %}
+{% block extrahead %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'portal/news_editor_workbench.css' %}?v=20260821-4">
+{% endblock %}
 {% block object-tools-items %}
   {% if original %}
     {% if original.is_trashed %}
