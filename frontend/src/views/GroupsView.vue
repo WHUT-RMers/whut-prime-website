@@ -102,10 +102,10 @@ const groups = [
 </template>
 
 <style scoped>
-.page { padding-bottom: 150px; }
+.page { padding-bottom: var(--section-space); }
 
 .group {
-  margin-top: 64px;
+  margin-top: clamp(38px, 5vw, 64px);
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: 40px;
@@ -195,5 +195,18 @@ const groups = [
 @media (max-width: 880px) {
   .group { grid-template-columns: 1fr; padding: 24px; gap: 24px; }
   .group-media { max-width: 520px; }
+}
+
+@media (max-width: 560px) {
+  .group { padding: 18px; gap: 20px; border-radius: var(--radius); }
+  .group-head { gap: 9px; flex-wrap: wrap; }
+  .group-en { flex: 1 1 100%; }
+  .group-name { margin-top: 12px; font-size: 1.5rem; }
+  .group-desc { font-size: 0.94rem; line-height: 1.8; }
+  .task-list li { padding: 7px 11px; }
+  .group-need { display: flex; align-items: flex-start; line-height: 1.7; }
+  .need-flag { flex: 0 0 auto; margin-top: 2px; }
+  .cta-row { margin-top: 52px; padding: 28px 18px; text-align: center; }
+  .cta-row .btn { width: 100%; }
 }
 </style>

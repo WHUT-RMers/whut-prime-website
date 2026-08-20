@@ -7,9 +7,6 @@ import './style.css'
 
 gsap.registerPlugin(ScrollTrigger)
 
-// 移动端 resize（如 iOS 地址栏折叠）不触发全量 refresh，避免布局抖动
-ScrollTrigger.config({ ignoreMobileResize: true })
-
 const app = createApp(App)
 app.use(router)
 app.mount('#app')

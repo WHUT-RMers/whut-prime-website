@@ -56,6 +56,8 @@
   --serif: var(--display);
   --mono: "Chakra Petch", "SFMono-Regular", Consolas, "Courier New", monospace;
   --maxw: 1200px;
+  --page-gutter: clamp(18px, 4vw, 48px);
+  --section-space: clamp(88px, 10vw, 150px);
   --nav-h: 72px;
   --radius: 14px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -64,7 +66,12 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + 12px); }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 12px);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 body {
   background: var(--bg);
@@ -75,11 +82,15 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  overflow-x: clip;
+  min-width: 320px;
 }
 
 a { color: inherit; text-decoration: none; }
 a[href], button, [role="button"], select { cursor: pointer; }
 button { font-family: inherit; }
+img, svg, video, canvas { max-width: 100%; }
+img { height: auto; }
 
 ::selection { background: var(--accent); color: var(--accent-ink); }
 :focus-visible {
@@ -113,7 +124,10 @@ body::after {
   mask-image: radial-gradient(90% 70% at 50% 12%, #000 0%, transparent 78%);
 }
 
-.container { width: min(var(--maxw), calc(100% - 48px)); margin-inline: auto; }
+.container {
+  width: min(var(--maxw), calc(100% - (var(--page-gutter) * 2)));
+  margin-inline: auto;
+}
 section { position: relative; }
 
 /* ---- 通用件 ---- */
@@ -138,9 +152,6 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: 0.02em
 
 .char { display: inline-block; will-change: transform; }
 
-/* GSAP 滚动入场元素：合成器提升提示，避免入场瞬间反复创建合成层（gsap-performance） */
-[data-reveal] { will-change: transform, opacity; }
-
 /* ---- 按钮：扁平（实色填充 / 细边幽灵），磁吸由 JS 负责 ---- */
 .btn {
   display: inline-flex;
@@ -157,6 +168,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: 0.02em
   border: 1px solid transparent;
   user-select: none;
   transition: transform 0.4s var(--ease-expo), background 0.25s, color 0.25s, border-color 0.25s;
+  min-height: 46px;
 }
 .btn:active { transform: scale(0.96); }
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
@@ -216,5 +228,56 @@ html { scrollbar-width: thin; scrollbar-color: rgba(45, 226, 166, 0.5) rgba(255,
     animation-duration: 0.001s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001s !important;
+  }
+}
+
+/* ---- 响应式基线：统一触控、窄屏与安全区域 ---- */
+@media (max-width: 900px) {
+  :root {
+    --nav-h: 68px;
+    --radius: 12px;
+  }
+  body { line-height: 1.75; }
+  .eyebrow { letter-spacing: 0.22em; }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --page-gutter: clamp(16px, 5vw, 22px);
+    --section-space: 92px;
+    --nav-h: 64px;
+  }
+  body { font-size: 15px; }
+  .eyebrow {
+    gap: 9px;
+    font-size: 0.68rem;
+    letter-spacing: 0.17em;
+  }
+  .eyebrow::before { width: 22px; }
+  .btn {
+    min-height: 48px;
+    padding: 12px 22px;
+    font-size: 0.86rem;
+  }
+  input, textarea, select { font-size: 16px; }
+}
+
+@media (max-width: 360px) {
+  :root { --page-gutter: 14px; }
+  .btn { padding-inline: 18px; }
+}
+
+@media (hover: none), (pointer: coarse) {
+  [data-spot]::before { display: none; }
+  .btn:hover { transform: none; }
+  a, button, input, textarea, select { -webkit-tap-highlight-color: rgba(45, 226, 166, 0.14); }
+}
+
+@supports (padding: max(0px)) {
+  .container {
+    width: min(
+      var(--maxw),
+      calc(100% - max(var(--page-gutter), env(safe-area-inset-left)) - max(var(--page-gutter), env(safe-area-inset-right)))
+    );
   }
 }

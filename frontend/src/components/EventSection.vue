@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
 import { prefersReducedMotion, countUp } from '../utils/motion'
@@ -7,7 +7,6 @@ import { useMouseFx } from '../composables/useMouseFx'
 import PlaceholderImage from './PlaceholderImage.vue'
 
 const root = ref<HTMLElement | null>(null)
-let ctx: gsap.Context | undefined
 useScrollReveal(root, { blur: 4, stagger: 0.08 })
 useMouseFx(root)
 
@@ -37,44 +36,34 @@ const impact = [
 
 onMounted(() => {
   const el = root.value
-  if (!el) return
+  if (!el || prefersReducedMotion()) return
+  const q = gsap.utils.selector(el)
 
-  // gsap.context 统一管理：卸载时 revert，ScrollTrigger / tween 不泄漏
-  ctx = gsap.context(() => {
-    if (!prefersReducedMotion()) {
-      const q = gsap.utils.selector(el)
-
-      /* 序号横向漂移视差 + 战役标记线生长（scrub，减弱动态时直接呈现终态） */
-      q('.event-item').forEach((item: Element, i: number) => {
-        const idx = item.querySelector('.event-index')
-        if (idx) {
-          gsap.fromTo(
-            idx,
-            { x: i % 2 ? 26 : -26 },
-            { x: i % 2 ? -26 : 26, ease: 'none', scrollTrigger: { trigger: item, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
-          )
-        }
-        const marker = item.querySelector('.event-marker')
-        if (marker) {
-          gsap.fromTo(
-            marker,
-            { scaleY: 0 },
-            { scaleY: 1, transformOrigin: 'top', ease: 'none', scrollTrigger: { trigger: item, start: 'top 82%', end: 'bottom 55%', scrub: 0.6 } },
-          )
-        }
-      })
+  /* 序号横向漂移视差 + 战役标记线生长 */
+  q('.event-item').forEach((item: Element, i: number) => {
+    const idx = item.querySelector('.event-index')
+    if (idx) {
+      gsap.fromTo(
+        idx,
+        { x: i % 2 ? 26 : -26 },
+        { x: i % 2 ? -26 : 26, ease: 'none', scrollTrigger: { trigger: item, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
+      )
     }
+    const marker = item.querySelector('.event-marker')
+    if (marker) {
+      gsap.fromTo(
+        marker,
+        { scaleY: 0 },
+        { scaleY: 1, transformOrigin: 'top', ease: 'none', scrollTrigger: { trigger: item, start: 'top 82%', end: 'bottom 55%', scrub: 0.6 } },
+      )
+    }
+  })
 
-    /* 影响数据计数（countUp 内部已处理减弱动态：直接落定终值） */
-    el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
-      const target = Number(node.dataset.count)
-      countUp(node, target, 1.8, 'power2.out', 0.2)
-    })
-  }, el)
-})
-
-onBeforeUnmount(() => {
-  ctx?.revert()
+  /* 影响数据计数 */
+  el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
+    const target = Number(node.dataset.count)
+    countUp(node, target, 1.8, 'power2.out', 0.2)
+  })
 })
 </script>
 
@@ -120,7 +109,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.event { padding: 130px 0 150px; }
+.event { padding: clamp(90px, 10vw, 130px) 0 var(--section-space); }
 .event-head { max-width: 780px; }
 .event-title {
   margin-top: 22px;
@@ -202,9 +191,16 @@ onBeforeUnmount(() => {
 
 @media (max-width: 880px) {
   .event-grid { grid-template-columns: 1fr; gap: 36px; }
-  .event { padding: 90px 0 110px; }
 }
 @media (max-width: 520px) {
   .event-impact { grid-template-columns: 1fr; }
+  .event-item { gap: 14px; padding-right: 0; }
+  .event-index { padding-left: 18px; }
+  .event-item-title { font-size: 1.18rem; }
+  .event-item-desc { font-size: 0.92rem; line-height: 1.8; }
+  .event-impact { padding: 12px 16px; }
+  .imp { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .imp:last-child { border-bottom: 0; }
+  .imp-label { margin-top: 0; }
 }
 </style>

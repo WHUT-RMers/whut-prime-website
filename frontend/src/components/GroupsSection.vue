@@ -94,6 +94,8 @@ onMounted(() => {
       )
     })
   })
+
+  mm.add('(max-width: 1000px)', () => undefined)
 })
 
 onBeforeUnmount(() => {
@@ -339,5 +341,19 @@ onBeforeUnmount(() => {
   .end-desc { color: var(--ink-dim); }
   .groups-progress { display: none; }
   .groups-hint { display: none; }
+}
+
+@media (max-width: 560px) {
+  .groups-stage { padding: 76px 0 90px; }
+  .groups-track { margin-top: 30px; }
+  .group-deck { padding: 22px 18px; }
+  .deck-top { gap: 9px; flex-wrap: wrap; }
+  .deck-en { flex: 1 1 100%; }
+  .deck-name { margin-top: 18px; font-size: 1.55rem; }
+  .deck-desc { line-height: 1.8; }
+  .deck-need { display: flex; align-items: flex-start; line-height: 1.7; }
+  .need-flag { flex: 0 0 auto; margin-top: 2px; }
+  .group-end { padding: 26px 18px; }
+  .group-end .btn { width: 100%; }
 }
 </style>

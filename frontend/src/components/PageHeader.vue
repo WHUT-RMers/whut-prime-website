@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
 
@@ -15,14 +15,10 @@ useScrollReveal(root, { blur: 10 })
 /** 从 eyebrow（如 "02 / 战队资讯"）提取章节序号作为底纹水印 */
 const watermark = computed(() => props.eyebrow.slice(0, 2).trim())
 
-/** 底纹水印滚动视差：matchMedia 实例随组件生命周期创建/revert，不泄漏 */
-const cover = ref<HTMLElement | null>(null)
-let mm: gsap.MatchMedia | undefined
-
-onMounted(() => {
-  const el = cover.value
+let reset: (() => void) | undefined
+function onParallax(el: HTMLElement | null) {
   if (!el) return
-  mm = gsap.matchMedia()
+  const mm = gsap.matchMedia()
   mm.add('(prefers-reduced-motion: no-preference)', () => {
     gsap.fromTo(
       el,
@@ -30,16 +26,13 @@ onMounted(() => {
       { y: -40, ease: 'none', scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
     )
   })
-})
-
-onBeforeUnmount(() => {
-  mm?.revert()
-})
+  reset = () => mm.revert()
+}
 </script>
 
 <template>
   <div ref="root" class="page-head">
-    <span ref="cover" class="page-cover" aria-hidden="true">{{ watermark }}</span>
+    <span ref="onParallax" class="page-cover" aria-hidden="true">{{ watermark }}</span>
     <p class="eyebrow" data-reveal>{{ eyebrow }}</p>
     <h1 class="page-title" data-reveal>{{ title }}</h1>
     <p v-if="desc" class="page-desc" data-reveal>{{ desc }}</p>
@@ -49,7 +42,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .page-head {
   position: relative;
-  padding: calc(var(--nav-h) + 70px) 70px 18px;
+  padding: calc(var(--nav-h) + clamp(48px, 7vw, 70px)) clamp(0px, 4vw, 70px) 18px;
   max-width: 900px;
 }
 .page-cover {
@@ -72,7 +65,12 @@ onBeforeUnmount(() => {
 .page-desc { margin-top: 18px; color: var(--ink-dim); font-size: 1.02rem; max-width: 640px; }
 
 @media (max-width: 640px) {
-  .page-head { padding: calc(var(--nav-h) + 48px) 24px 12px; }
+  .page-head { padding: calc(var(--nav-h) + 42px) 0 10px; }
   .page-cover { right: 6px; font-size: 7rem; }
+  .page-title { margin-top: 18px; font-size: clamp(2rem, 10vw, 2.7rem); }
+  .page-desc { margin-top: 14px; font-size: 0.96rem; line-height: 1.8; }
+}
+@media (max-width: 360px) {
+  .page-cover { right: -10px; opacity: 0.7; }
 }
 </style>

@@ -20,14 +20,10 @@ const links = [
 ]
 
 let onScroll: (() => void) | undefined
-let ctx: gsap.Context | undefined
 
 onMounted(() => {
-  // 入场 tween 纳入 gsap.context：卸载时 revert，避免残留动画作用于已卸载节点
   if (nav.value && !reduced) {
-    ctx = gsap.context(() => {
-      gsap.from(nav.value, { y: -26, opacity: 0, duration: 0.8, ease: 'expo.out', delay: 0.15 })
-    }, nav.value)
+    gsap.from(nav.value, { y: -26, opacity: 0, duration: 0.8, ease: 'expo.out', delay: 0.15 })
   }
   onScroll = () => {
     scrolled.value = window.scrollY > 28
@@ -40,7 +36,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  ctx?.revert()
   if (onScroll) window.removeEventListener('scroll', onScroll)
 })
 
@@ -70,6 +65,10 @@ watch(open, (v) => {
     })
   }
 })
+
+function closeDrawer() {
+  open.value = false
+}
 </script>
 
 <template>
@@ -77,7 +76,7 @@ watch(open, (v) => {
     <div class="nav-progress" aria-hidden="true"><span ref="prog"></span></div>
 
     <div class="container nav-inner">
-      <RouterLink to="/" class="brand">
+      <RouterLink to="/" class="brand" @click="closeDrawer">
         <span class="brand-mark">P</span>
         <span class="brand-name">WHUT<span class="dot">·</span>PRIME</span>
       </RouterLink>
@@ -96,7 +95,7 @@ watch(open, (v) => {
           class="nav-burger"
           :class="{ active: open }"
           :aria-expanded="open"
-          aria-label="打开菜单"
+          :aria-label="open ? '关闭菜单' : '打开菜单'"
           @click="open = !open"
         >
           <span></span><span></span><span></span>
@@ -153,7 +152,7 @@ watch(open, (v) => {
 }
 
 .nav-inner { height: 100%; display: flex; align-items: center; gap: 32px; position: relative; }
-.brand { display: flex; align-items: center; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; min-height: 44px; }
 .brand-mark {
   width: 30px;
   height: 30px;
@@ -169,13 +168,14 @@ watch(open, (v) => {
 .brand-name { font-family: var(--mono); font-weight: 600; letter-spacing: 0.16em; font-size: 0.86rem; }
 .brand-name .dot { color: var(--accent); margin: 0 2px; }
 
-.nav-links { display: flex; gap: 26px; margin-inline: auto; }
+.nav-links { display: flex; gap: clamp(15px, 1.8vw, 26px); margin-inline: auto; min-width: 0; }
 .nav-link {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 2px;
+  min-height: 44px;
+  padding: 8px 2px;
   font-size: 0.9rem;
   color: var(--ink-dim);
   transition: color 0.3s;
@@ -215,8 +215,8 @@ watch(open, (v) => {
   flex-direction: column;
   justify-content: center;
   gap: 5px;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   padding: 10px;
   border-radius: 8px;
   border: 1px solid var(--line-strong);
@@ -237,7 +237,10 @@ watch(open, (v) => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 18px 24px 34px;
+  max-height: calc(100dvh - var(--nav-h));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px max(24px, env(safe-area-inset-right)) max(34px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
   background: #0a0c13;
   border-bottom: 1px solid var(--line-strong);
   clip-path: inset(0 0 100% 0);
@@ -260,13 +263,20 @@ watch(open, (v) => {
 .drawer-link:hover .drawer-arrow { color: var(--accent); transform: translateX(5px); }
 .drawer-cta { align-self: flex-start; }
 
-@media (max-width: 980px) {
-  .nav-links { gap: 18px; }
+@media (max-width: 1100px) {
   .nav-cta { display: none; }
   .nav-link { font-size: 0.84rem; }
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .nav-links { display: none; }
   .nav-burger { display: flex; }
+  .nav-inner { gap: 16px; }
+  .nav-right { margin-left: auto; }
+}
+@media (max-width: 420px) {
+  .brand-name { font-size: 0.78rem; letter-spacing: 0.13em; }
+  .brand-mark { width: 32px; height: 32px; }
+  .drawer { padding-top: 10px; }
+  .drawer-link { min-height: 56px; padding-block: 13px; }
 }
 </style>

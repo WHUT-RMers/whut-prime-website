@@ -14,7 +14,6 @@ export interface NewsItem {
 
 export interface NewsDetail extends NewsItem {
   body: string
-  images: { id: number; caption: string; url: string }[]
   previous: NewsItem | null
   next: NewsItem | null
 }

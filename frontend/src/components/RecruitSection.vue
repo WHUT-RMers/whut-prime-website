@@ -35,7 +35,7 @@ useScrollReveal(root, { blur: 8, stagger: 0.07 })
 </template>
 
 <style scoped>
-.recruit { padding: 0 0 150px; }
+.recruit { padding: 0 0 var(--section-space); }
 .recruit-inner {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -98,6 +98,13 @@ useScrollReveal(root, { blur: 8, stagger: 0.07 })
 
 @media (max-width: 880px) {
   .recruit-inner { grid-template-columns: 1fr; gap: 48px; }
-  .recruit { padding: 0 0 110px; }
+}
+@media (max-width: 560px) {
+  .recruit-inner { gap: 38px; }
+  .recruit-list li { display: grid; grid-template-columns: auto 1fr; align-items: start; line-height: 1.8; }
+  .li-k { margin-top: 2px; margin-right: 8px; }
+  .recruit-form { padding: 28px 20px; }
+  .recruit-form h3 { font-size: 1.4rem; }
+  .submit-btn { width: 100%; }
 }
 </style>
