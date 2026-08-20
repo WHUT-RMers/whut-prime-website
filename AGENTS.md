@@ -100,9 +100,10 @@ npm run build        # 产物到 frontend/dist
 
 ## 8. GSAP 历史规范（承上）
 
-- `gsap.registerPlugin(ScrollTrigger)` 只在 `main.ts` 执行一次。
-- 通用滚动入场：组件内 `const root = ref(...)` + `useScrollReveal(root)`，元素加 `data-reveal` 属性；该 composable 基于 `gsap.context` 管理生命周期（卸载自动 revert）。
-- 私有动画：组件 `onMounted` 内用 `gsap.context(() => {...}, root)` 包裹，作用域选择器 + 自动清理。
+- `gsap.registerPlugin(ScrollTrigger)` 只在 `main.ts` 执行一次；另配置 `ScrollTrigger.config({ ignoreMobileResize: true })` 避免移动端 resize 全量 refresh。
+- 通用滚动入场：组件内 `const root = ref(...)` + `useScrollReveal(root)`，元素加 `data-reveal` 属性；composable 基于 `gsap.context` 管理生命周期（卸载自动 revert），并返回 `{ reveal }`——异步渲染（如资讯卡片）完成后调 `reveal()` 补跑入场，已入场元素不会重复播放。
+- 私有动画：组件 `onMounted` 内用 `gsap.context(() => {...}, root)` 包裹，作用域选择器 + 自动清理；`gsap.matchMedia()` 实例（AppFooter、PageHeader 视差等）必须保存并在 `onBeforeUnmount` 中 revert。
+- 计数动画统一走 `utils/motion.ts` 的 `countUp()`（内部尊重减弱动态，直接落定终值）。
 - 逐字动画：`charsHtml()` 生成 `<span class="char">`，配合外层 `overflow:hidden` 行做 yPercent 入场（见 HeroSection）。
 - **文案为先、动效为辅**：demo 页面文字精简，动效编排（入场节奏 + 滚动触发 + 微交互），不要散射式动画。
 

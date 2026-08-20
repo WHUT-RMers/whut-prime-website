@@ -94,8 +94,6 @@ onMounted(() => {
       )
     })
   })
-
-  mm.add('(max-width: 1000px)', () => undefined)
 })
 
 onBeforeUnmount(() => {

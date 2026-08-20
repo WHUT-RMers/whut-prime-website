@@ -14,6 +14,7 @@ export const EASE = {
 
 /**
  * 数字滚动计数（data-count 目标值），可配合 ScrollTrigger once 使用。
+ * 减弱动态时跳过动画，直接落定终值。
  */
 export function countUp(
   node: HTMLElement,
@@ -23,6 +24,11 @@ export function countUp(
   delay = 0,
   onDone?: () => void,
 ): void {
+  if (prefersReducedMotion()) {
+    node.textContent = String(target)
+    onDone?.()
+    return
+  }
   const obj = { v: 0 }
   gsap.to(obj, {
     v: target,

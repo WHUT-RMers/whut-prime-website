@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import PageHeader from '../components/PageHeader.vue'
 import PlaceholderImage from '../components/PlaceholderImage.vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
+import { prefersReducedMotion } from '../utils/motion'
 
 const root = ref<HTMLElement | null>(null)
+let ctx: gsap.Context | undefined
 useScrollReveal(root, { stagger: 0.07 })
 
 const milestones = [
@@ -45,19 +47,32 @@ const stats = [
 onMounted(() => {
   const el = root.value
   if (!el) return
-  el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
-    const target = Number(node.dataset.count)
-    const obj = { v: 0 }
-    gsap.to(obj, {
-      v: target,
-      duration: 1.8,
-      ease: 'power2.out',
-      scrollTrigger: { trigger: node, start: 'top 88%', once: true },
-      onUpdate: () => {
-        node.textContent = String(Math.round(obj.v))
-      },
+
+  // gsap.context 统一管理：卸载时 revert，计数 ScrollTrigger 不泄漏
+  ctx = gsap.context(() => {
+    el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
+      const target = Number(node.dataset.count)
+      // 减弱动态：直接落定终值，不创建滚动触发
+      if (prefersReducedMotion()) {
+        node.textContent = String(target)
+        return
+      }
+      const obj = { v: 0 }
+      gsap.to(obj, {
+        v: target,
+        duration: 1.8,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: node, start: 'top 88%', once: true },
+        onUpdate: () => {
+          node.textContent = String(Math.round(obj.v))
+        },
+      })
     })
-  })
+  }, el)
+})
+
+onBeforeUnmount(() => {
+  ctx?.revert()
 })
 </script>
 

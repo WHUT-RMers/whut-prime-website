@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
 
 const root = ref<HTMLElement | null>(null)
+let mm: gsap.MatchMedia | undefined
 useScrollReveal(root, { blur: 8 })
 
 const navLinks = [
@@ -14,7 +15,7 @@ const navLinks = [
 ]
 
 onMounted(() => {
-  const mm = gsap.matchMedia()
+  mm = gsap.matchMedia()
   mm.add('(prefers-reduced-motion: no-preference)', () => {
     gsap.fromTo(
       '.footer-mark',
@@ -22,6 +23,10 @@ onMounted(() => {
       { yPercent: 0, opacity: 1, ease: 'none', scrollTrigger: { trigger: '.footer', start: 'top bottom', end: 'bottom bottom', scrub: 0.8 } },
     )
   })
+})
+
+onBeforeUnmount(() => {
+  mm?.revert()
 })
 </script>
 

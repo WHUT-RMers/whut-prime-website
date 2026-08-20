@@ -1,18 +1,43 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { api, type NewsItem } from '../api'
 import PageHeader from '../components/PageHeader.vue'
+import { useScrollReveal } from '../composables/useGsapReveal'
 
 const items = ref<NewsItem[]>([]), categories = ref<string[]>([]), current = ref(''), loading = ref(true), error = ref('')
-async function load() { loading.value = true; error.value = ''; try { const q = current.value ? `?category=${encodeURIComponent(current.value)}` : ''; const result = await api.news(q); items.value = result.items; categories.value = result.categories } catch { error.value = '暂时无法获取资讯，请稍后重试。' } finally { loading.value = false } }
+
+/** 列表区滚动入场：卡片为异步渲染，数据就绪后由 reveal() 补跑 */
+const list = ref<HTMLElement | null>(null)
+const { reveal } = useScrollReveal(list, { stagger: 0.06, blur: 4 })
+
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    const q = current.value ? `?category=${encodeURIComponent(current.value)}` : ''
+    const result = await api.news(q)
+    items.value = result.items
+    categories.value = result.categories
+  } catch {
+    error.value = '暂时无法获取资讯，请稍后重试。'
+  } finally {
+    loading.value = false
+    // 等 DOM 更新后再扫描新渲染的 [data-reveal] 卡片
+    await nextTick()
+    reveal()
+  }
+}
 onMounted(load)
 const display = computed(() => items.value)
 </script>
 <template>
   <div class="page"><div class="container"><PageHeader eyebrow="02 / 战队资讯" title="最新动态" desc="赛场战报、技术研发、招新与合作动态，第一时间了解 PRIME。" />
-    <div class="news-watermark" aria-hidden="true">NEWS</div><div class="filters"><button :class="{ active: !current }" @click="current='';load()">全部</button><button v-for="category in categories" :key="category" :class="{ active: current===category }" @click="current=category;load()">{{ category }}</button></div>
-    <p v-if="loading" class="state">正在加载资讯…</p><p v-else-if="error" class="state error">{{ error }}</p><p v-else-if="!display.length" class="state">暂时没有已发布资讯。</p>
-    <div v-else class="grid"><RouterLink v-for="article in display" :key="article.slug" :to="`/news/${article.slug}`" class="card"><div class="media"><img :src="article.cover_url" :alt="article.title" :style="{objectPosition:article.image_focus}" /></div><div class="copy"><div><span>{{ article.category }}</span><time>{{ article.published_at?.slice(0,10) }}</time></div><h2>{{ article.title }}</h2><p>{{ article.summary }}</p><b>查看详情 →</b></div></RouterLink></div>
+    <div class="news-watermark" aria-hidden="true">NEWS</div>
+    <div ref="list">
+      <div class="filters" data-reveal><button :class="{ active: !current }" @click="current='';load()">全部</button><button v-for="category in categories" :key="category" :class="{ active: current===category }" @click="current=category;load()">{{ category }}</button></div>
+      <p v-if="loading" class="state">正在加载资讯…</p><p v-else-if="error" class="state error">{{ error }}</p><p v-else-if="!display.length" class="state">暂时没有已发布资讯。</p>
+      <div v-else class="grid"><RouterLink v-for="article in display" :key="article.slug" :to="`/news/${article.slug}`" class="card" data-reveal><div class="media"><img :src="article.cover_url" :alt="article.title" :style="{objectPosition:article.image_focus}" /></div><div class="copy"><div><span>{{ article.category }}</span><time>{{ article.published_at?.slice(0,10) }}</time></div><h2>{{ article.title }}</h2><p>{{ article.summary }}</p><b>查看详情 →</b></div></RouterLink></div>
+    </div>
   </div></div>
 </template>
 <style scoped>

@@ -138,6 +138,9 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: 0.02em
 
 .char { display: inline-block; will-change: transform; }
 
+/* GSAP 滚动入场元素：合成器提升提示，避免入场瞬间反复创建合成层（gsap-performance） */
+[data-reveal] { will-change: transform, opacity; }
+
 /* ---- 按钮：扁平（实色填充 / 细边幽灵），磁吸由 JS 负责 ---- */
 .btn {
   display: inline-flex;

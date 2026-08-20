@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
 import { prefersReducedMotion, countUp } from '../utils/motion'
@@ -7,6 +7,7 @@ import { useMouseFx } from '../composables/useMouseFx'
 import PlaceholderImage from './PlaceholderImage.vue'
 
 const root = ref<HTMLElement | null>(null)
+let ctx: gsap.Context | undefined
 useScrollReveal(root, { blur: 4, stagger: 0.08 })
 useMouseFx(root)
 
@@ -36,34 +37,44 @@ const impact = [
 
 onMounted(() => {
   const el = root.value
-  if (!el || prefersReducedMotion()) return
-  const q = gsap.utils.selector(el)
+  if (!el) return
 
-  /* 序号横向漂移视差 + 战役标记线生长 */
-  q('.event-item').forEach((item: Element, i: number) => {
-    const idx = item.querySelector('.event-index')
-    if (idx) {
-      gsap.fromTo(
-        idx,
-        { x: i % 2 ? 26 : -26 },
-        { x: i % 2 ? -26 : 26, ease: 'none', scrollTrigger: { trigger: item, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
-      )
-    }
-    const marker = item.querySelector('.event-marker')
-    if (marker) {
-      gsap.fromTo(
-        marker,
-        { scaleY: 0 },
-        { scaleY: 1, transformOrigin: 'top', ease: 'none', scrollTrigger: { trigger: item, start: 'top 82%', end: 'bottom 55%', scrub: 0.6 } },
-      )
-    }
-  })
+  // gsap.context 统一管理：卸载时 revert，ScrollTrigger / tween 不泄漏
+  ctx = gsap.context(() => {
+    if (!prefersReducedMotion()) {
+      const q = gsap.utils.selector(el)
 
-  /* 影响数据计数 */
-  el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
-    const target = Number(node.dataset.count)
-    countUp(node, target, 1.8, 'power2.out', 0.2)
-  })
+      /* 序号横向漂移视差 + 战役标记线生长（scrub，减弱动态时直接呈现终态） */
+      q('.event-item').forEach((item: Element, i: number) => {
+        const idx = item.querySelector('.event-index')
+        if (idx) {
+          gsap.fromTo(
+            idx,
+            { x: i % 2 ? 26 : -26 },
+            { x: i % 2 ? -26 : 26, ease: 'none', scrollTrigger: { trigger: item, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
+          )
+        }
+        const marker = item.querySelector('.event-marker')
+        if (marker) {
+          gsap.fromTo(
+            marker,
+            { scaleY: 0 },
+            { scaleY: 1, transformOrigin: 'top', ease: 'none', scrollTrigger: { trigger: item, start: 'top 82%', end: 'bottom 55%', scrub: 0.6 } },
+          )
+        }
+      })
+    }
+
+    /* 影响数据计数（countUp 内部已处理减弱动态：直接落定终值） */
+    el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
+      const target = Number(node.dataset.count)
+      countUp(node, target, 1.8, 'power2.out', 0.2)
+    })
+  }, el)
+})
+
+onBeforeUnmount(() => {
+  ctx?.revert()
 })
 </script>
 

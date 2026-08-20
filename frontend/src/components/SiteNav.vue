@@ -20,10 +20,14 @@ const links = [
 ]
 
 let onScroll: (() => void) | undefined
+let ctx: gsap.Context | undefined
 
 onMounted(() => {
+  // 入场 tween 纳入 gsap.context：卸载时 revert，避免残留动画作用于已卸载节点
   if (nav.value && !reduced) {
-    gsap.from(nav.value, { y: -26, opacity: 0, duration: 0.8, ease: 'expo.out', delay: 0.15 })
+    ctx = gsap.context(() => {
+      gsap.from(nav.value, { y: -26, opacity: 0, duration: 0.8, ease: 'expo.out', delay: 0.15 })
+    }, nav.value)
   }
   onScroll = () => {
     scrolled.value = window.scrollY > 28
@@ -36,6 +40,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  ctx?.revert()
   if (onScroll) window.removeEventListener('scroll', onScroll)
 })
 

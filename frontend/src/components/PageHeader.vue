@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
 
@@ -15,10 +15,14 @@ useScrollReveal(root, { blur: 10 })
 /** 从 eyebrow（如 "02 / 战队资讯"）提取章节序号作为底纹水印 */
 const watermark = computed(() => props.eyebrow.slice(0, 2).trim())
 
-let reset: (() => void) | undefined
-function onParallax(el: HTMLElement | null) {
+/** 底纹水印滚动视差：matchMedia 实例随组件生命周期创建/revert，不泄漏 */
+const cover = ref<HTMLElement | null>(null)
+let mm: gsap.MatchMedia | undefined
+
+onMounted(() => {
+  const el = cover.value
   if (!el) return
-  const mm = gsap.matchMedia()
+  mm = gsap.matchMedia()
   mm.add('(prefers-reduced-motion: no-preference)', () => {
     gsap.fromTo(
       el,
@@ -26,13 +30,16 @@ function onParallax(el: HTMLElement | null) {
       { y: -40, ease: 'none', scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
     )
   })
-  reset = () => mm.revert()
-}
+})
+
+onBeforeUnmount(() => {
+  mm?.revert()
+})
 </script>
 
 <template>
   <div ref="root" class="page-head">
-    <span ref="onParallax" class="page-cover" aria-hidden="true">{{ watermark }}</span>
+    <span ref="cover" class="page-cover" aria-hidden="true">{{ watermark }}</span>
     <p class="eyebrow" data-reveal>{{ eyebrow }}</p>
     <h1 class="page-title" data-reveal>{{ title }}</h1>
     <p v-if="desc" class="page-desc" data-reveal>{{ desc }}</p>

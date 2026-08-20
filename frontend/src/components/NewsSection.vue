@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { api, type NewsItem } from '../api'
 import { useScrollReveal } from '../composables/useGsapReveal'
 import { useMouseFx } from '../composables/useMouseFx'
@@ -8,10 +8,20 @@ const props = withDefaults(defineProps<{ limit?: number }>(), { limit: 4 })
 const root = ref<HTMLElement | null>(null)
 const items = ref<NewsItem[]>([])
 const loading = ref(true)
-useScrollReveal(root, { stagger: 0.08, blur: 4 })
+const { reveal } = useScrollReveal(root, { stagger: 0.08, blur: 4 })
 useMouseFx(root)
 const shown = computed(() => items.value.slice(0, props.limit))
-onMounted(async () => { try { const featured = await api.news(`?featured=1&limit=${props.limit}`); items.value = featured.items.length ? featured.items : (await api.news(`?limit=${props.limit}`)).items } finally { loading.value = false } })
+onMounted(async () => {
+  try {
+    const featured = await api.news(`?featured=1&limit=${props.limit}`)
+    items.value = featured.items.length ? featured.items : (await api.news(`?limit=${props.limit}`)).items
+  } finally {
+    loading.value = false
+    // 卡片为异步渲染：等 DOM 更新后补跑入场（头部已在挂载时入场）
+    await nextTick()
+    reveal()
+  }
+})
 </script>
 
 <template>
