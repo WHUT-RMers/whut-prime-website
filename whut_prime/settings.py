@@ -17,6 +17,26 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def load_local_env() -> None:
+    """Load local-only configuration without adding a production dependency.
+
+    System environment variables always win.  `.env` is ignored by Git, so a
+    mailbox authorization code never needs to appear in source control.
+    """
+    env_file = BASE_DIR / '.env'
+    if not env_file.exists():
+        return
+    for line in env_file.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"\''))
+
+
+load_local_env()
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
@@ -128,6 +148,28 @@ STATIC_ROOT = BASE_DIR / 'static_root'
 # news images and private resumes are served by permission-aware application views.
 MEDIA_ROOT = BASE_DIR / 'media'
 MEDIA_URL = 'media/'
+
+# 招新邮箱验证码。正式启用前，在本机 `.env`（或服务器环境变量）中填写
+# QQ_SMTP_USER 与 QQ_SMTP_AUTH_CODE，并将开关设为 1。
+RECRUITMENT_EMAIL_VERIFICATION_ENABLED = os.environ.get('RECRUITMENT_EMAIL_VERIFICATION_ENABLED', '0') == '1'
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.qq.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '465'))
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', '1') == '1'
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', '0') == '1'
+EMAIL_HOST_USER = os.environ.get('QQ_SMTP_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('QQ_SMTP_AUTH_CODE', '')
+_configured_from_email = os.environ.get('DEFAULT_FROM_EMAIL', '').strip()
+# `.env.example` 的占位地址不能作为 SMTP 信封发件人；QQ SMTP 会拒绝它。
+DEFAULT_FROM_EMAIL = (
+    _configured_from_email
+    if _configured_from_email and 'noreply@example.com' not in _configured_from_email
+    else EMAIL_HOST_USER or 'PRIME 招新 <noreply@example.com>'
+)
+
+# 去掉 SimpleUI 默认的版本、Gitee、GitHub 宣传卡片；首页快捷入口会自动
+# 扩展为整行，避免留下右侧空白。
+SIMPLEUI_HOME_INFO = False
 
 
 # 运营人员的侧边栏：将高频资讯管理与数据查看拆成独立入口，避免在
