@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import PageHeader from '../components/PageHeader.vue'
 import PlaceholderImage from '../components/PlaceholderImage.vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
-import { prefersReducedMotion } from '../utils/motion'
 
 const root = ref<HTMLElement | null>(null)
-let ctx: gsap.Context | undefined
 useScrollReveal(root, { stagger: 0.07 })
 
 const milestones = [
@@ -47,32 +45,19 @@ const stats = [
 onMounted(() => {
   const el = root.value
   if (!el) return
-
-  // gsap.context 统一管理：卸载时 revert，计数 ScrollTrigger 不泄漏
-  ctx = gsap.context(() => {
-    el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
-      const target = Number(node.dataset.count)
-      // 减弱动态：直接落定终值，不创建滚动触发
-      if (prefersReducedMotion()) {
-        node.textContent = String(target)
-        return
-      }
-      const obj = { v: 0 }
-      gsap.to(obj, {
-        v: target,
-        duration: 1.8,
-        ease: 'power2.out',
-        scrollTrigger: { trigger: node, start: 'top 88%', once: true },
-        onUpdate: () => {
-          node.textContent = String(Math.round(obj.v))
-        },
-      })
+  el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
+    const target = Number(node.dataset.count)
+    const obj = { v: 0 }
+    gsap.to(obj, {
+      v: target,
+      duration: 1.8,
+      ease: 'power2.out',
+      scrollTrigger: { trigger: node, start: 'top 88%', once: true },
+      onUpdate: () => {
+        node.textContent = String(Math.round(obj.v))
+      },
     })
-  }, el)
-})
-
-onBeforeUnmount(() => {
-  ctx?.revert()
+  })
 })
 </script>
 
@@ -126,13 +111,13 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.page { padding-bottom: 150px; }
+.page { padding-bottom: var(--section-space); }
 
 .album-grid {
-  margin-top: 56px;
+  margin-top: clamp(38px, 5vw, 56px);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: clamp(12px, 2vw, 18px);
 }
 .album figcaption {
   margin-top: 10px;
@@ -222,5 +207,16 @@ onBeforeUnmount(() => {
   .album-grid { grid-template-columns: 1fr; }
   .comp-list { grid-template-columns: 1fr; }
   .stats { grid-template-columns: 1fr; }
+  .timeline { margin-top: 64px; padding-left: 24px; }
+  .milestone::before { left: -23px; }
+  .milestone-desc { font-size: 0.92rem; line-height: 1.8; }
+  .stat { padding: 26px 20px; }
+  .stat-num { font-size: 2.2rem; }
+  .comp-block { margin-top: 68px; }
+  .comp-list li { padding: 14px; }
+}
+
+@media (hover: none) {
+  .comp-list li:hover { border-color: var(--line); color: var(--ink-dim); }
 }
 </style>

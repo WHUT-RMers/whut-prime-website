@@ -85,4 +85,9 @@ onBeforeUnmount(() => {
 }
 .marquee:hover .word { color: var(--ink); }
 .star { font-style: normal; color: var(--accent); font-size: 0.72rem; opacity: 0.85; }
+
+@media (max-width: 600px) {
+  .marquee { padding: 15px 0; }
+  .word { gap: 12px; padding: 0 20px; font-size: 1.05rem; letter-spacing: .09em; }
+}
 </style>

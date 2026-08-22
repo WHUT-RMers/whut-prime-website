@@ -312,11 +312,49 @@ onBeforeUnmount(() => {
 .cue-line { width: 1px; height: 44px; background: linear-gradient(to bottom, var(--accent), transparent); animation: cue 1.8s var(--ease-expo) infinite; }
 .cue-tri { font-style: normal; color: var(--accent); animation: pulse-dot 1.8s ease-in-out infinite; }
 
+@media (max-width: 900px) {
+  .hero-inner { gap: 24px; }
+  .hero-title { font-size: clamp(3rem, 10vw, 5.2rem); }
+  .hero-sub { max-width: 620px; }
+  .hero-notes { gap: 28px; margin-top: 48px; }
+}
+
 @media (max-width: 640px) {
-  .hero-notes { gap: 22px; flex-direction: column; margin-top: 44px; }
+  .hero {
+    min-height: max(100svh, 720px);
+    justify-content: flex-start;
+    padding-top: calc(var(--nav-h) + 72px);
+    padding-bottom: 70px;
+  }
+  .hero-title { font-size: clamp(2.55rem, 13.6vw, 4rem); line-height: 1.08; }
+  .hero-eyebrow { margin-bottom: 24px; line-height: 1.75; }
+  .hero-sub { margin-top: 26px; font-size: 1rem; line-height: 1.85; }
+  .hero-actions { margin-top: 34px; gap: 12px; }
+  .hero-notes { gap: 12px; flex-direction: row; flex-wrap: wrap; margin-top: 42px; }
+  .hero-notes li { min-width: calc(50% - 8px); }
+  .hero-notes .k { font-size: 1.45rem; }
   .hero-inner { flex-direction: column; align-items: flex-start; }
   .hero-hud { display: none; }
   .hero-watermark { opacity: 0.35; }
   .shape-a, .shape-b { display: none; }
+  .scroll-cue { display: none; }
+}
+
+@media (max-width: 380px) {
+  .hero { min-height: max(100svh, 690px); padding-top: calc(var(--nav-h) + 58px); }
+  .hero-title { font-size: clamp(2.35rem, 13vw, 3.2rem); }
+  .hero-sub { font-size: 0.94rem; }
+  .hero-actions .btn { flex: 1 1 140px; }
+  .hero-notes { margin-top: 34px; }
+}
+
+@media (orientation: landscape) and (max-height: 620px) {
+  .hero { min-height: 620px; justify-content: flex-start; padding-top: calc(var(--nav-h) + 48px); padding-bottom: 48px; }
+  .hero-title { font-size: clamp(2.65rem, 8vw, 4.5rem); }
+  .hero-eyebrow { margin-bottom: 18px; }
+  .hero-sub { margin-top: 18px; max-width: 680px; font-size: 0.94rem; }
+  .hero-actions { margin-top: 22px; }
+  .hero-notes { margin-top: 28px; }
+  .scroll-cue, .hero-hud { display: none; }
 }
 </style>

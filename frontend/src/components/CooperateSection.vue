@@ -87,7 +87,7 @@ const contact = {
 </template>
 
 <style scoped>
-.cooperate { padding: 0 0 150px; }
+.cooperate { padding: 0 0 var(--section-space); }
 .cooperate-title {
   margin-top: 22px;
   font-size: clamp(1.9rem, 4vw, 3.1rem);
@@ -189,6 +189,13 @@ const contact = {
 @media (max-width: 620px) {
   .tier-grid { grid-template-columns: repeat(2, 1fr); }
   .benefit-list { grid-template-columns: 1fr; }
-  .cooperate { padding: 0 0 110px; }
+  .cooperate-lower { margin-top: 34px; }
+  .benefit-card, .contact-card { padding: 26px 20px; }
+  .contact-list div { align-items: flex-start; gap: 10px; }
+  .contact-list dd { min-width: 0; overflow-wrap: anywhere; }
+  .contact-card .btn { width: 100%; }
+}
+@media (max-width: 380px) {
+  .tier-grid { grid-template-columns: 1fr; }
 }
 </style>

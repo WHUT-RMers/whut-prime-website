@@ -94,6 +94,8 @@ onMounted(() => {
       )
     })
   })
+
+  mm.add('(max-width: 1000px)', () => undefined)
 })
 
 onBeforeUnmount(() => {
@@ -110,7 +112,8 @@ onBeforeUnmount(() => {
         <h2 class="groups-title" data-reveal>四大组别与技术栈</h2>
         <p class="groups-lead" data-reveal>一辆车从图纸到赛场，需要四双手。</p>
         <p class="groups-hint" data-reveal aria-hidden="true">
-          SCROLL <i class="hint-arrow">→</i> 横向穿行组别舱段
+          <span class="groups-hint-desktop">SCROLL <i class="hint-arrow">→</i> 横向穿行组别舱段</span>
+          <span class="groups-hint-mobile">SWIPE <i class="hint-arrow">→</i> 左右滑动查看全部组别</span>
         </p>
       </header>
 
@@ -154,7 +157,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .groups-stage { position: relative; display: flex; flex-direction: column; overflow: hidden; }
 
-.groups-head { padding-top: 110px; position: relative; z-index: 2; max-width: 760px; }
+.groups-head { padding-top: 110px; position: relative; z-index: 2; }
 .groups-title { margin-top: 22px; font-size: clamp(1.9rem, 4vw, 3.1rem); }
 .groups-lead { margin-top: 14px; color: var(--ink-dim); }
 .groups-hint {
@@ -186,10 +189,11 @@ onBeforeUnmount(() => {
   .groups-stage {
     height: calc(100vh - var(--nav-h));
     min-height: 640px;
-    justify-content: center;
+    /* 与 01–03 区块统一：标题从区块顶部的标准留白开始，而非垂直居中。 */
+    justify-content: flex-start;
     gap: 34px;
   }
-  .groups-head { padding-top: 0; }
+  .groups-head { padding-top: clamp(90px, 10vw, 130px); }
   .groups-track {
     flex: 1;
     display: flex;
@@ -302,18 +306,38 @@ onBeforeUnmount(() => {
   background: var(--accent);
 }
 
-/* ---------- 移动端：纵向堆叠 ---------- */
+/* ---------- 移动端：手势横向轨道 ---------- */
 @media (max-width: 1000px) {
   .groups { padding-bottom: 0; }
   .groups-stage { padding: 90px 0 100px; gap: 26px; }
-  .groups-track { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 40px; }
+  .groups-track {
+    display: flex;
+    width: 100%;
+    gap: 14px;
+    margin-top: 22px;
+    padding: 0 var(--page-gutter) 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--page-gutter);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .groups-track::-webkit-scrollbar { display: none; }
   .group-deck {
     position: relative;
+    flex: 0 0 min(82vw, 500px);
+    min-height: 390px;
     padding: 26px 24px;
     border: 1px solid hsla(var(--deck-hue, 158), 55%, 62%, 0.35);
     border-radius: var(--radius);
     background: var(--surface);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
   .deck-num {
     position: absolute;
@@ -326,6 +350,8 @@ onBeforeUnmount(() => {
     pointer-events: none;
   }
   .group-end {
+    flex: 0 0 min(82vw, 500px);
+    min-height: 390px;
     padding: 30px 24px;
     border: 1px solid var(--accent);
     border-radius: var(--radius);
@@ -333,11 +359,30 @@ onBeforeUnmount(() => {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    justify-content: center;
     gap: 14px;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
   .end-title { font-size: 1.4rem; }
   .end-desc { color: var(--ink-dim); }
   .groups-progress { display: none; }
-  .groups-hint { display: none; }
+  .groups-hint { display: flex; }
+  .groups-hint-desktop { display: none; }
+  .groups-hint-mobile { display: inline-flex; align-items: center; gap: 10px; }
+}
+
+@media (max-width: 560px) {
+  .groups-stage { padding: 76px 0 90px; }
+  .groups-track { margin-top: 18px; gap: 12px; padding-bottom: 12px; }
+  .group-deck { flex-basis: 86vw; min-height: 372px; padding: 22px 18px; }
+  .deck-top { gap: 9px; flex-wrap: wrap; }
+  .deck-en { flex: 1 1 100%; }
+  .deck-name { margin-top: 18px; font-size: 1.55rem; }
+  .deck-desc { line-height: 1.8; }
+  .deck-need { display: flex; align-items: flex-start; line-height: 1.7; }
+  .need-flag { flex: 0 0 auto; margin-top: 2px; }
+  .group-end { flex-basis: 86vw; min-height: 372px; padding: 26px 18px; }
+  .group-end .btn { width: 100%; }
 }
 </style>

@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
 import { prefersReducedMotion, countUp } from '../utils/motion'
 
 const root = ref<HTMLElement | null>(null)
-let ctx: gsap.Context | undefined
 useScrollReveal(root, { stagger: 0.08, blur: 8 })
 
 const milestones = [
@@ -28,79 +27,73 @@ const stats = [
 onMounted(() => {
   const el = root.value
   if (!el) return
+  const q = gsap.utils.selector(el)
 
-  // gsap.context 统一管理：卸载时 revert，ScrollTrigger / tween 不泄漏
-  ctx = gsap.context(() => {
-    if (!prefersReducedMotion()) {
-      const q = gsap.utils.selector(el)
+  /* 时间线生长（保留） */
+  const fill = q('.history-line-fill')[0]
+  if (fill) {
+    gsap.fromTo(
+      fill,
+      { scaleY: 0 },
+      {
+        scaleY: 1,
+        transformOrigin: 'top',
+        ease: 'none',
+        scrollTrigger: { trigger: el, start: 'top 60%', end: 'bottom 70%', scrub: 0.6 },
+      },
+    )
+  }
 
-      /* 时间线生长（scrub，减弱动态时直接呈现满线终态） */
-      const fill = q('.history-line-fill')[0]
-      if (fill) {
+  /* 里程碑：左右交替滑入 + 年份视差 */
+  if (!prefersReducedMotion()) {
+    q('.milestone').forEach((m: Element, i: number) => {
+      gsap.fromTo(
+        m,
+        { x: i % 2 ? 64 : -64, opacity: 0, filter: 'blur(6px)' },
+        {
+          x: 0,
+          opacity: 1,
+          filter: 'blur(0px)',
+          duration: 1,
+          ease: 'expo.out',
+          scrollTrigger: { trigger: m, start: 'top 88%', once: true },
+        },
+      )
+      const yr = m.querySelector('.year')
+      if (yr) {
         gsap.fromTo(
-          fill,
-          { scaleY: 0 },
-          {
-            scaleY: 1,
-            transformOrigin: 'top',
-            ease: 'none',
-            scrollTrigger: { trigger: el, start: 'top 60%', end: 'bottom 70%', scrub: 0.6 },
-          },
+          yr,
+          { y: 22 },
+          { y: -22, ease: 'none', scrollTrigger: { trigger: m, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
         )
       }
-
-      /* 里程碑：左右交替滑入 + 年份视差 */
-      q('.milestone').forEach((m: Element, i: number) => {
-        gsap.fromTo(
-          m,
-          { x: i % 2 ? 64 : -64, opacity: 0, filter: 'blur(6px)' },
-          {
-            x: 0,
-            opacity: 1,
-            filter: 'blur(0px)',
-            duration: 1,
-            ease: 'expo.out',
-            scrollTrigger: { trigger: m, start: 'top 88%', once: true },
-          },
-        )
-        const yr = m.querySelector('.year')
-        if (yr) {
-          gsap.fromTo(
-            yr,
-            { y: 22 },
-            { y: -22, ease: 'none', scrollTrigger: { trigger: m, start: 'top bottom', end: 'bottom top', scrub: 0.8 } },
-          )
-        }
-      })
-
-      /* 荣誉徽章：脉冲弹入 */
-      q('.honor-list li').forEach((li: Element, i: number) => {
-        gsap.fromTo(
-          li,
-          { opacity: 0, scale: 0.7, rotate: i % 2 ? 6 : -6 },
-          {
-            opacity: 1,
-            scale: 1,
-            rotate: 0,
-            duration: 0.6,
-            ease: 'back.out(1.8)',
-            delay: (i % 4) * 0.06,
-            scrollTrigger: { trigger: li, start: 'top 92%', once: true },
-          },
-        )
-      })
-    }
-
-    /* 数据计数（countUp 内部已处理减弱动态：直接落定终值） */
-    el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
-      const target = Number(node.dataset.count)
-      countUp(node, target, 1.8, 'power2.out', 0.15)
     })
-  }, el)
-})
+  }
 
-onBeforeUnmount(() => {
-  ctx?.revert()
+  /* 荣誉徽章：脉冲弹入 */
+  if (!prefersReducedMotion()) {
+    q('.honor-list li').forEach((li: Element, i: number) => {
+      gsap.fromTo(
+        li,
+        { opacity: 0, scale: 0.7, rotate: i % 2 ? 6 : -6 },
+        {
+          opacity: 1,
+          scale: 1,
+          rotate: 0,
+          duration: 0.6,
+          ease: 'back.out(1.8)',
+          delay: (i % 4) * 0.06,
+          scrollTrigger: { trigger: li, start: 'top 92%', once: true },
+        },
+      )
+    })
+  }
+
+  /* 数据计数 */
+  el.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {
+    const target = Number(node.dataset.count)
+    countUp(node, target, 1.8, 'power2.out', 0.15)
+  })
 })
 </script>
 
@@ -139,7 +132,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.history { padding: 0 0 150px; }
+.history { padding: 0 0 var(--section-space); }
 .history-title {
   margin-top: 22px;
   font-size: clamp(1.9rem, 4vw, 3.1rem);
@@ -239,6 +232,15 @@ onBeforeUnmount(() => {
 @media (max-width: 880px) {
   .history-layout { grid-template-columns: 1fr; gap: 56px; }
   .honor-side { position: static; }
-  .history { padding: 0 0 110px; }
+}
+@media (max-width: 560px) {
+  .history-layout { margin-top: 44px; gap: 42px; }
+  .timeline { padding-left: 24px; }
+  .milestone::before { left: -24px; }
+  .milestone { padding-bottom: 34px; }
+  .milestone-desc { font-size: .92rem; line-height: 1.8; }
+  .honor-stats { grid-template-columns: 1fr; gap: 10px; }
+  .hstat { display: flex; align-items: baseline; justify-content: space-between; padding: 16px 18px; text-align: left; }
+  .hstat-label { margin-top: 0; }
 }
 </style>

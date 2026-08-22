@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
 
 const root = ref<HTMLElement | null>(null)
-let mm: gsap.MatchMedia | undefined
 useScrollReveal(root, { blur: 8 })
 
 const navLinks = [
@@ -15,7 +14,7 @@ const navLinks = [
 ]
 
 onMounted(() => {
-  mm = gsap.matchMedia()
+  const mm = gsap.matchMedia()
   mm.add('(prefers-reduced-motion: no-preference)', () => {
     gsap.fromTo(
       '.footer-mark',
@@ -23,10 +22,6 @@ onMounted(() => {
       { yPercent: 0, opacity: 1, ease: 'none', scrollTrigger: { trigger: '.footer', start: 'top bottom', end: 'bottom bottom', scrub: 0.8 } },
     )
   })
-})
-
-onBeforeUnmount(() => {
-  mm?.revert()
 })
 </script>
 
@@ -91,4 +86,21 @@ onBeforeUnmount(() => {
 .footer-nav a:hover { color: var(--accent); letter-spacing: 0.1em; }
 .footer-line { color: var(--ink-dim); font-size: 0.95rem; max-width: 560px; }
 .footer-copy { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--ink-faint); }
+
+@media (max-width: 700px) {
+  .footer { padding: 44px 0 max(48px, env(safe-area-inset-bottom)); }
+  .footer-inner { gap: 16px; }
+  .footer-brand { align-items: flex-start; }
+  .footer-nav { gap: 8px 18px; flex-wrap: wrap; }
+  .footer-nav a { min-height: 42px; display: inline-flex; align-items: center; }
+  .footer-line { max-width: 30em; }
+  .footer-mark { font-size: clamp(7rem, 34vw, 11rem); }
+}
+
+@media (max-width: 420px) {
+  .brand-name { font-size: 0.68rem; line-height: 1.6; }
+  .footer-nav { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .footer-nav a { border-bottom: 1px solid var(--line); }
+  .footer-line, .footer-copy { font-size: 0.68rem; }
+}
 </style>

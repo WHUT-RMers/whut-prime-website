@@ -14,7 +14,6 @@ export interface NewsItem {
 
 export interface NewsDetail extends NewsItem {
   body: string
-  images: { id: number; caption: string; url: string }[]
   previous: NewsItem | null
   next: NewsItem | null
 }
@@ -32,6 +31,34 @@ export const api = {
   news: (params = '') => request<{ items: NewsItem[]; categories: string[] }>(`news/${params}`),
   article: (slug: string) => request<NewsDetail>(`news/${slug}/`),
   countView: (slug: string) => request<{ view_count: number }>(`news/${slug}/view/`, { method: 'POST' }),
-  recruitmentStatus: () => request<{ is_open: boolean; notice: string }>('recruitment/status/'),
+  recruitmentStatus: () => request<{ is_open: boolean; notice: string; email_verification_required: boolean }>('recruitment/status/'),
+  sendRecruitmentEmailCode: (email: string) => {
+    const payload = new FormData(); payload.append('email', email)
+    return request<{ message: string }>('recruitment/email-code/', { method: 'POST', body: payload })
+  },
+  verifyRecruitmentEmailCode: (email: string, code: string) => {
+    const payload = new FormData(); payload.append('email', email); payload.append('code', code)
+    return request<{ message: string }>('recruitment/email-code/verify/', { method: 'POST', body: payload })
+  },
+  recruitmentApplicationStatus: (email: string) => {
+    const payload = new FormData(); payload.append('email', email)
+    return request<{ exists: boolean; application: RecruitmentApplicationSummary | null }>('recruitment/application-status/', { method: 'POST', body: payload })
+  },
   apply: (payload: FormData) => request<{ application_no: string }>('recruitment/applications/', { method: 'POST', body: payload }),
+  updateRecruitment: (id: number, payload: FormData) => request<{ application_no: string; message: string }>(`recruitment/applications/${id}/update/`, { method: 'POST', body: payload }),
+}
+
+export interface RecruitmentApplicationSummary {
+  id: number
+  application_no: string
+  primary_choice: string
+  status: string
+  created_at: string
+  can_edit: boolean
+  modification_count: number
+  form: {
+    name: string; qq: string; wechat: string; email: string; phone: string; college: string; major_class: string
+    primary_choice: string; accepts_adjustment: boolean; second_choice: string; introduction: string; experience: string; availability: string; consent: boolean
+  }
+  attachments: string[]
 }

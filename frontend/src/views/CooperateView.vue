@@ -106,7 +106,7 @@ const contact = {
 </template>
 
 <style scoped>
-.page { padding-bottom: 150px; }
+.page { padding-bottom: var(--section-space); }
 
 .cover { margin-top: 56px; }
 
@@ -194,7 +194,24 @@ const contact = {
 }
 @media (max-width: 760px) {
   .tier-grid { grid-template-columns: repeat(2, 1fr); }
-  .matrix { overflow-x: auto; }
+  .matrix { overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; }
   .matrix-head, .matrix-row { min-width: 720px; }
+}
+@media (max-width: 520px) {
+  .cover { margin-top: 36px; }
+  .tier-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 36px; }
+  .tier { padding: 20px 14px; }
+  .tier-name { font-size: .94rem; }
+  .tier-seats { font-size: 1.3rem; }
+  .matrix-block { margin-top: 54px; }
+  .matrix { margin-inline: calc(var(--page-gutter) * -1); border-radius: 0; border-inline: 0; }
+  .matrix-note { line-height: 1.7; }
+  .contact { margin-top: 54px; padding: 28px 18px; }
+  .contact-list div { align-items: flex-start; gap: 10px; }
+  .contact-list dd { min-width: 0; overflow-wrap: anywhere; }
+  .contact .btn { width: 100%; }
+}
+@media (max-width: 360px) {
+  .tier-grid { grid-template-columns: 1fr; }
 }
 </style>
