@@ -1,0 +1,21 @@
+.portal-carousel-manager{max-width:940px!important;padding:0!important;background:transparent!important;border:0!important}
+.portal-carousel-slots{display:flex!important;flex-wrap:wrap!important;align-items:flex-start!important;gap:10px!important;min-height:145px!important}
+.portal-carousel-add,.portal-carousel-upload-card{position:relative!important;box-sizing:border-box!important;width:162px!important;min-width:162px!important;max-width:162px!important;flex:0 0 162px!important;margin:0!important;overflow:hidden!important;border-radius:7px!important}
+.portal-carousel-add{display:flex!important;height:145px!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;border:1px dashed #8fb9d0!important;background:#f7fbfd!important;color:#2386b3!important;cursor:pointer!important;transition:border-color .2s,background .2s,transform .2s!important}
+.portal-carousel-add:hover{border-color:#168cc0!important;background:#eaf7fd!important;transform:translateY(-2px)!important}
+.portal-carousel-add span{font-size:30px!important;line-height:27px!important;font-weight:300!important}
+.portal-carousel-add small{font-size:11px!important}
+.portal-carousel-upload-card{height:145px!important;border:1px solid #d7e3ea!important;background:#fff!important}
+.portal-carousel-upload-card img{display:block!important;width:162px!important;height:91px!important;min-width:162px!important;max-width:162px!important;max-height:91px!important;aspect-ratio:16/9!important;object-fit:cover!important;margin:0!important;border:0!important;border-radius:0!important}
+.portal-carousel-upload-card figcaption{display:flex!important;height:53px!important;box-sizing:border-box!important;flex-direction:column!important;gap:3px!important;padding:4px 7px 6px!important;background:#fff!important}
+.portal-carousel-number{display:block!important;color:#6c7a8b!important;font-size:10px!important;line-height:12px!important}
+.portal-carousel-caption{display:block!important;box-sizing:border-box!important;width:100%!important;height:27px!important;min-height:27px!important;padding:4px 6px!important;border:1px solid #dce4eb!important;border-radius:4px!important;background:#f9fbfc!important;color:#334155!important;font-size:11px!important;line-height:17px!important}
+.portal-carousel-caption:focus{border-color:#168cc0!important;background:#fff!important;box-shadow:0 0 0 2px #168cc01f!important;outline:0!important}
+.portal-carousel-caption::placeholder{color:#9aa7b5!important}
+.portal-carousel-remove{position:absolute!important;right:5px!important;top:5px!important;width:22px!important;height:22px!important;padding:0!important;border:0!important;border-radius:50%!important;background:#1d2933e6!important;color:#fff!important;font-size:18px!important;line-height:19px!important;cursor:pointer!important}
+.portal-carousel-remove:hover{background:#c73a3a!important}
+.portal-carousel-hint{margin:9px 0 0!important;color:#718096!important;font-size:12px!important;line-height:1.6!important}
+@media(max-width:600px){
+  .portal-carousel-add,.portal-carousel-upload-card{width:148px!important;min-width:148px!important;max-width:148px!important;flex-basis:148px!important}
+  .portal-carousel-upload-card img{width:148px!important;height:83px!important;min-width:148px!important;max-width:148px!important;max-height:83px!important}
+}

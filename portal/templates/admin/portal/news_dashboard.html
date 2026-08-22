@@ -1,10 +1,62 @@
 {% extends "admin/base_site.html" %}
+
 {% block content %}
 <style>
-.prime-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:22px 0}.prime-stat,.prime-panel{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:20px}.prime-stat b{display:block;font-size:30px;color:#18a870;margin-top:8px}.prime-panel{margin-top:18px}.prime-panel table{width:100%;border-collapse:collapse}.prime-panel th,.prime-panel td{text-align:left;padding:11px;border-bottom:1px solid #eee}@media(max-width:700px){.prime-stats{grid-template-columns:1fr}}
+  .prime-dashboard{max-width:1500px;margin:0 auto;padding:28px 30px 56px;box-sizing:border-box}
+  .prime-dashboard__head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px;padding:4px 2px 0}
+  .prime-dashboard__eyebrow{margin:0 0 9px;color:#198ec4;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+  .prime-dashboard h1{margin:0;color:#22303a;font-size:28px;line-height:1.25;font-weight:700}
+  .prime-dashboard__lead{margin:10px 0 0;color:#718096;font-size:14px;line-height:1.7}
+  .prime-dashboard__action{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 17px;border-radius:6px;background:#2196d2;color:#fff!important;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;box-shadow:0 5px 12px rgba(33,150,210,.18)}
+  .prime-dashboard__action:hover{background:#1386c1}
+  .prime-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:0 0 22px}
+  .prime-stat{position:relative;min-height:142px;padding:23px 25px;box-sizing:border-box;border:1px solid #e5ebf0;border-radius:10px;background:#fff;overflow:hidden;box-shadow:0 2px 7px rgba(24,39,56,.035)}
+  .prime-stat:before{position:absolute;top:0;left:0;width:4px;height:100%;background:#22a876;content:""}
+  .prime-stat:nth-child(2):before{background:#239cd7}.prime-stat:nth-child(3):before{background:#6474d7}
+  .prime-stat__label{display:block;color:#718096;font-size:13px;font-weight:600;letter-spacing:.03em}
+  .prime-stat b{display:block;margin-top:13px;color:#1d2e3a;font-size:34px;line-height:1;font-weight:700}
+  .prime-stat__note{display:block;margin-top:9px;color:#9aa7b4;font-size:12px}
+  .prime-panels{display:grid;grid-template-columns:minmax(0,1.22fr) minmax(360px,.78fr);gap:22px;align-items:start}
+  .prime-panel{border:1px solid #e5ebf0;border-radius:10px;background:#fff;overflow:hidden;box-shadow:0 2px 7px rgba(24,39,56,.035)}
+  .prime-panel--wide{grid-row:span 2}.prime-panel__head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:21px 24px 16px;border-bottom:1px solid #edf1f4}
+  .prime-panel h2{margin:0;color:#293847;font-size:17px;line-height:1.35;font-weight:700}.prime-panel__caption{color:#98a5b3;font-size:12px;white-space:nowrap}
+  .prime-panel table{width:100%;border-collapse:collapse;table-layout:fixed}.prime-panel th{padding:12px 24px;color:#8a98a7;background:#f8fafb;font-size:12px;font-weight:600;text-align:left}.prime-panel td{padding:16px 24px;border-top:1px solid #edf1f4;color:#455361;font-size:13px;line-height:1.45;vertical-align:middle}.prime-panel tbody tr{transition:background .18s}.prime-panel tbody tr:hover{background:#f4fbfe}.prime-panel td:first-child{width:52%;color:#31404d}.prime-panel td:nth-child(n+2),.prime-panel th:nth-child(n+2){text-align:right}.prime-panel a{color:#178bc4;text-decoration:none}.prime-panel a:hover{text-decoration:underline}.prime-panel__empty{padding:34px 24px;color:#98a5b3;text-align:center}
+  .prime-panel--recent td:first-child{width:52%}.prime-panel--recent td:nth-child(2){white-space:nowrap}.prime-panel--recent td{padding-top:14px;padding-bottom:14px}
+  @media(max-width:1100px){.prime-dashboard{padding:24px 20px 44px}.prime-panels{grid-template-columns:1fr}.prime-panel--wide{grid-row:auto}}
+  @media(max-width:700px){.prime-dashboard{padding:20px 14px 36px}.prime-dashboard__head{align-items:flex-start;flex-direction:column;margin-bottom:22px}.prime-stats{grid-template-columns:1fr;gap:12px}.prime-stat{min-height:112px}.prime-panel__head{padding:18px}.prime-panel th,.prime-panel td{padding-right:14px;padding-left:14px}.prime-panel th:nth-child(3),.prime-panel td:nth-child(3){display:none}.prime-panel__caption{display:none}}
 </style>
-<div id="content-main"><h1>资讯运营看板</h1><p>只统计已发布资讯，用于快速判断近期内容表现。</p>
-<div class="prime-stats"><div class="prime-stat">总浏览量<b>{{ total_views }}</b></div><div class="prime-stat">近 7 天浏览<b>{{ views_7d }}</b></div><div class="prime-stat">近 30 天浏览<b>{{ views_30d }}</b></div></div>
-<section class="prime-panel"><h2>热门资讯 Top 10</h2><table><thead><tr><th>标题</th><th>分类</th><th>总浏览</th><th>近 7 天</th></tr></thead><tbody>{% for item in top_articles %}<tr><td><a href="../{{ item.pk }}/change/">{{ item.title }}</a></td><td>{{ item.category }}</td><td>{{ item.view_count }}</td><td>{{ item.views_7d }}</td></tr>{% empty %}<tr><td colspan="4">暂无已发布资讯</td></tr>{% endfor %}</tbody></table></section>
-<section class="prime-panel"><h2>近期发布</h2><table><thead><tr><th>标题</th><th>发布时间</th><th>总浏览</th></tr></thead><tbody>{% for item in recent_articles %}<tr><td>{{ item.title }}</td><td>{{ item.published_at|date:"Y-m-d H:i" }}</td><td>{{ item.view_count }}</td></tr>{% empty %}<tr><td colspan="3">暂无内容</td></tr>{% endfor %}</tbody></table></section></div>
+
+<main id="content-main" class="prime-dashboard">
+  <header class="prime-dashboard__head">
+    <div>
+      <p class="prime-dashboard__eyebrow">PRIME / CONTENT OVERVIEW</p>
+      <h1>资讯运营看板</h1>
+      <p class="prime-dashboard__lead">聚焦已发布内容，快速查看近期阅读表现与发布节奏。</p>
+    </div>
+    <a class="prime-dashboard__action" href="../add/">＋ 发布新资讯</a>
+  </header>
+
+  <section class="prime-stats" aria-label="资讯浏览汇总">
+    <article class="prime-stat"><span class="prime-stat__label">累计浏览量</span><b>{{ total_views }}</b><span class="prime-stat__note">已发布资讯的历史累计</span></article>
+    <article class="prime-stat"><span class="prime-stat__label">近 7 天浏览</span><b>{{ views_7d }}</b><span class="prime-stat__note">用于观察本周内容热度</span></article>
+    <article class="prime-stat"><span class="prime-stat__label">近 30 天浏览</span><b>{{ views_30d }}</b><span class="prime-stat__note">用于评估月度内容表现</span></article>
+  </section>
+
+  <div class="prime-panels">
+    <section class="prime-panel prime-panel--wide">
+      <div class="prime-panel__head"><h2>热门资讯</h2><span class="prime-panel__caption">按总浏览量排序 · Top 10</span></div>
+      <table><thead><tr><th>资讯标题</th><th>分类</th><th>总浏览</th><th>近 7 天</th></tr></thead><tbody>
+        {% for item in top_articles %}<tr><td><a href="../{{ item.pk }}/change/">{{ item.title }}</a></td><td>{{ item.category }}</td><td>{{ item.view_count }}</td><td>{{ item.views_7d }}</td></tr>
+        {% empty %}<tr><td class="prime-panel__empty" colspan="4">暂无已发布资讯</td></tr>{% endfor %}
+      </tbody></table>
+    </section>
+    <section class="prime-panel prime-panel--recent">
+      <div class="prime-panel__head"><h2>近期发布</h2><span class="prime-panel__caption">最近 8 篇</span></div>
+      <table><thead><tr><th>资讯标题</th><th>发布时间</th><th>浏览</th></tr></thead><tbody>
+        {% for item in recent_articles %}<tr><td><a href="../{{ item.pk }}/change/">{{ item.title }}</a></td><td>{{ item.published_at|date:"Y-m-d H:i" }}</td><td>{{ item.view_count }}</td></tr>
+        {% empty %}<tr><td class="prime-panel__empty" colspan="3">暂无内容</td></tr>{% endfor %}
+      </tbody></table>
+    </section>
+  </div>
+</main>
 {% endblock %}
