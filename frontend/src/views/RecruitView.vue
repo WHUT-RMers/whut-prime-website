@@ -153,32 +153,17 @@ async function submit() {
       <template v-if="!existingApplication || editingExisting">
       <fieldset><legend>志愿与调剂</legend><p class="field-tip">第一志愿为唯一的优先投递方向。若选择服从调剂，可指定一个不同的第二志愿，或接受战队统筹安排。</p><label>第一志愿<select v-model="form.primary_choice" required><option value="" disabled>请选择最想加入的组别</option><option v-for="group in groups" :key="group[0]" :value="group[0]">{{ group[1] }}</option></select></label><label class="check"><input v-model="form.accepts_adjustment" type="checkbox" />我愿意服从组别调剂</label><label v-if="form.accepts_adjustment">第二志愿 / 调剂意向<select v-model="form.second_choice"><option value="">接受战队统筹安排</option><option v-for="group in groups.filter((group) => group[0] !== form.primary_choice)" :key="group[0]" :value="group[0]">{{ group[1] }}</option></select></label></fieldset>
       <label>自我介绍<textarea v-model="form.introduction" required rows="4" placeholder="为什么想加入 PRIME？你最想投入哪个方向？" /></label><label>项目或竞赛经历（选填）<textarea v-model="form.experience" rows="3" placeholder="可填写项目、竞赛、作品链接或相关经历。" /></label><section class="attachment-field"><span>报名材料（可多选，可分多次添加）</span><label class="file-picker"><input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.txt,.md,.csv,.json,.mp4,.mov,.webm,.mp3,.wav,.m4a,.zip,.rar,.7z" @change="selectFiles" /><strong>＋ 选择文件并添加</strong></label><small>{{ editingExisting ? '原有附件会保留；可继续分批追加新材料。' : '至少上传一份材料；支持常见文档、表格、演示、图片、音视频、文本和压缩包。单个附件不超过 15 MB。' }}</small></section><ul v-if="attachments.length" class="file-list"><li v-for="(file, index) in attachments" :key="`${file.name}-${file.lastModified}`"><span>{{ file.name }}</span><button type="button" @click="removeAttachment(index)">移除</button></li></ul><label class="check consent"><input v-model="form.consent" type="checkbox" required />我同意战队仅为本次招新收集、使用以上个人信息。</label><section v-if="emailVerificationRequired" class="verify-panel" :class="{ ok: emailVerified, err: emailError }">
-  <header class="vp-head">
-    <span class="vp-mark" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6l7-3z" /><path d="M9.2 12l2 2 3.6-3.8" /></svg>
-    </span>
-    <div class="vp-titles">
-      <p class="vp-title">邮箱验证</p>
-      <p class="vp-sub">确认报名信息无误后，向报名邮箱发送验证码；验证成功后才能提交。</p>
-    </div>
+  <div class="vp-head">
+    <p class="vp-title">邮箱验证</p>
     <span class="vp-badge" :class="{ ok: emailVerified }">{{ emailVerified ? '已验证' : '未验证' }}</span>
-  </header>
-
-  <div class="vp-actions">
-    <button class="vp-send" type="button" :disabled="sendingCode || resendSeconds > 0" @click="sendEmailCode">
-      <i class="vp-send-dot" aria-hidden="true"></i>
-      <span>{{ sendingCode ? '发送中…' : resendSeconds > 0 ? `${resendSeconds}s 后可重发` : '发送验证码' }}</span>
-    </button>
-    <div class="vp-code">
-      <input v-model="emailCode" inputmode="numeric" maxlength="6" placeholder="6 位验证码" aria-label="邮箱验证码" @keyup.enter="verifyEmailCode" />
-      <button class="vp-verify" type="button" :disabled="verifyingCode || emailVerified" @click="verifyEmailCode">{{ verifyingCode ? '验证中…' : '验证' }}</button>
-    </div>
   </div>
-
-  <p class="vp-status" :class="{ ok: emailVerified, err: emailError }" aria-live="polite">
-    <i class="vp-status-ico" aria-hidden="true"></i>
-    <span>{{ emailVerified ? '邮箱验证通过，可以提交报名了。' : emailHint || '验证码 10 分钟有效；若邮件未送达，请检查地址与垃圾邮件箱。' }}</span>
-  </p>
+  <p class="vp-sub">向报名邮箱发送验证码，验证成功后才能提交报名。</p>
+  <div class="vp-actions">
+    <button class="vp-send" type="button" :disabled="sendingCode || resendSeconds > 0" @click="sendEmailCode">{{ sendingCode ? '发送中…' : resendSeconds > 0 ? `${resendSeconds}s 后可重发` : '发送验证码' }}</button>
+    <input v-model="emailCode" class="vp-input" inputmode="numeric" maxlength="6" placeholder="6 位验证码" aria-label="邮箱验证码" @keyup.enter="verifyEmailCode" />
+    <button class="vp-verify" type="button" :disabled="verifyingCode || emailVerified" @click="verifyEmailCode">{{ verifyingCode ? '验证中…' : '验证' }}</button>
+  </div>
+  <p class="vp-status" :class="{ ok: emailVerified, err: emailError }" aria-live="polite">{{ emailVerified ? '邮箱验证通过，可以提交报名了。' : emailHint || '验证码 10 分钟有效；若邮件未送达，请检查垃圾邮件箱。' }}</p>
 </section><button class="btn btn-primary" :disabled="sending">{{ sending ? '正在提交…' : editingExisting ? `确认修改（剩余 ${2 - (existingApplication?.modification_count || 0)} 次）` : '提交简历' }}</button><p v-if="error" class="error" role="alert">{{ error }}</p><p v-if="success" class="success">{{ success }}</p>
       </template>
     </form></section>
@@ -198,52 +183,37 @@ async function submit() {
 </style>
 <style scoped>
 .verify-panel{
-  --vp-line: rgba(45,226,166,.28);
-  position: relative;
   display: grid;
-  gap: 14px;
-  padding: 18px 18px 16px;
-  border: 1px solid var(--vp-line);
+  gap: 12px;
+  padding: 16px 18px 14px;
+  border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius);
-  background:
-    linear-gradient(135deg, rgba(45,226,166,.07) 25%, transparent 25%) 0 0/22px 22px,
-    linear-gradient(315deg, rgba(45,226,166,.07) 25%, transparent 25%) 0 0/22px 22px,
-    rgba(45,226,166,.035);
+  background: var(--surface);
 }
-.verify-panel.ok{ --vp-line: rgba(45,226,166,.5); }
-.verify-panel.err{ --vp-line: rgba(255,180,94,.42); border-left-color: var(--accent-warm); }
+.verify-panel.err{ border-left-color: var(--accent-warm); }
 
-.vp-head{ display:flex; align-items:center; gap:12px; }
-.vp-mark{ flex:0 0 auto; width:34px; height:34px; display:grid; place-items:center; border:1px solid rgba(45,226,166,.4); border-radius:9px; color:var(--accent); background:rgba(45,226,166,.08); }
-.vp-mark svg{ width:18px; height:18px; }
-.vp-titles{ min-width:0; flex:1; }
+.vp-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .vp-title{ margin:0; font-family:var(--mono); font-size:.78rem; letter-spacing:.18em; color:var(--ink); }
-.vp-sub{ margin:3px 0 0; font-size:.8rem; color:var(--ink-dim); line-height:1.6; }
-.vp-badge{ flex:0 0 auto; font-family:var(--mono); font-size:.62rem; letter-spacing:.16em; padding:4px 10px; border:1px solid rgba(255,180,94,.45); border-radius:999px; color:var(--accent-warm); background:rgba(255,180,94,.06); transition:border-color .25s,color .25s,background .25s; }
-.vp-badge.ok{ border-color:rgba(45,226,166,.5); color:var(--accent); background:rgba(45,226,166,.08); }
+.vp-badge{ font-family:var(--mono); font-size:.62rem; letter-spacing:.14em; color:var(--ink-faint); }
+.vp-badge.ok{ color:var(--accent); }
+.vp-sub{ margin:0; font-size:.8rem; color:var(--ink-dim); line-height:1.6; }
 
-.vp-actions{ display:flex; gap:10px; align-items:stretch; flex-wrap:wrap; }
-.vp-send{ display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 16px; border:1px solid var(--line-strong); border-radius:10px; background:var(--surface-2); color:var(--ink); font-family:var(--mono); font-size:.78rem; letter-spacing:.06em; cursor:pointer; transition:border-color .25s,background .25s,color .25s; }
+.vp-actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.vp-send{ min-height:42px; padding:0 16px; border:1px solid var(--line-strong); border-radius:10px; background:transparent; color:var(--ink); font-family:var(--mono); font-size:.78rem; cursor:pointer; transition:border-color .25s,color .25s; }
 .vp-send:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
-.vp-send:disabled{ opacity:.55; cursor:not-allowed; }
-.vp-send-dot{ width:6px; height:6px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px rgba(45,226,166,.15); }
-.vp-code{ display:flex; gap:10px; flex:1 1 auto; min-width:0; }
-.vp-code input{ flex:0 1 170px; min-width:130px; min-height:44px; padding:8px 14px; border:1px solid var(--line-strong); border-radius:10px; background:#090b10; color:var(--ink); font-family:var(--mono); font-size:1.05rem; letter-spacing:.35em; text-align:center; transition:border-color .25s; }
-.vp-code input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(45,226,166,.08); }
-.vp-verify{ flex:0 0 auto; min-height:44px; padding:0 22px; border:1px solid var(--accent); border-radius:10px; background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-size:.8rem; font-weight:700; letter-spacing:.1em; cursor:pointer; transition:background .25s,transform .4s var(--ease-expo); }
+.vp-send:disabled{ opacity:.5; cursor:not-allowed; }
+.vp-input{ flex:0 1 160px; min-width:120px; min-height:42px; padding:8px 14px; border:1px solid var(--line-strong); border-radius:10px; background:transparent; color:var(--ink); font-family:var(--mono); font-size:1.05rem; letter-spacing:.3em; text-align:center; transition:border-color .25s; }
+.vp-input:focus{ outline:none; border-color:var(--accent); }
+.vp-verify{ min-height:42px; padding:0 20px; border:1px solid var(--accent); border-radius:10px; background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-size:.8rem; font-weight:700; cursor:pointer; transition:background .25s; }
 .vp-verify:hover:not(:disabled){ background:#7cf0c8; }
 .vp-verify:disabled{ opacity:.5; cursor:not-allowed; }
-.vp-verify:active{ transform:scale(.96); }
 
-.vp-status{ display:flex; align-items:center; gap:8px; margin:0; font-size:.82rem; color:var(--ink-dim); line-height:1.6; }
-.vp-status-ico{ width:7px; height:7px; border-radius:50%; background:var(--ink-faint); flex:0 0 auto; transition:background .25s,box-shadow .25s; }
+.vp-status{ margin:0; font-size:.8rem; color:var(--ink-dim); line-height:1.6; }
 .vp-status.ok{ color:var(--accent); }
-.vp-status.ok .vp-status-ico{ background:var(--accent); box-shadow:0 0 0 3px rgba(45,226,166,.15); }
 .vp-status.err{ color:var(--accent-warm); }
-.vp-status.err .vp-status-ico{ background:var(--accent-warm); box-shadow:0 0 0 3px rgba(255,180,94,.15); }
 .attachment-field{display:grid;gap:9px;color:var(--ink-dim);font-size:.9rem}.file-picker{position:relative;display:flex;align-items:center;justify-content:center;min-height:54px;border:1px dashed rgba(45,226,166,.45);border-radius:8px;background:rgba(45,226,166,.035);color:var(--accent);cursor:pointer;transition:.18s ease}.file-picker:hover{border-color:var(--accent);background:rgba(45,226,166,.08)}.file-picker input{position:absolute;inset:0;width:100%;min-height:0;opacity:0;cursor:pointer}.file-picker strong{font-size:.9rem}
 .file-list{display:grid;gap:7px;padding:0;list-style:none}.file-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:1px solid rgba(45,226,166,.18);border-radius:6px;background:rgba(45,226,166,.035)}.file-list span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file-list button{border:0;background:transparent;color:var(--accent-warm);font:inherit;font-size:.78rem;cursor:pointer}
 .existing-application{position:relative;overflow:hidden;padding:25px;border:1px solid rgba(45,226,166,.35);border-radius:10px;background:linear-gradient(135deg,rgba(45,226,166,.09),rgba(77,163,255,.045))}.existing-application:after{position:absolute;right:-35px;top:-52px;width:140px;height:140px;border:1px solid rgba(45,226,166,.34);border-radius:50%;content:""}.existing-application>span{color:var(--accent);font:700 .72rem var(--mono);letter-spacing:.12em}.existing-application h3{margin:9px 0 18px;font-size:1.35rem}.existing-application dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:0;border:1px solid var(--line);background:var(--line)}.existing-application dl div{padding:12px 14px;background:#0a0d12}.existing-application dt{margin-bottom:4px;color:var(--ink-dim);font-size:.75rem}.existing-application dd{margin:0;color:var(--ink);font-weight:700}.existing-application p{margin:16px 0;color:var(--ink-dim);font-size:.84rem;line-height:1.7}.existing-application .btn{position:relative;z-index:1}
-@media(max-width:620px){.vp-head{flex-wrap:wrap}.vp-badge{margin-left:auto}.vp-code{flex-wrap:wrap}.vp-code input{flex:1 1 100%}.vp-verify{flex:1 1 auto}.existing-application dl{grid-template-columns:1fr}}
+@media(max-width:620px){.vp-head{flex-wrap:wrap}.vp-actions{flex-wrap:wrap}.vp-input{flex:1 1 100%}.vp-verify{flex:1 1 auto}.existing-application dl{grid-template-columns:1fr}}
 </style>
