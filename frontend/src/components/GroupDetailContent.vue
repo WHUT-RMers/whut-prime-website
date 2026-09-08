@@ -9,11 +9,18 @@ import type { GroupInfo } from '../data/groups'
 /**
  * 组别详情正文：路由页（/groups/:code）与全屏浮层（GroupOverlay）共用。
  * 自带滚动入场与计数动画，各自实例独立触发。
+ * immediate=true（浮层内）：挂载即播放入场，不依赖窗口滚动（浮层有独立滚动容器）。
  */
-const props = defineProps<{ group: GroupInfo }>()
+const props = withDefaults(defineProps<{ group: GroupInfo; immediate?: boolean }>(), { immediate: false })
 
 const root = ref<HTMLElement | null>(null)
-useScrollReveal(root, { blur: 6, stagger: 0.08 })
+/* PageHeader 自带入场动画：父级 reveal 跳过其子树，避免同一元素被两套 tween 争抢（表现为入场卡住/发黑） */
+useScrollReveal(root, {
+  selector: '[data-reveal]:not(.page-head *)',
+  blur: 6,
+  stagger: 0.08,
+  immediate: props.immediate,
+})
 
 onMounted(() => {
   root.value?.querySelectorAll<HTMLElement>('[data-count]').forEach((node) => {

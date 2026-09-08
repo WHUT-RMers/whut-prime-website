@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
 
       <div class="ov-scroll">
         <div class="container">
-          <GroupDetailContent :key="group.code" :group="group" />
+          <GroupDetailContent :key="group.code" :group="group" immediate />
         </div>
       </div>
     </div>

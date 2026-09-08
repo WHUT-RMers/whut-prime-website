@@ -22,6 +22,8 @@ export interface RevealOptions {
   ease?: string
   /** ScrollTrigger start 位置 */
   start?: string
+  /** 立即入场：浮层/弹层等独立滚动容器内不依赖窗口滚动触发，挂载即播放 */
+  immediate?: boolean
 }
 
 /**
@@ -40,6 +42,7 @@ export function useScrollReveal(rootRef: Ref<HTMLElement | null>, opts: RevealOp
     duration = 0.95,
     ease = 'expo.out',
     start = 'top 82%',
+    immediate = false,
   } = opts
   let ctx: gsap.Context | undefined
 
@@ -56,7 +59,7 @@ export function useScrollReveal(rootRef: Ref<HTMLElement | null>, opts: RevealOp
     }
 
     ctx = gsap.context(() => {
-      gsap.from(targets, {
+      const tween = {
         y,
         x,
         scale,
@@ -65,9 +68,13 @@ export function useScrollReveal(rootRef: Ref<HTMLElement | null>, opts: RevealOp
         duration,
         ease,
         stagger,
-        scrollTrigger: { trigger: root, start, once: true },
         clearProps: 'transform,filter',
-      })
+      } as const
+      if (immediate) {
+        gsap.from(targets, tween)
+      } else {
+        gsap.from(targets, { ...tween, scrollTrigger: { trigger: root, start, once: true } })
+      }
     }, root)
   })
 
