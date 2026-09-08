@@ -5,6 +5,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useScrollReveal } from '../composables/useGsapReveal'
 import { useMouseFx } from '../composables/useMouseFx'
 import { prefersReducedMotion } from '../utils/motion'
+import { groups, groupRoute, type GroupInfo } from '../data/groups'
+import { groupOverlay } from '../composables/useGroupOverlay'
 
 const root = ref<HTMLElement | null>(null)
 const stage = ref<HTMLElement | null>(null)
@@ -14,34 +16,14 @@ const prog = ref<HTMLElement | null>(null)
 useScrollReveal(root, { selector: '[data-reveal]', blur: 4, stagger: 0.09 })
 useMouseFx(root)
 
-const groups = [
-  {
-    code: 'MEC', name: '机械组', en: 'MECHANICAL', hue: 158,
-    d: '机器人结构设计与加工装配：云台、底盘、发射机构的机械美学。',
-    stack: ['SolidWorks', 'ANSYS', '碳纤维加工', '3D 打印'],
-    need: '懂公差，也懂暴力美学',
-  },
-  {
-    code: 'ELC', name: '电控组', en: 'EMBEDDED CONTROL', hue: 208,
-    d: '嵌入式系统设计与机器人决策：让每一度转角都有依据。',
-    stack: ['STM32', 'FreeRTOS', 'CAN 总线', 'PID', '射频前端'],
-    need: '写过驱动，调过 PID',
-  },
-  {
-    code: 'VIS', name: '视觉算法组', en: 'VISION & ALGORITHM', hue: 268,
-    d: '机器视觉与自主导航：让机器人看见、判断、自主行动。',
-    stack: ['C++', 'Python', 'OpenCV', '深度学习', 'SLAM / 自主导航'],
-    need: '跑通过 Demo，更喜欢真枪实弹',
-  },
-  {
-    code: 'COM', name: '商业运营组', en: 'COMMERCIAL & OPERATION', hue: 32,
-    d: '赛事运营、商业赞助与媒体矩阵：让战队的战绩被看见。',
-    stack: ['公众号 / 视频号', 'B 站 / 抖音', '平面设计', '项目管理'],
-    need: '能写能剪，也能谈合作',
-  },
-]
+const deckStyle = (g: GroupInfo) => ({ '--deck-hue': String(g.hue) })
 
-const deckStyle = (g: (typeof groups)[number]) => ({ '--deck-hue': String(g.hue) })
+/** 左键单击弹出全屏详情浮层；修饰键/中键放行系统默认（新标签打开路由详情页） */
+function onDeckClick(g: GroupInfo, e: MouseEvent) {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+  e.preventDefault()
+  groupOverlay.open(g)
+}
 
 let mm: gsap.MatchMedia | undefined
 
@@ -115,18 +97,21 @@ onBeforeUnmount(() => {
       </header>
 
       <div ref="track" class="groups-track">
-        <article
+        <a
           v-for="(g, i) in groups"
           :key="g.code"
+          :href="groupRoute(g.code)"
           class="group-deck"
           :style="deckStyle(g)"
           data-tilt
           data-spot
+          @click="onDeckClick(g, $event)"
         >
           <span class="deck-num" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
           <div class="deck-top">
             <span class="deck-code">{{ g.code }}</span>
             <span class="deck-en">{{ g.en }}</span>
+            <span class="deck-go">组别详情 <i aria-hidden="true">→</i></span>
           </div>
           <h3 class="deck-name">{{ g.name }}</h3>
           <p class="deck-desc">{{ g.d }}</p>
@@ -134,7 +119,7 @@ onBeforeUnmount(() => {
             <span v-for="s in g.stack" :key="s" class="stack-tag">{{ s }}</span>
           </div>
           <p class="deck-need"><span class="need-flag">招募</span>{{ g.need }}</p>
-        </article>
+        </a>
 
         <article class="group-end" data-tilt data-spot>
           <span class="end-num" aria-hidden="true">GO</span>
@@ -154,7 +139,9 @@ onBeforeUnmount(() => {
 <style scoped>
 .groups-stage { position: relative; display: flex; flex-direction: column; overflow: hidden; }
 
-.groups-head { padding-top: 110px; position: relative; z-index: 2; max-width: 760px; }
+/* 头部与其余板块一致：占满 .container 左对齐，不做 max-width 收窄（否则
+   margin-inline: auto 会把头部居中，与下方轨道、进度条及全站头部错位） */
+.groups-head { padding-top: 110px; position: relative; z-index: 2; }
 .groups-title { margin-top: 22px; font-size: clamp(1.9rem, 4vw, 3.1rem); }
 .groups-lead { margin-top: 14px; color: var(--ink-dim); }
 .groups-hint {
@@ -266,6 +253,22 @@ onBeforeUnmount(() => {
   padding: 3px 10px;
 }
 .deck-en { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em; color: var(--ink-faint); }
+/* 「组别详情」入口：整卡可点，右上角给出跳转暗示 */
+.deck-go {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  opacity: 0.7;
+  transition: opacity 0.3s, transform 0.35s var(--ease-expo);
+}
+.deck-go i { font-style: normal; transition: transform 0.35s var(--ease-expo); }
+.group-deck:hover .deck-go { opacity: 1; }
+.group-deck:hover .deck-go i { transform: translateX(4px); }
 .deck-name { margin-top: 26px; font-size: 1.8rem; position: relative; }
 .deck-desc { margin-top: 12px; font-size: 0.92rem; color: var(--ink-dim); position: relative; }
 .deck-stack { margin-top: auto; padding-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; position: relative; }
