@@ -110,12 +110,14 @@ onMounted(() => {
 
 <style scoped>
 .event { padding: clamp(90px, 10vw, 130px) 0 var(--section-space); }
-.event-head { max-width: 780px; }
+/* 标题「RoboMaster 机甲大师高校系列赛」在最大字号（3.1rem）下整行约 787px，
+   780px 容器会触发 text-wrap: balance 折行，放宽到 840px 保证单行显示 */
+.event-head { max-width: 840px; }
 .event-title {
   margin-top: 22px;
   font-size: clamp(1.9rem, 4vw, 3.1rem);
 }
-.event-lead { margin-top: 18px; color: var(--ink-dim); font-size: 1.02rem; }
+.event-lead { margin-top: 18px; max-width: 680px; color: var(--ink-dim); font-size: 1.02rem; }
 
 .event-grid {
   margin-top: 56px;

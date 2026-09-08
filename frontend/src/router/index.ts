@@ -4,6 +4,7 @@ import NewsView from '../views/NewsView.vue'
 import NewsDetailView from '../views/NewsDetailView.vue'
 import HistoryView from '../views/HistoryView.vue'
 import GroupsView from '../views/GroupsView.vue'
+import GroupDetailView from '../views/GroupDetailView.vue'
 import RecruitView from '../views/RecruitView.vue'
 import CooperateView from '../views/CooperateView.vue'
 
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: '/news/:slug', name: 'news-detail', component: NewsDetailView },
     { path: '/history', name: 'history', component: HistoryView },
     { path: '/groups', name: 'groups', component: GroupsView },
+    { path: '/groups/:code', name: 'group-detail', component: GroupDetailView },
     { path: '/recruit', name: 'recruit', component: RecruitView },
     { path: '/cooperate', name: 'cooperate', component: CooperateView },
     { path: '/:pathMatch(.*)*', redirect: '/' },

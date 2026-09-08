@@ -1,11 +1,12 @@
 import { createApp } from 'vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import App from './App.vue'
 import router from './router'
 import './style.css'
 
-gsap.registerPlugin(ScrollTrigger)
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin)
 
 const app = createApp(App)
 app.use(router)
