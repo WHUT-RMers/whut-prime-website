@@ -3,52 +3,20 @@ import { ref } from 'vue'
 import PageHeader from '../components/PageHeader.vue'
 import PlaceholderImage from '../components/PlaceholderImage.vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
+import { groups, groupRoute, type GroupInfo } from '../data/groups'
+import { groupOverlay } from '../composables/useGroupOverlay'
 
 const root = ref<HTMLElement | null>(null)
 useScrollReveal(root, { stagger: 0.08 })
 
-const groups = [
-  {
-    code: 'MEC',
-    name: '机械组',
-    en: 'MECHANICAL',
-    d: '负责机器人结构设计与加工装配：云台、底盘、发射机构、悬挂系统的机械美学与可靠性。',
-    image: '机械结构设计 / 装配调试现场',
-    stack: ['SolidWorks', 'ANSYS', '碳纤维加工', '3D 打印', '公差分析'],
-    tasks: ['底盘与云台结构设计', '发射机构研发', '轻量化材料工艺', '装配与调试支持'],
-    need: '懂公差，也懂暴力美学；有设计软件基础者优先',
-  },
-  {
-    code: 'ELC',
-    name: '电控组',
-    en: 'EMBEDDED CONTROL',
-    d: '负责嵌入式系统设计与机器人决策：让每一度转角都有依据，让每一帧信号都可靠。',
-    image: '电控调试 / 硬件联调现场',
-    stack: ['STM32', 'FreeRTOS', 'CAN 总线', 'PID', '射频前端'],
-    tasks: ['驱动与底盘控制', '云台与弹道控制', '传感器融合', '整车电气布线'],
-    need: '写过驱动，调过 PID；掌握 C / 嵌入式基础',
-  },
-  {
-    code: 'VIS',
-    name: '视觉算法组',
-    en: 'VISION & ALGORITHM',
-    d: '负责机器视觉与自主导航：让机器人看见、判断、自主行动，在赛场上快人一秒。',
-    image: '视觉识别 / 算法调试现场',
-    stack: ['C++', 'Python', 'OpenCV', '深度学习', 'SLAM / 自主导航'],
-    tasks: ['自瞄与能量机关识别', '反小陀螺与目标跟踪', '导航与感知定位', '仿真与数据集'],
-    need: '跑通过 Demo，更喜欢真枪实弹；熟悉 C++ 或 Python',
-  },
-  {
-    code: 'COM',
-    name: '商业运营组',
-    en: 'COMMERCIAL & OPERATION',
-    d: '负责赛事运营、商业赞助与媒体矩阵：让战队的战绩被看见，让资源支撑梦想。',
-    image: '运营企划 / 媒体内容制作',
-    stack: ['公众号 / 视频号', 'B 站 / 抖音', '平面设计', '项目管理'],
-    tasks: ['招商与赞助对接', '社媒内容生产', '品牌视觉设计', '赛事运营与财务'],
-    need: '能写能剪，也能谈合作；对新媒体敏感',
-  },
-]
+const deckStyle = (g: GroupInfo) => ({ '--deck-hue': String(g.hue) })
+
+/** 左键单击弹出全屏详情浮层；修饰键/中键放行系统默认（新标签打开路由详情页） */
+function onGroupClick(g: GroupInfo, e: MouseEvent) {
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+  e.preventDefault()
+  groupOverlay.open(g)
+}
 </script>
 
 <template>
@@ -62,7 +30,15 @@ const groups = [
     </div>
 
     <div ref="root" class="container">
-      <article v-for="(g, i) in groups" :key="g.code" class="group" data-reveal>
+      <a
+        v-for="(g, i) in groups"
+        :key="g.code"
+        :href="groupRoute(g.code)"
+        class="group"
+        :style="deckStyle(g)"
+        data-reveal
+        @click="onGroupClick(g, $event)"
+      >
         <div class="group-media">
           <PlaceholderImage :label="g.image" ratio="4 / 3" accent />
         </div>
@@ -90,8 +66,9 @@ const groups = [
           </div>
 
           <p class="group-need"><span class="need-flag">招募</span>{{ g.need }}</p>
+          <p class="group-more">查看组别详情 <span class="group-more-arrow" aria-hidden="true">→</span></p>
         </div>
-      </article>
+      </a>
 
       <div class="cta-row" data-reveal>
         <p class="cta-text">找到属于你的组别了吗？</p>
@@ -114,6 +91,12 @@ const groups = [
   border-radius: 18px;
   padding: 34px;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 60%);
+  transition: border-color 0.3s, background 0.3s, transform 0.35s var(--ease-expo);
+}
+.group:hover {
+  border-color: hsl(var(--deck-hue, 158), 60%, 58%);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), transparent 60%);
+  transform: translateY(-2px);
 }
 .group-media { min-width: 0; }
 
@@ -177,6 +160,20 @@ const groups = [
   padding: 2px 8px;
   margin-right: 10px;
 }
+
+/* 整卡可点：底部给出跳转暗示 */
+.group-more {
+  margin-top: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+.group-more-arrow { transition: transform 0.35s var(--ease-expo); }
+.group:hover .group-more-arrow { transform: translateX(5px); }
 
 .cta-row {
   margin-top: 70px;

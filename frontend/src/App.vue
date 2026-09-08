@@ -6,13 +6,15 @@ import { useRoute } from 'vue-router'
 import SiteNav from './components/SiteNav.vue'
 import AppFooter from './components/AppFooter.vue'
 import MouseCursor from './components/MouseCursor.vue'
+import BackToTop from './components/BackToTop.vue'
+import GroupOverlay from './components/GroupOverlay.vue'
 import { prefersReducedMotion } from './utils/motion'
 
 const route = useRoute()
 const reduced = prefersReducedMotion()
 
 /** 导航顺序：决定过场滑动方向（1 前进 / -1 后退） */
-const order = ['home', 'news', 'news-detail', 'history', 'groups', 'recruit', 'cooperate']
+const order = ['home', 'news', 'news-detail', 'history', 'groups', 'group-detail', 'recruit', 'cooperate']
 const prevIndex = ref(Math.max(0, order.indexOf(route.name as string)))
 const dir = ref(1)
 
@@ -85,4 +87,6 @@ function onEnter(el: Element, done: () => void) {
   <AppFooter />
 
   <MouseCursor />
+  <BackToTop />
+  <GroupOverlay />
 </template>

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { gsap } from 'gsap'
 import { prefersReducedMotion } from '../utils/motion'
 
+const route = useRoute()
 const nav = ref<HTMLElement | null>(null)
 const prog = ref<HTMLElement | null>(null)
 const drawer = ref<HTMLElement | null>(null)
@@ -18,6 +20,12 @@ const links = [
   { to: '/recruit', label: '投递简历', no: '05' },
   { to: '/cooperate', label: '商业合作', no: '06' },
 ]
+
+/**
+ * vue-router 4 对平级路由（如 /groups 与 /groups/:code）不会自动标 active，
+ * 这里手动按路径前缀判断——详情页仍高亮所属板块（主页 '/' 需精确匹配）。
+ */
+const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.startsWith(to))
 
 let onScroll: (() => void) | undefined
 let ctx: gsap.Context | undefined
@@ -83,7 +91,13 @@ watch(open, (v) => {
       </RouterLink>
 
       <nav class="nav-links" aria-label="主导航">
-        <RouterLink v-for="l in links" :key="l.to" :to="l.to" class="nav-link">
+        <RouterLink
+          v-for="l in links"
+          :key="l.to"
+          :to="l.to"
+          class="nav-link"
+          :class="{ 'router-link-active': isActive(l.to) }"
+        >
           <span class="nav-idx">{{ l.no }}</span>{{ l.label }}
         </RouterLink>
       </nav>

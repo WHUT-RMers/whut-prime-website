@@ -1,11 +1,12 @@
 import { createApp } from 'vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import App from './App.vue'
 import router from './router'
 import './style.css'
 
-gsap.registerPlugin(ScrollTrigger)
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin)
 
 // 移动端 resize（如 iOS 地址栏折叠）不触发全量 refresh，避免布局抖动
 ScrollTrigger.config({ ignoreMobileResize: true })
