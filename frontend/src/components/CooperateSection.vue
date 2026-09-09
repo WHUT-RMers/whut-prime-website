@@ -33,11 +33,15 @@ const contact = {
   address: '湖北省武汉市洪山区珞狮路122号 · 武汉理工大学马房山校区东院自动化学院求实楼东附楼102室',
 }
 
-/** 已合作赞助伙伴（logo 在 frontend/public/sponsors/，alt 建议改成对应厂商名） */
+/**
+ * 已合作赞助伙伴（logo 在 frontend/public/sponsors/）
+ * alt 为厂商名；url 为其官网，点击 logo 新标签页打开；没有官网时留空则不跳转。
+ * ⚠️ 森虹官网为搜索所得（泉州森虹科技 senhom.com），瓦力增材暂未找到官网，请核对。
+ */
 const sponsors = [
-  { src: '/static/sponsors/sponsor-1.png', alt: '赞助伙伴 1' },
-  { src: '/static/sponsors/sponsor-2.png', alt: '赞助伙伴 2' },
-  { src: '/static/sponsors/sponsor-3.png', alt: '赞助伙伴 3' },
+  { src: '/static/sponsors/sponsor-1.png', alt: '森虹 CENHONG', url: 'https://www.senhom.com/' },
+  { src: '/static/sponsors/sponsor-2.png', alt: 'WONDERMAKER', url: 'https://www.wondermaker3d.com/' },
+  { src: '/static/sponsors/sponsor-3.png', alt: '瓦力增材', url: '' },
 ]
 </script>
 
@@ -75,8 +79,21 @@ const sponsors = [
           <p class="sponsor-sub">感谢每一份信任与支持 · 排名不分先后</p>
         </div>
         <ul class="sponsor-grid">
-          <li v-for="s in sponsors" :key="s.src" class="sponsor-item" data-tilt>
-            <img :src="s.src" :alt="s.alt" loading="lazy" decoding="async" />
+          <li v-for="s in sponsors" :key="s.src">
+            <a
+              v-if="s.url"
+              :href="s.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="sponsor-item sponsor-link"
+              :aria-label="s.alt + '（官网）'"
+              data-tilt
+            >
+              <img :src="s.src" :alt="s.alt" loading="lazy" decoding="async" />
+            </a>
+            <span v-else class="sponsor-item" data-tilt>
+              <img :src="s.src" :alt="s.alt" loading="lazy" decoding="async" />
+            </span>
           </li>
         </ul>
       </div>
@@ -177,13 +194,13 @@ const sponsors = [
   place-items: center;
   min-height: 122px;
   padding: 22px 20px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  background: #ffffff;
+  background: var(--logo-chip);
   transition: border-color 0.3s, transform 0.35s var(--ease-expo);
 }
 .sponsor-item:hover { border-color: var(--accent); transform: translateY(-3px); }
-:root[data-theme='light'] .sponsor-item { border-color: var(--line-strong); }
+.sponsor-link { text-decoration: none; }
 .sponsor-item img {
   display: block;
   max-width: 100%;

@@ -63,6 +63,8 @@
   --deck-sheen: rgba(255, 255, 255, 0.03);
   --deck-sheen-strong: rgba(255, 255, 255, 0.05);
   --deck-line: rgba(233, 241, 255, 0.05);
+  /* 深色 logo 的白色底板：深色主题下纯白、浅色主题下随页面变浅灰白 */
+  --logo-chip: #ffffff;
   --display: "Russo One", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
   --sans: "Chakra Petch", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
   --serif: var(--display);
@@ -97,6 +99,7 @@
   --deck-sheen: rgba(23, 32, 46, 0.03);
   --deck-sheen-strong: rgba(23, 32, 46, 0.05);
   --deck-line: rgba(23, 32, 46, 0.06);
+  --logo-chip: #eef1f7;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
