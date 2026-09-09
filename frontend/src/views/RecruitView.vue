@@ -169,7 +169,7 @@ async function submit() {
     <div class="apply-layout"><section class="form-card"><form @submit.prevent="submit">
       <div class="form-heading"><h2>在线投递</h2><p>提交前请确认信息真实；简历仅用于本次战队招新审核。</p></div>
       <div class="two"><label>姓名<input v-model="form.name" required maxlength="32" placeholder="你的姓名" /></label><label>学院<input v-model="form.college" required maxlength="80" placeholder="例如：自动化学院" /></label><label>专业与班级<input v-model="form.major_class" required maxlength="120" placeholder="例如：机械设计制造及其自动化 2301 班" /></label><label>每周可投入时间<input v-model="form.availability" required maxlength="80" placeholder="例如：每周 12 小时" /></label></div>
-      <fieldset><legend>联系方式（以下四项均为必填）</legend><div class="two"><label>QQ<input v-model="form.qq" required maxlength="20" inputmode="numeric" placeholder="QQ 号码" /></label><label>微信<input v-model="form.wechat" required maxlength="80" placeholder="微信号" /></label><div class="email-cell"><label>邮箱<input v-model="form.email" required type="email" placeholder="name@example.com" @input="emailVerified = false; existingApplication = null; editingExisting = false; stopVerifyPoll()" /></label><button v-if="emailVerificationRequired" class="vp-btn" type="button" :disabled="sendingCode || resendSeconds > 0 || emailVerified" @click="sendEmailCode"><span v-if="emailVerified">✓ 邮箱已验证</span><span v-else-if="sendingCode">发送中…</span><span v-else-if="resendSeconds > 0">{{ resendSeconds }}s 后可重发</span><span v-else>发送邮箱验证链接</span></button><p class="vp-hint" :class="{ ok: emailVerified, err: emailError }"><template v-if="emailVerified">验证通过，可以提交报名了。</template><template v-else-if="pollingEmail">链接已发送至邮箱，点击邮件中的链接即可自动验证。</template><template v-else>{{ emailHint || '验证链接 10 分钟有效；点击后无需返回本站。' }}</template></p></div><label>手机号码<input v-model="form.phone" required type="tel" maxlength="32" placeholder="常用手机号" /></label></div></fieldset>
+      <fieldset><legend>联系方式（以下四项均为必填）</legend><div class="two"><label>QQ<input v-model="form.qq" required maxlength="20" inputmode="numeric" placeholder="QQ 号码" /></label><label>微信<input v-model="form.wechat" required maxlength="80" placeholder="微信号" /></label><div class="email-cell"><div class="email-head"><span class="email-title">邮箱</span><button v-if="emailVerificationRequired" class="vp-link" :class="{ ok: emailVerified }" type="button" :disabled="sendingCode || resendSeconds > 0 || emailVerified" @click="sendEmailCode"><span v-if="emailVerified">✓ 已验证</span><span v-else-if="sendingCode">发送中…</span><span v-else-if="resendSeconds > 0">{{ resendSeconds }}s 后重发</span><span v-else>发送验证链接</span></button></div><input v-model="form.email" required type="email" aria-label="邮箱" placeholder="name@example.com" @input="emailVerified = false; existingApplication = null; editingExisting = false; stopVerifyPoll()" /><p class="vp-hint" :class="{ ok: emailVerified, err: emailError }"><template v-if="emailVerified">验证通过，可以提交报名了。</template><template v-else-if="pollingEmail">链接已发送至邮箱，点击邮件中的链接即可自动验证。</template><template v-else>{{ emailHint || '验证链接 10 分钟有效；点击后无需返回本站。' }}</template></p></div><label>手机号码<input v-model="form.phone" required type="tel" maxlength="32" placeholder="常用手机号" /></label></div></fieldset>
       <section v-if="existingApplication && !editingExisting" class="existing-application" aria-live="polite"><span>已完成身份验证</span><h3>你已经提交过报名</h3><dl><div><dt>报名编号</dt><dd>{{ existingApplication.application_no }}</dd></div><div><dt>第一志愿</dt><dd>{{ groups.find((group) => group[0] === existingApplication?.primary_choice)?.[1] }}</dd></div><div><dt>当前状态</dt><dd>{{ existingApplication.status }}</dd></div><div><dt>最后提交</dt><dd>{{ existingApplication.created_at }}</dd></div></dl><p v-if="existingApplication.can_edit">当前仍未审核，可在线修改 {{ 2 - existingApplication.modification_count }} 次；每次修改都会覆盖此前填写内容，并刷新最后提交时间。</p><p v-else>报名已进入处理流程，或修改次数已用完；如有问题请联系管理员。</p><button v-if="existingApplication.can_edit" type="button" class="btn btn-primary" @click="startEditingExisting">修改报名信息（剩余 {{ 2 - existingApplication.modification_count }} 次）</button></section>
       <template v-if="!existingApplication || editingExisting">
       <fieldset><legend>志愿与调剂</legend><p class="field-tip">第一志愿为唯一的优先投递方向。若选择服从调剂，可指定一个不同的第二志愿，或接受战队统筹安排。</p><label>第一志愿<select v-model="form.primary_choice" required><option value="" disabled>请选择最想加入的组别</option><option v-for="group in groups" :key="group[0]" :value="group[0]">{{ group[1] }}</option></select></label><label class="check"><input v-model="form.accepts_adjustment" type="checkbox" />我愿意服从组别调剂</label><label v-if="form.accepts_adjustment">第二志愿 / 调剂意向<select v-model="form.second_choice"><option value="">接受战队统筹安排</option><option v-for="group in groups.filter((group) => group[0] !== form.primary_choice)" :key="group[0]" :value="group[0]">{{ group[1] }}</option></select></label></fieldset>
@@ -192,16 +192,18 @@ async function submit() {
 </style>
 <style scoped>
 .email-cell{ display:flex; flex-direction:column; gap:8px; }
-.vp-btn{
-  box-sizing:border-box;
-  min-height:50px; padding:0 18px;
-  background:#090b10; color:var(--ink);
-  border:1px solid var(--line); border-radius:8px;
-  font:inherit; font-size:.9rem;
-  cursor:pointer; transition:border-color .25s,color .25s;
+.email-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.email-title{ color:var(--ink-dim); font-size:.9rem; }
+.vp-link{
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.1em;
+  color:var(--ink-dim); background:transparent;
+  border:1px solid var(--line); border-radius:999px;
+  padding:3px 10px; cursor:pointer;
+  transition:border-color .25s,color .25s;
 }
-.vp-btn:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
-.vp-btn:disabled{ opacity:.5; cursor:not-allowed; }
+.vp-link:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
+.vp-link:disabled{ opacity:.5; cursor:not-allowed; }
+.vp-link.ok{ border-color:rgba(45,226,166,.45); color:var(--accent); }
 .vp-hint{ margin:0; font-size:.78rem; color:var(--ink-dim); line-height:1.55; }
 .vp-hint.ok{ color:var(--accent); }
 .vp-hint.err{ color:var(--accent-warm); }
