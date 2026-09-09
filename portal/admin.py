@@ -561,7 +561,7 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
                 fields,
                 ('；状态：' + other.get_status_display()) if other.status != 'pending' else '',
             ))
-        return format_html(
+        return mark_safe(
             '<div style="border:1px solid #ffb45e;border-radius:10px;padding:10px 14px;background:#140e05">'
             + ''.join(rows)
             + '<div style="margin-top:6px;color:#97a3b6;font-size:.85rem;line-height:1.7">'
