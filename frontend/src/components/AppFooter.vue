@@ -30,7 +30,7 @@ onMounted(() => {
     <span class="footer-mark" aria-hidden="true">PRIME</span>
     <div class="container footer-inner">
       <div class="footer-brand" data-reveal>
-        <span class="brand-mark">P</span>
+        <img class="brand-mark" :src="'/static/favicon.png'" alt="" aria-hidden="true" />
         <span class="brand-name">WHUT·PRIME — ROBOMASTER</span>
       </div>
       <nav class="footer-nav" data-reveal>
@@ -69,16 +69,13 @@ onMounted(() => {
 .footer-inner { position: relative; display: flex; flex-direction: column; gap: 18px; }
 .footer-brand { display: flex; align-items: center; gap: 12px; }
 .brand-mark {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-radius: 8px;
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: 1.05rem;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
 }
 .brand-name { font-family: var(--mono); letter-spacing: 0.14em; font-size: 0.86rem; }
 .footer-nav { display: flex; gap: 24px; }

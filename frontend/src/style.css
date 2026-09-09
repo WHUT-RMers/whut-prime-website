@@ -201,6 +201,9 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: 0.02em
 
 .char { display: inline-block; will-change: transform; }
 
+/* 品牌吉祥物：文件为白色线稿（深色站点可见）；浅色主题反色回黑色 */
+html[data-theme='light'] .brand-mark { filter: invert(1); }
+
 /* ---- 按钮：扁平（实色填充 / 细边幽灵），磁吸由 JS 负责 ---- */
 .btn {
   display: inline-flex;

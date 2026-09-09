@@ -89,8 +89,8 @@ function closeDrawer() {
     <div class="nav-progress" aria-hidden="true"><span ref="prog"></span></div>
 
     <div class="container nav-inner">
-      <RouterLink to="/" class="brand" @click="closeDrawer">
-        <span class="brand-mark">P</span>
+      <RouterLink to="/" class="brand" @click="closeDrawer" :aria-label="'WHUT PRIME 首页'">
+        <img class="brand-mark" :src="'/static/favicon.png'" alt="" aria-hidden="true" />
         <span class="brand-name">WHUT<span class="dot">·</span>PRIME</span>
       </RouterLink>
 
@@ -191,16 +191,13 @@ function closeDrawer() {
 .nav-inner { height: 100%; display: flex; align-items: center; gap: 32px; position: relative; }
 .brand { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; min-height: 44px; }
 .brand-mark {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-radius: 8px;
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: 1.05rem;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
 }
 .brand-name { font-family: var(--mono); font-weight: 600; letter-spacing: 0.16em; font-size: 0.86rem; }
 .brand-name .dot { color: var(--accent); margin: 0 2px; }
