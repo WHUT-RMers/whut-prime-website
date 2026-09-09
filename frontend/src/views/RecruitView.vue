@@ -205,15 +205,14 @@ async function submit() {
 /* 发送后倒计时：按钮变灰（灰字 + 灰边），倒计时结束自动恢复绿色 */
 .vp-link.counting{
   color:#5b6673; border-color:#3a4250; background:transparent;
-  opacity:1; cursor:not-allowed;
+  opacity:1;
 }
-.vp-link:disabled{ cursor:not-allowed; }
-/* 验证成功：绿色圆 + 白色勾 */
+/* 验证成功：绿色圆 + 白色勾（cursor 交给全站自定义光标系统，勿覆盖） */
 .vp-link.ok{
   width:26px; height:26px; padding:0; flex:0 0 auto;
   display:inline-flex; align-items:center; justify-content:center;
   border-radius:50%; background:var(--accent); border-color:var(--accent);
-  opacity:1; cursor:default;
+  opacity:1;
 }
 .vp-link.ok .vp-check{ color:#fff; font-size:.72rem; line-height:1; }
 .vp-hint{ margin:0; font-size:.78rem; color:var(--ink-dim); line-height:1.55; }
