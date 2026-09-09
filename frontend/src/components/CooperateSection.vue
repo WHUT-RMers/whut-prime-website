@@ -32,6 +32,13 @@ const contact = {
   email: 'whut_prime@foxmail.com',
   address: '湖北省武汉市洪山区珞狮路122号 · 武汉理工大学马房山校区东院自动化学院求实楼东附楼102室',
 }
+
+/** 已合作赞助伙伴（logo 在 frontend/public/sponsors/，alt 建议改成对应厂商名） */
+const sponsors = [
+  { src: '/static/sponsors/sponsor-1.png', alt: '赞助伙伴 1' },
+  { src: '/static/sponsors/sponsor-2.png', alt: '赞助伙伴 2' },
+  { src: '/static/sponsors/sponsor-3.png', alt: '赞助伙伴 3' },
+]
 </script>
 
 <template>
@@ -60,6 +67,18 @@ const contact = {
           <p class="tier-seats">{{ t.seats }}</p>
           <p class="tier-amount">{{ t.amount }}</p>
         </article>
+      </div>
+
+      <div class="sponsor-block" data-reveal>
+        <div class="sponsor-head">
+          <h3 class="sponsor-title">我们的赞助伙伴</h3>
+          <p class="sponsor-sub">感谢每一份信任与支持 · 排名不分先后</p>
+        </div>
+        <ul class="sponsor-grid">
+          <li v-for="s in sponsors" :key="s.src" class="sponsor-item" data-tilt>
+            <img :src="s.src" :alt="s.alt" loading="lazy" decoding="async" />
+          </li>
+        </ul>
       </div>
 
       <div class="cooperate-lower">
@@ -140,6 +159,44 @@ const contact = {
   color: var(--accent);
 }
 .tier-amount { margin-top: 6px; font-size: 0.82rem; color: var(--ink-dim); }
+
+.sponsor-block { margin-top: clamp(36px, 4.5vw, 56px); }
+.sponsor-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.sponsor-title { font-size: 1.12rem; }
+.sponsor-sub { font-size: 0.8rem; color: var(--ink-faint); letter-spacing: 0.06em; }
+/* 白色底板：这批 logo 为深色，深色主题下也保留白卡保证可见 */
+.sponsor-grid {
+  list-style: none;
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 1.8vw, 20px);
+}
+.sponsor-item {
+  display: grid;
+  place-items: center;
+  min-height: 122px;
+  padding: 22px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  transition: border-color 0.3s, transform 0.35s var(--ease-expo);
+}
+.sponsor-item:hover { border-color: var(--accent); transform: translateY(-3px); }
+:root[data-theme='light'] .sponsor-item { border-color: var(--line-strong); }
+.sponsor-item img {
+  display: block;
+  max-width: 100%;
+  max-height: 68px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+@media (max-width: 760px) {
+  .sponsor-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sponsor-item { min-height: 96px; padding: 18px 14px; }
+}
 
 .cooperate-lower {
   margin-top: 44px;
