@@ -36,9 +36,9 @@ export const api = {
     const payload = new FormData(); payload.append('email', email)
     return request<{ message: string }>('recruitment/email-code/', { method: 'POST', body: payload })
   },
-  verifyRecruitmentEmailCode: (email: string, code: string) => {
-    const payload = new FormData(); payload.append('email', email); payload.append('code', code)
-    return request<{ message: string }>('recruitment/email-code/verify/', { method: 'POST', body: payload })
+  emailVerifyStatus: (email: string) => {
+    const payload = new FormData(); payload.append('email', email)
+    return request<{ verified: boolean }>('recruitment/email-status/', { method: 'POST', body: payload })
   },
   recruitmentApplicationStatus: (email: string) => {
     const payload = new FormData(); payload.append('email', email)

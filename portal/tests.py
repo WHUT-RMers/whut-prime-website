@@ -93,8 +93,8 @@ class PortalApiTests(TestCase):
         self.assertEqual(send.status_code, 200, send.content.decode())
         self.assertEqual(len(mail.outbox), 1)
         import re
-        code = re.search(r'(\d{6})', mail.outbox[0].body).group(1)
-        verify = self.client.post(reverse('portal:recruitment-verify-email-code'), {'email': email, 'code': code})
+        token = re.search(r'[?&]token=([^ &\n]+)', mail.outbox[0].body).group(1)
+        verify = self.client.get(reverse('portal:recruitment-email-verify'), {'token': token})
         self.assertEqual(verify.status_code, 200, verify.content.decode())
         response = self.client.post(reverse('portal:recruitment-submit'), {
             'name': '验证同学', 'qq': '12345678', 'wechat': 'verified-prime', 'email': email, 'phone': '13800000000',
@@ -114,8 +114,8 @@ class PortalApiTests(TestCase):
         import re
         email = 'materials-verified@example.com'
         self.client.post(reverse('portal:recruitment-send-email-code'), {'email': email})
-        code = re.search(r'(\d{6})', mail.outbox[0].body).group(1)
-        self.assertEqual(self.client.post(reverse('portal:recruitment-verify-email-code'), {'email': email, 'code': code}).status_code, 200)
+        token = re.search(r'[?&]token=([^ &\n]+)', mail.outbox[0].body).group(1)
+        self.assertEqual(self.client.get(reverse('portal:recruitment-email-verify'), {'token': token}).status_code, 200)
         settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
         response = self.client.post(reverse('portal:recruitment-submit'), {
             'name': '多材料同学', 'qq': '87654321', 'wechat': 'multi-material', 'email': email, 'phone': '13800000003',
@@ -159,7 +159,15 @@ class PortalApiTests(TestCase):
             introduction='原始介绍', availability='每周 10 小时', consent=True,
             resume=SimpleUploadedFile('resume.pdf', b'%PDF-1.4 editable', content_type='application/pdf'),
         )
-        session = self.client.session; session['recruitment_verified_email'] = application.email; session.save()
+        # 链接点击后：数据库记录 verified_at 已写入（新流程以记录为准，不再依赖会话）
+        from datetime import timedelta
+        from django.contrib.auth.hashers import make_password
+        now = timezone.now()
+        RecruitmentEmailVerification.objects.create(
+            email=application.email, code_hash=make_password('token'),
+            expires_at=now + timedelta(minutes=10), last_sent_at=now - timedelta(minutes=5),
+            verified_at=now,
+        )
         status = self.client.post(reverse('portal:recruitment-application-status'), {'email': application.email})
         self.assertTrue(status.json()['application']['can_edit'])
         response = self.client.post(reverse('portal:recruitment-update', args=[application.pk]), {

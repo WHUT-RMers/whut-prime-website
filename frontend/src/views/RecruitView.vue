@@ -6,14 +6,15 @@ import { api, type RecruitmentApplicationSummary } from '../api'
 const open = ref(false)
 const sending = ref(false)
 const sendingCode = ref(false)
-const verifyingCode = ref(false)
 const emailVerificationRequired = ref(false)
 const emailVerified = ref(false)
-const emailCode = ref('')
 const emailHint = ref('')
 const emailError = ref(false)
 const resendSeconds = ref(0)
+const pollingEmail = ref(false)
 let resendTimer: ReturnType<typeof window.setInterval> | undefined
+let verifyPoll: ReturnType<typeof window.setInterval> | undefined
+let pollTicks = 0
 const existingApplication = ref<RecruitmentApplicationSummary | null>(null)
 const editingExisting = ref(false)
 const success = ref('')
@@ -47,7 +48,7 @@ function removeAttachment(index: number) { attachments.value.splice(index, 1) }
 
 function formReadyForVerification() {
   const required = ['name', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class', 'primary_choice', 'introduction', 'availability'] as const
-  if (required.some((key) => !form[key]?.trim())) { error.value = '请先完整填写报名信息，再获取邮箱验证码。'; return false }
+  if (required.some((key) => !form[key]?.trim())) { error.value = '请先完整填写报名信息，再发送邮箱验证链接。'; return false }
   if (!editingExisting.value && !attachments.value.length) { error.value = '请至少上传一份报名材料。'; return false }
   if (!form.consent) { error.value = '请先同意个人信息使用说明。'; return false }
   if (form.accepts_adjustment && form.second_choice === form.primary_choice) { error.value = '第二志愿不能与第一志愿相同。'; return false }
@@ -66,7 +67,42 @@ function startResendCountdown(seconds = 60) {
   }, 1000)
 }
 
-onUnmounted(() => { if (resendTimer) window.clearInterval(resendTimer) })
+onUnmounted(() => {
+  if (resendTimer) window.clearInterval(resendTimer)
+  stopVerifyPoll()
+})
+
+/**
+ * 邮件魔法链接流程：发送后轮询后端记录，链接被点击即自动识别为已验证，
+ * 无需用户回到本站手动回填验证码。
+ */
+function stopVerifyPoll() {
+  if (verifyPoll) { window.clearInterval(verifyPoll); verifyPoll = undefined }
+  pollingEmail.value = false
+}
+
+async function checkEmailVerified() {
+  pollTicks += 1
+  if (pollTicks > 300) { stopVerifyPoll(); emailError.value = true; emailHint.value = '验证链接已过期，请重新发送。'; return }
+  try {
+    const status = await api.emailVerifyStatus(form.email)
+    if (status.verified) {
+      emailVerified.value = true
+      emailHint.value = ''
+      stopVerifyPoll()
+      const result = await api.recruitmentApplicationStatus(form.email)
+      existingApplication.value = result.application
+      editingExisting.value = false
+    }
+  } catch { /* 轮询瞬时失败忽略，下一轮继续 */ }
+}
+
+function startVerifyPoll() {
+  stopVerifyPoll()
+  pollTicks = 0
+  pollingEmail.value = true
+  verifyPoll = window.setInterval(checkEmailVerified, 2000)
+}
 
 async function sendEmailCode() {
   error.value = ''; emailHint.value = ''; emailError.value = false; emailVerified.value = false
@@ -75,29 +111,14 @@ async function sendEmailCode() {
   try {
     emailHint.value = (await api.sendRecruitmentEmailCode(form.email)).message
     startResendCountdown()
+    startVerifyPoll()
   }
   catch (reason: any) {
     emailError.value = true
-    emailHint.value = reason?.error || '验证码发送失败，请稍后再试。'
+    emailHint.value = reason?.error || '验证链接发送失败，请稍后再试。'
     if (reason?.cooldown_seconds) startResendCountdown(reason.cooldown_seconds)
   }
   finally { sendingCode.value = false }
-}
-
-async function verifyEmailCode() {
-  error.value = ''; emailHint.value = ''; emailError.value = false
-  if (!emailCode.value.trim()) { error.value = '请输入 6 位邮箱验证码。'; return }
-  verifyingCode.value = true
-  try {
-    emailHint.value = (await api.verifyRecruitmentEmailCode(form.email, emailCode.value)).message
-    emailVerified.value = true
-    const result = await api.recruitmentApplicationStatus(form.email)
-    existingApplication.value = result.application
-    editingExisting.value = false
-    if (result.application) emailHint.value = '已找到你的报名记录。'
-  }
-  catch (reason: any) { emailError.value = true; emailHint.value = reason?.error || '验证码验证失败。' }
-  finally { verifyingCode.value = false }
 }
 
 function startEditingExisting() {
@@ -112,7 +133,7 @@ function startEditingExisting() {
 async function submit() {
   error.value = ''; success.value = ''
   if (!open.value) { error.value = '当前不在报名时间，暂不接收报名信息。'; return }
-  if (emailVerificationRequired.value && !emailVerified.value) { error.value = '请先完成邮箱验证码验证。'; return }
+  if (emailVerificationRequired.value && !emailVerified.value) { error.value = '请先完成邮箱验证。'; return }
   if (existingApplication.value && !editingExisting.value) { error.value = '该邮箱已有报名记录，请点击“修改报名信息”后再提交。'; return }
   if (!form.primary_choice) { error.value = '请选择第一志愿。'; return }
   if (form.accepts_adjustment && form.second_choice === form.primary_choice) { error.value = '第二志愿不能与第一志愿相同。'; return }
@@ -154,13 +175,21 @@ async function submit() {
       <fieldset><legend>志愿与调剂</legend><p class="field-tip">第一志愿为唯一的优先投递方向。若选择服从调剂，可指定一个不同的第二志愿，或接受战队统筹安排。</p><label>第一志愿<select v-model="form.primary_choice" required><option value="" disabled>请选择最想加入的组别</option><option v-for="group in groups" :key="group[0]" :value="group[0]">{{ group[1] }}</option></select></label><label class="check"><input v-model="form.accepts_adjustment" type="checkbox" />我愿意服从组别调剂</label><label v-if="form.accepts_adjustment">第二志愿 / 调剂意向<select v-model="form.second_choice"><option value="">接受战队统筹安排</option><option v-for="group in groups.filter((group) => group[0] !== form.primary_choice)" :key="group[0]" :value="group[0]">{{ group[1] }}</option></select></label></fieldset>
       <label>自我介绍<textarea v-model="form.introduction" required rows="4" placeholder="为什么想加入 PRIME？你最想投入哪个方向？" /></label><label>项目或竞赛经历（选填）<textarea v-model="form.experience" rows="3" placeholder="可填写项目、竞赛、作品链接或相关经历。" /></label><section class="attachment-field"><span>报名材料（可多选，可分多次添加）</span><label class="file-picker"><input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.txt,.md,.csv,.json,.mp4,.mov,.webm,.mp3,.wav,.m4a,.zip,.rar,.7z" @change="selectFiles" /><strong>＋ 选择文件并添加</strong></label><small>{{ editingExisting ? '原有附件会保留；可继续分批追加新材料。' : '至少上传一份材料；支持常见文档、表格、演示、图片、音视频、文本和压缩包。单个附件不超过 15 MB。' }}</small></section><ul v-if="attachments.length" class="file-list"><li v-for="(file, index) in attachments" :key="`${file.name}-${file.lastModified}`"><span>{{ file.name }}</span><button type="button" @click="removeAttachment(index)">移除</button></li></ul><label class="check consent"><input v-model="form.consent" type="checkbox" required />我同意战队仅为本次招新收集、使用以上个人信息。</label><fieldset v-if="emailVerificationRequired" class="verify-panel" :class="{ ok: emailVerified, err: emailError }">
   <legend class="vp-legend">邮箱验证 <span class="vp-badge" :class="{ ok: emailVerified }">{{ emailVerified ? '已验证' : '未验证' }}</span></legend>
-  <p class="field-tip">向报名邮箱发送验证码，验证成功后才能提交报名。验证码 10 分钟有效。</p>
+  <p class="field-tip">向报名邮箱发送验证链接，点击邮件中的链接即可自动完成验证，无需返回本站。</p>
   <div class="vp-actions">
-    <button class="vp-btn" type="button" :disabled="sendingCode || resendSeconds > 0" @click="sendEmailCode">{{ sendingCode ? '发送中…' : resendSeconds > 0 ? `${resendSeconds}s 后可重发` : '发送验证码' }}</button>
-    <input class="vp-input" v-model="emailCode" inputmode="numeric" maxlength="6" placeholder="6 位验证码" aria-label="邮箱验证码" @keyup.enter="verifyEmailCode" />
-    <button class="vp-btn" type="button" :disabled="verifyingCode || emailVerified" @click="verifyEmailCode">{{ verifyingCode ? '验证中…' : '验证' }}</button>
+    <button class="vp-btn" type="button" :disabled="sendingCode || resendSeconds > 0 || emailVerified" @click="sendEmailCode">
+      <span v-if="emailVerified">邮箱已验证</span>
+      <span v-else-if="sendingCode">发送中…</span>
+      <span v-else-if="resendSeconds > 0">{{ resendSeconds }}s 后可重发</span>
+      <span v-else>发送邮箱验证链接</span>
+    </button>
+    <span v-if="pollingEmail && !emailVerified" class="vp-wait" aria-hidden="true"><i></i>等待点击链接…</span>
   </div>
-  <p class="vp-status" :class="{ ok: emailVerified, err: emailError }" aria-live="polite">{{ emailVerified ? '邮箱验证通过，可以提交报名了。' : emailHint || '验证码 10 分钟有效；若邮件未送达，请检查垃圾邮件箱。' }}</p>
+  <p class="vp-status" :class="{ ok: emailVerified, err: emailError }" aria-live="polite">
+    <template v-if="emailVerified">邮箱验证通过，可以提交报名了。</template>
+    <template v-else-if="pollingEmail">验证链接已发送至报名邮箱，点击链接后这里会自动变为已验证。</template>
+    <template v-else>{{ emailHint || '验证链接 10 分钟有效；若邮件未送达，请检查垃圾邮件箱。' }}</template>
+  </p>
 </fieldset><button class="btn btn-primary" :disabled="sending">{{ sending ? '正在提交…' : editingExisting ? `确认修改（剩余 ${2 - (existingApplication?.modification_count || 0)} 次）` : '提交简历' }}</button><p v-if="error" class="error" role="alert">{{ error }}</p><p v-if="success" class="success">{{ success }}</p>
       </template>
     </form></section>
@@ -197,16 +226,9 @@ async function submit() {
 }
 .vp-btn:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
 .vp-btn:disabled{ opacity:.5; cursor:not-allowed; }
-.vp-input{
-  box-sizing:border-box;
-  flex:0 1 180px; min-width:130px; min-height:50px;
-  background:#090b10; color:var(--ink);
-  border:1px solid var(--line); border-radius:8px;
-  padding:12px 14px; font:inherit; font-family:var(--mono);
-  font-size:1.05rem; letter-spacing:.3em; text-align:center;
-  transition:border-color .25s;
-}
-.vp-input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(45,226,166,.08); }
+.vp-wait{ display:inline-flex; align-items:center; gap:8px; font-family:var(--mono); font-size:.68rem; letter-spacing:.14em; color:var(--ink-dim); }
+.vp-wait i{ width:7px; height:7px; border-radius:50%; background:var(--accent); animation:vp-pulse 1.3s ease-in-out infinite; }
+@keyframes vp-pulse{ 0%,100%{ opacity:.3; } 50%{ opacity:1; } }
 
 .vp-status{ margin:0; color:var(--ink-dim); font-size:.82rem; line-height:1.65; }
 .vp-status.ok{ color:var(--accent); }
@@ -214,5 +236,5 @@ async function submit() {
 .attachment-field{display:grid;gap:9px;color:var(--ink-dim);font-size:.9rem}.file-picker{position:relative;display:flex;align-items:center;justify-content:center;min-height:54px;border:1px dashed rgba(45,226,166,.45);border-radius:8px;background:rgba(45,226,166,.035);color:var(--accent);cursor:pointer;transition:.18s ease}.file-picker:hover{border-color:var(--accent);background:rgba(45,226,166,.08)}.file-picker input{position:absolute;inset:0;width:100%;min-height:0;opacity:0;cursor:pointer}.file-picker strong{font-size:.9rem}
 .file-list{display:grid;gap:7px;padding:0;list-style:none}.file-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:1px solid rgba(45,226,166,.18);border-radius:6px;background:rgba(45,226,166,.035)}.file-list span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file-list button{border:0;background:transparent;color:var(--accent-warm);font:inherit;font-size:.78rem;cursor:pointer}
 .existing-application{position:relative;overflow:hidden;padding:25px;border:1px solid rgba(45,226,166,.35);border-radius:10px;background:linear-gradient(135deg,rgba(45,226,166,.09),rgba(77,163,255,.045))}.existing-application:after{position:absolute;right:-35px;top:-52px;width:140px;height:140px;border:1px solid rgba(45,226,166,.34);border-radius:50%;content:""}.existing-application>span{color:var(--accent);font:700 .72rem var(--mono);letter-spacing:.12em}.existing-application h3{margin:9px 0 18px;font-size:1.35rem}.existing-application dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:0;border:1px solid var(--line);background:var(--line)}.existing-application dl div{padding:12px 14px;background:#0a0d12}.existing-application dt{margin-bottom:4px;color:var(--ink-dim);font-size:.75rem}.existing-application dd{margin:0;color:var(--ink);font-weight:700}.existing-application p{margin:16px 0;color:var(--ink-dim);font-size:.84rem;line-height:1.7}.existing-application .btn{position:relative;z-index:1}
-@media(max-width:620px){.vp-actions{flex-wrap:wrap}.vp-badge{margin-left:auto}.vp-input{flex:1 1 100%}.vp-btn{flex:1 1 auto}.existing-application dl{grid-template-columns:1fr}}
+@media(max-width:620px){.vp-actions{flex-wrap:wrap}.vp-badge{margin-left:auto}.vp-btn{flex:1 1 auto}.existing-application dl{grid-template-columns:1fr}}
 </style>

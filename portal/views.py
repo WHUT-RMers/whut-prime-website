@@ -9,12 +9,14 @@ import zipfile
 from datetime import timedelta
 
 from django.conf import settings
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import make_password
+from django.core import signing
 from django.core.mail import send_mail
 from django.core.cache import cache
 from django.db.models import F
-from django.http import FileResponse, Http404, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import get_valid_filename
 from django.views.decorators.http import require_GET, require_POST
@@ -27,11 +29,10 @@ from .models import (NewsArticle, NewsCoverSlide, NewsImage, NewsView,
 
 EMAIL_CODE_SESSION_KEY = 'recruitment_verified_email'
 EMAIL_CODE_TTL = timedelta(minutes=10)
-EMAIL_CODE_VERIFY_TTL = timedelta(minutes=30)
 EMAIL_CODE_RESEND_WAIT = timedelta(seconds=60)
 EMAIL_CODE_DAILY_LIMIT = 5
-EMAIL_CODE_MAX_ATTEMPTS = 5
 EMAIL_CODE_IP_HOURLY_LIMIT = 10
+EMAIL_VERIFY_SALT = 'whut-prime-recruit-email-verify'
 
 
 def normalize_email(value: str) -> str:
@@ -42,8 +43,32 @@ def email_verification_enabled() -> bool:
     return bool(settings.RECRUITMENT_EMAIL_VERIFICATION_ENABLED and settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD)
 
 
-def verified_email_from_session(request) -> str:
-    return normalize_email(request.session.get(EMAIL_CODE_SESSION_KEY, ''))
+def is_email_verified(email: str) -> bool:
+    """链接点击后以数据库记录为准（不依赖会话），供表单页轮询与提交校验。"""
+    record = RecruitmentEmailVerification.objects.filter(email=email).first()
+    if not record or not record.verified_at:
+        return False
+    now = timezone.now()
+    # verified_at 必须晚于最近一次发送，且仍在校验有效期内
+    return record.verified_at >= record.last_sent_at and record.expires_at > now
+
+
+def verify_page_html(message: str) -> str:
+    """邮件链接落地页：极简自包含 HTML，无外部资源，不跳转回报名页。"""
+    return (
+        '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<title>邮箱验证 · WHUT PRIME</title></head>'
+        '<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#07080d;'
+        'color:#eef2f9;font-family:\'PingFang SC\',\'Microsoft YaHei\',sans-serif;text-align:center">'
+        '<div style="max-width:440px;margin:24px;padding:48px 30px;border:1px solid rgba(45,226,166,.35);'
+        'border-radius:16px;background:#0c0e15">'
+        '<div style="width:54px;height:54px;margin:0 auto 22px;border:2px solid #2de2a6;border-radius:50%;'
+        'display:grid;place-items:center;color:#2de2a6;font-size:26px">&#10003;</div>'
+        '<h1 style="margin:0;font-size:1.15rem;letter-spacing:.06em">邮箱验证</h1>'
+        f'<p style="margin:14px 0 0;color:#97a3b6;font-size:.95rem;line-height:1.8">{message}</p>'
+        '</div></body></html>'
+    )
 
 
 def check_email_code_ip_limit(request) -> bool:
@@ -227,10 +252,18 @@ def recruitment_send_email_code(request):
     # Record the attempt before talking to SMTP.  A mail failure must not let a
     # caller bypass the same-address cooldown by retrying immediately.
     RecruitmentEmailVerification.objects.update_or_create(email=email, defaults=defaults)
+    # 邮件里只放一个签名魔法链接：点击即验证，无需回填验证码、无需跳转。
+    token = signing.dumps({'email': email}, salt=EMAIL_VERIFY_SALT)
+    link = request.build_absolute_uri(reverse('portal:recruitment-email-verify')) + '?token=' + token
+    minutes = int(EMAIL_CODE_TTL.total_seconds() // 60)
     try:
         sent = send_mail(
-            'PRIME 招新邮箱验证码',
-            f'你的 PRIME 招新邮箱验证码是：{code}\n\n验证码 10 分钟内有效，请勿转发给他人。若非本人操作，请忽略此邮件。',
+            'PRIME 招新邮箱验证',
+            (
+                f'请点击以下链接完成邮箱验证（{minutes} 分钟内有效）：\n\n{link}\n\n'
+                '点击链接后会自动完成验证，报名页面会同步变为「已验证」状态，无需跳转回来。\n'
+                '若非本人操作，请忽略此邮件。'
+            ),
             settings.DEFAULT_FROM_EMAIL,
             [email],
             fail_silently=False,
@@ -242,39 +275,48 @@ def recruitment_send_email_code(request):
             'error': '验证码发送失败，请检查邮箱地址或稍后重试。',
             'cooldown_seconds': 60,
         }, status=502)
-    return JsonResponse({'message': '验证码已发送，请在 10 分钟内查收并验证。'})
+    return JsonResponse({'message': '验证链接已发送至报名邮箱，请查收邮件并点击链接完成验证。'})
 
 
 @require_POST
-def recruitment_verify_email_code(request):
-    if not email_verification_enabled():
-        return JsonResponse({'error': '邮箱验证码尚未配置，请稍后再试。'}, status=503)
+def recruitment_email_status(request):
+    """表单页轮询：链接被点击后由数据库记录判断是否已验证（不依赖会话/跳转）。"""
     email = normalize_email(request.POST.get('email', ''))
-    code = request.POST.get('code', '').strip()
-    record = RecruitmentEmailVerification.objects.filter(email=email).first()
+    return JsonResponse({'verified': is_email_verified(email) if email else False})
+
+
+@require_GET
+def recruitment_email_verify(request):
+    """邮件魔法链接：点击即自动验证。无需重定向回报名页，表单页通过轮询同步状态。"""
+    token = request.GET.get('token', '')
+    try:
+        payload = signing.loads(token, salt=EMAIL_VERIFY_SALT, max_age=EMAIL_CODE_TTL.total_seconds())
+    except signing.BadSignature:
+        return HttpResponse(verify_page_html('链接无效或已过期，请重新发送验证链接。'), status=400)
+    email = normalize_email(str(payload.get('email') or ''))
+    if not email or '@' not in email or not email_verification_enabled():
+        return HttpResponse(verify_page_html('链接无效。'), status=400)
     now = timezone.now()
-    if not record or not code:
-        return JsonResponse({'error': '请先获取验证码。'}, status=400)
-    if record.failed_attempts >= EMAIL_CODE_MAX_ATTEMPTS:
-        return JsonResponse({'error': '尝试次数过多，请重新获取验证码。'}, status=429)
-    if record.expires_at < now:
-        return JsonResponse({'error': '验证码已过期，请重新获取。'}, status=400)
-    if not check_password(code, record.code_hash):
-        record.failed_attempts += 1
-        record.save(update_fields=['failed_attempts'])
-        return JsonResponse({'error': '验证码不正确。'}, status=400)
-    record.verified_at = now
-    record.failed_attempts = 0
-    record.save(update_fields=['verified_at', 'failed_attempts'])
+    record = RecruitmentEmailVerification.objects.filter(email=email).first()
+    if record:
+        record.verified_at = now
+        record.failed_attempts = 0
+        record.save(update_fields=['verified_at', 'failed_attempts'])
+    else:
+        RecruitmentEmailVerification.objects.create(
+            email=email, code_hash=make_password(secrets.token_hex(8)),
+            expires_at=now + EMAIL_CODE_TTL, verified_at=now, last_sent_at=now,
+        )
+    # 同一浏览器内顺手写入会话，兼容旧逻辑；跨端场景由轮询 + 数据库记录覆盖。
     request.session[EMAIL_CODE_SESSION_KEY] = email
-    return JsonResponse({'message': '邮箱验证成功。'})
+    return HttpResponse(verify_page_html('邮箱验证成功，现在可以返回报名页面提交简历了。'))
 
 
 @require_POST
 def recruitment_application_status(request):
     email = normalize_email(request.POST.get('email', ''))
-    if email_verification_enabled() and verified_email_from_session(request) != email:
-        return JsonResponse({'error': '请先完成邮箱验证码验证。'}, status=403)
+    if email_verification_enabled() and not is_email_verified(email):
+        return JsonResponse({'error': '请先完成邮箱验证。'}, status=403)
     application = RecruitmentApplication.objects.filter(email__iexact=email).prefetch_related('attachments').order_by('-created_at').first()
     return JsonResponse({
         'exists': bool(application),
@@ -301,10 +343,8 @@ def recruitment_submit(request):
         return JsonResponse({'error': '当前不在报名时间，暂不接收报名信息。'}, status=403)
     data = recruitment_form_data(request)
     email = data['email']
-    if email_verification_enabled():
-        verified_at = RecruitmentEmailVerification.objects.filter(email=email).values_list('verified_at', flat=True).first()
-        if request.session.get(EMAIL_CODE_SESSION_KEY) != email or not verified_at or verified_at < timezone.now() - EMAIL_CODE_VERIFY_TTL:
-            return JsonResponse({'error': '请先完成邮箱验证码验证。'}, status=400)
+    if email_verification_enabled() and not is_email_verified(email):
+        return JsonResponse({'error': '请先完成邮箱验证。'}, status=400)
     form = RecruitmentApplicationForm(data, request.FILES)
     if not form.is_valid():
         return JsonResponse({'error': form_error_message(form), 'errors': form.errors.get_json_data()}, status=400)
@@ -320,8 +360,10 @@ def recruitment_update(request, pk):
     application = get_object_or_404(RecruitmentApplication, pk=pk)
     data = recruitment_form_data(request)
     email = data['email']
-    if verified_email_from_session(request) != normalize_email(application.email) or email != normalize_email(application.email):
+    if email != normalize_email(application.email):
         return JsonResponse({'error': '请使用投递时验证过的邮箱进行修改。'}, status=403)
+    if email_verification_enabled() and not is_email_verified(email):
+        return JsonResponse({'error': '请先完成邮箱验证。'}, status=403)
     if not can_applicant_edit(application):
         return JsonResponse({'error': '此报名已进入处理流程，或修改次数已用完，暂不能在线修改。'}, status=403)
     form = RecruitmentApplicationForm(data, request.FILES, instance=application)
