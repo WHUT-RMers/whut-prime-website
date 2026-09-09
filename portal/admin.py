@@ -329,12 +329,12 @@ class NewsArticleAdmin(admin.ModelAdmin):
 class RecruitmentApplicationAdmin(admin.ModelAdmin):
     form = RecruitmentApplicationAdminForm
     change_list_template = 'admin/portal/recruitmentapplication/change_list.html'
-    list_display = ('application_no', 'name', 'college', 'major_class', 'primary_group_display', 'adjustment_display', 'status', 'created_at', 'resume_link')
+    list_display = ('application_no', 'name', 'duplicate_alert', 'college', 'major_class', 'primary_group_display', 'adjustment_display', 'status', 'created_at', 'resume_link')
     list_filter = ('primary_choice', 'status', 'accepts_adjustment', 'created_at')
     search_fields = ('application_no', 'name', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class')
-    readonly_fields = ('application_no', 'created_at', 'updated_at', 'resume_link', 'attachments_display')
+    readonly_fields = ('application_no', 'duplicate_check', 'created_at', 'updated_at', 'resume_link', 'attachments_display')
     list_editable = ('status',)
-    fields = ('application_no', 'name', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class', 'primary_choice', 'accepts_adjustment', 'second_choice', 'introduction', 'experience', 'availability', 'resume_link', 'attachments_display', 'status', 'interview_at', 'internal_note', 'created_at', 'updated_at')
+    fields = ('application_no', 'duplicate_check', 'name', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class', 'primary_choice', 'accepts_adjustment', 'second_choice', 'introduction', 'experience', 'availability', 'resume_link', 'attachments_display', 'status', 'interview_at', 'internal_note', 'created_at', 'updated_at')
 
     class Media:
         css = {'all': ('portal/admin_polish.css',)}
@@ -482,6 +482,90 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
         except Exception:
             return JsonResponse({'kind': 'unsupported', 'title': attachment.original_name, 'message': '此文件无法生成在线预览，请下载后使用对应软件打开。'})
         return JsonResponse({'kind': 'unsupported', 'title': attachment.original_name, 'message': '此格式暂不支持在线预览，请下载后使用对应软件打开。'})
+
+    @staticmethod
+    def _norm_contact(value: str) -> str:
+        """联系方式归一化：去首尾空白 + 小写，微信/邮箱/Q 号常见的空格与大小写差异不误判。"""
+        return (value or '').strip().lower()
+
+    CONTACT_FIELDS = ('qq', 'wechat', 'phone', 'email')
+    CONTACT_LABELS = {'qq': 'QQ', 'wechat': '微信', 'phone': '手机号', 'email': '邮箱'}
+
+    def _duplicate_matches(self, obj):
+        """比对当前报名与已有报名（不含自身）的个人信息：
+        强校验——QQ / 微信 / 手机号 / 邮箱 任一归一化后相同；
+        弱校验——姓名 + 学院 + 专业班级 三者同时相同。
+        返回 [(已有报名, 匹配字段列表), ...]，字段未命中则返回空列表。"""
+        from django.db.models import Q
+        if obj is None or not obj.pk:
+            return []
+        query = Q()
+        for field in self.CONTACT_FIELDS:
+            value = getattr(obj, field)
+            if value and value.strip():
+                query |= Q(**{f'{field}__iexact': value.strip()})
+        name = (obj.name or '').strip()
+        college = (obj.college or '').strip()
+        major = (obj.major_class or '').strip()
+        if name and college and major:
+            query |= Q(name__iexact=name, college__iexact=college, major_class__iexact=major)
+        if not query:
+            return []
+        results = []
+        for other in RecruitmentApplication.objects.filter(query).exclude(pk=obj.pk).order_by('created_at'):
+            matched = [field for field in self.CONTACT_FIELDS
+                       if self._norm_contact(getattr(other, field)) == self._norm_contact(getattr(obj, field))
+                       and self._norm_contact(getattr(obj, field))]
+            if (name.lower() and
+                    (other.name or '').strip().lower() == name.lower() and
+                    (other.college or '').strip().lower() == college.lower() and
+                    (other.major_class or '').strip().lower() == major.lower()):
+                matched.append('name_college_major')
+            if matched:
+                results.append((other, matched))
+        return results
+
+    @admin.display(description='疑似重复')
+    def duplicate_alert(self, obj):
+        """列表页紧凑标识：命中即显示与哪些报名疑似重复。"""
+        matches = self._duplicate_matches(obj)
+        if not matches:
+            return format_html('<span style="color:#2de2a6">无</span>')
+        others = '、'.join(other.application_no for other, _ in matches)
+        return format_html('<span style="color:#ffb45e;font-weight:600;white-space:nowrap">⚠ 请勿重复提交：与 {}</span>', others)
+
+    @admin.display(description='重复信息比对')
+    def duplicate_check(self, obj):
+        """编辑页顶部提示条：列出每一条重复的来源报名与命中的具体字段。"""
+        matches = self._duplicate_matches(obj)
+        if not matches:
+            return format_html(
+                '<div style="border:1px solid rgba(45,226,166,.35);background:#0b1511;'
+                'border-radius:10px;padding:10px 14px;color:#2de2a6">'
+                '✓ 未发现与已有报名重复的个人信息。</div>')
+        rows = []
+        labels = {**self.CONTACT_LABELS, 'name_college_major': '姓名+学院+专业班级'}
+        for other, matched in matches:
+            fields = '、'.join(labels[field] for field in matched)
+            rows.append(format_html(
+                '<div style="margin:8px 0;border-left:3px solid #ffb45e;padding:8px 12px;background:#1a1106">'
+                '<b style="color:#ffb45e">请勿重复提交</b>：该报名与已有报名 '
+                '<a href="{}" target="_blank" style="color:#4da3ff;font-weight:600">{}</a> '
+                '（{} · {} 投递）信息重复，命中字段：{}{}'
+                '</div>',
+                reverse('admin:portal_recruitmentapplication_change', args=[other.pk]),
+                other.application_no,
+                other.name or '未填写姓名',
+                timezone.localtime(other.created_at).strftime('%Y-%m-%d %H:%M'),
+                fields,
+                ('；状态：' + other.get_status_display()) if other.status != 'pending' else '',
+            ))
+        return format_html(
+            '<div style="border:1px solid #ffb45e;border-radius:10px;padding:10px 14px;background:#140e05">'
+            + ''.join(rows)
+            + '<div style="margin-top:6px;color:#97a3b6;font-size:.85rem;line-height:1.7">'
+            '比对规则：QQ / 微信 / 手机号 / 邮箱 任一相同，或 姓名+学院+专业班级 三者全同，即判定为疑似重复。'
+            '请核对是否为同一人重复投递；确认无意重复后，可删除后一条或标记相应状态。</div></div>')
 
     @admin.display(description='意向组别')
     def groups_display(self, obj):
