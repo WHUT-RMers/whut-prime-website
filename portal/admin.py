@@ -530,7 +530,7 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
         """列表页紧凑标识：命中即显示与哪些报名疑似重复。"""
         matches = self._duplicate_matches(obj)
         if not matches:
-            return format_html('<span style="color:#2de2a6">无</span>')
+            return '<span style="color:#2de2a6">无</span>'
         others = '、'.join(other.application_no for other, _ in matches)
         return format_html('<span style="color:#ffb45e;font-weight:600;white-space:nowrap">⚠ 请勿重复提交：与 {}</span>', others)
 
@@ -539,10 +539,9 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
         """编辑页顶部提示条：列出每一条重复的来源报名与命中的具体字段。"""
         matches = self._duplicate_matches(obj)
         if not matches:
-            return format_html(
-                '<div style="border:1px solid rgba(45,226,166,.35);background:#0b1511;'
-                'border-radius:10px;padding:10px 14px;color:#2de2a6">'
-                '✓ 未发现与已有报名重复的个人信息。</div>')
+            return ('<div style="border:1px solid rgba(45,226,166,.35);background:#0b1511;'
+                    'border-radius:10px;padding:10px 14px;color:#2de2a6">'
+                    '✓ 未发现与已有报名重复的个人信息。</div>')
         rows = []
         labels = {**self.CONTACT_LABELS, 'name_college_major': '姓名+学院+专业班级'}
         for other, matched in matches:
