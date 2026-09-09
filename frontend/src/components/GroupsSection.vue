@@ -93,10 +93,6 @@ onBeforeUnmount(() => {
         <p class="eyebrow" data-reveal>04 / 组别介绍</p>
         <h2 class="groups-title" data-reveal>四大组别与技术栈</h2>
         <p class="groups-lead" data-reveal>一辆车从图纸到赛场，需要四双手。</p>
-        <p class="groups-hint" data-reveal aria-hidden="true">
-          <span class="groups-hint-desktop">SCROLL <i class="hint-arrow">→</i> 横向穿行组别舱段</span>
-          <span class="groups-hint-mobile">SWIPE <i class="hint-arrow">→</i> 左右滑动查看全部组别</span>
-        </p>
       </header>
 
       <div ref="track" class="groups-track">
@@ -147,28 +143,6 @@ onBeforeUnmount(() => {
 .groups-head { padding-top: 110px; position: relative; z-index: 2; }
 .groups-title { margin-top: 22px; font-size: clamp(1.9rem, 4vw, 3.1rem); }
 .groups-lead { margin-top: 14px; color: var(--ink-dim); }
-.groups-hint {
-  margin-top: 22px;
-  font-family: var(--mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.28em;
-  color: var(--accent);
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.hint-arrow {
-  font-style: normal;
-  animation: flow-x 1.1s linear infinite;
-  background: linear-gradient(90deg, var(--accent) 40%, transparent 40%) no-repeat;
-  background-size: 9px 2px;
-  background-position-y: center;
-  width: 42px;
-  height: 2px;
-  display: inline-block;
-  color: transparent;
-}
 
 /* ---------- 桌面：横向轨道 ---------- */
 @media (min-width: 1001px) {
@@ -370,9 +344,6 @@ onBeforeUnmount(() => {
   .end-title { font-size: 1.4rem; }
   .end-desc { color: var(--ink-dim); }
   .groups-progress { display: none; }
-  .groups-hint { display: flex; }
-  .groups-hint-desktop { display: none; }
-  .groups-hint-mobile { display: inline-flex; align-items: center; gap: 10px; }
 }
 
 @media (max-width: 560px) {
