@@ -122,5 +122,6 @@ npm run build        # 产物到 frontend/dist
 - **db.sqlite3 未提交**：clone 后需 `migrate` + 重新创建管理员，才有后台账号。
 - `SECRET_KEY` 为 demo 硬编码密钥；`ALLOWED_HOSTS=['*']`、`DEBUG=True` 仅限开发，公开部署前需处理。
 - 简历表单（§5 RecruitSection）目前只是前端 demo 提示，未接后端存储；接入时表单字段/提交接口按现有结构扩展。
+- **后台报名查重**：RecruitmentApplicationAdmin 自带疑似重复比对（列表列 + 编辑页顶部提示条），规则：QQ / 微信 / 手机号 / 邮箱 任一相同，或 姓名+学院+专业班级 三者全同；命中提示「请勿重复提交」。注意 format_html 无参数会抛 TypeError，空结果显示请用 mark_safe。
 - **首屏大图素材**：三张实拍横图在 `frontend/public/hero/`（`arena-battle.jpg` 赛场 / `pits-debug.jpg` 调试区 / `team-group.jpg` 全队合影，1620×1080、q82 渐进式 JPEG，各 180–270KB），`data/hero.ts` 用 `image: '/static/hero/xxx.jpg'` 引用，`focus` 控制 `object-position`（移动端竖屏裁切主要靠它）；把 `image` 留空即回退到扁平几何占位面板。
 - 组别当前为 4 个（机械/电控/算法/运营），导航、Hero、招新资讯、投递表单等多处文案需同步，改动时全局搜索确认。
