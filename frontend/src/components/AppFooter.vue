@@ -30,7 +30,7 @@ onMounted(() => {
     <span class="footer-mark" aria-hidden="true">PRIME</span>
     <div class="container footer-inner">
       <div class="footer-brand" data-reveal>
-        <img class="brand-mark" :src="'/static/favicon.png'" alt="" aria-hidden="true" />
+        <img class="brand-mark" :src="'/static/mascot.png'" alt="" aria-hidden="true" />
         <span class="brand-name">WHUT·PRIME — ROBOMASTER</span>
       </div>
       <nav class="footer-nav" data-reveal>

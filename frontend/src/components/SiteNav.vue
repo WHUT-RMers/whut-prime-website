@@ -90,7 +90,7 @@ function closeDrawer() {
 
     <div class="container nav-inner">
       <RouterLink to="/" class="brand" @click="closeDrawer" :aria-label="'WHUT PRIME 首页'">
-        <img class="brand-mark" :src="'/static/favicon.png'" alt="" aria-hidden="true" />
+        <img class="brand-mark" :src="'/static/mascot.png'" alt="" aria-hidden="true" />
         <span class="brand-name">WHUT<span class="dot">·</span>PRIME</span>
       </RouterLink>
 
