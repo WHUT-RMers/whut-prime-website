@@ -508,7 +508,7 @@ defineExpose({ go })
   gap: 9px;
   font-size: 0.66rem;
   letter-spacing: 0.26em;
-  color: var(--ink-dim);
+  color: var(--hero-ink-dim);
 }
 .art-tag::before {
   content: '';
@@ -516,7 +516,7 @@ defineExpose({ go })
   height: 6px;
   background: var(--art, var(--accent));
 }
-.art-note { font-size: 0.56rem; letter-spacing: 0.22em; color: var(--ink-faint); }
+.art-note { font-size: 0.56rem; letter-spacing: 0.22em; color: var(--hero-ink-faint); }
 
 /* ---- 内容容器 ---- */
 .slide-inner {
@@ -561,11 +561,11 @@ defineExpose({ go })
   display: block;
   width: 100%;
   height: 3px;
-  background: var(--line-strong);
+  background: var(--hero-line-strong);
   transition: background 0.3s, transform 0.4s var(--ease-expo);
   transform-origin: left;
 }
-.tick:hover span { background: var(--ink-dim); }
+.tick:hover span { background: var(--hero-ink-dim); }
 .tick.is-active { width: 44px; }
 .tick.is-active span { background: var(--accent); }
 
@@ -575,10 +575,10 @@ defineExpose({ go })
   height: 42px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--hero-line-strong);
   border-radius: 8px;
   background: rgba(6, 7, 13, 0.42);
-  color: var(--ink-dim);
+  color: var(--hero-ink-dim);
   transition: border-color 0.3s, color 0.3s, background 0.3s, transform 0.35s var(--ease-expo);
 }
 .sarrow span {
@@ -589,7 +589,7 @@ defineExpose({ go })
 }
 .sarrow-prev span { transform: rotate(-135deg); margin-left: 3px; }
 .sarrow-next span { transform: rotate(45deg); margin-right: 3px; }
-.sarrow:hover { border-color: var(--accent); color: var(--accent); background: rgba(45, 226, 166, 0.08); }
+.sarrow:hover { border-color: var(--hero-accent); color: var(--hero-accent); background: rgba(45, 226, 166, 0.08); }
 .sarrow:active { transform: scale(0.94); }
 
 /* ---- 自动播放进度 ---- */

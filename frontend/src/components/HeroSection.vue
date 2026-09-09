@@ -93,13 +93,13 @@ onMounted(() => {
 
 <style scoped>
 /* ---- 文案区 ---- */
-.slide-copy { max-width: 780px; }
-.slide-eyebrow { margin-bottom: 26px; }
+.slide-copy { max-width: 780px; color: var(--hero-ink); }
+.slide-eyebrow { margin-bottom: 26px; color: var(--hero-accent); }
 .eyebrow-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--hero-accent);
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
@@ -114,17 +114,27 @@ onMounted(() => {
   padding-bottom: 0.1em;
   margin-bottom: -0.1em;
 }
-.line-accent { color: var(--accent); }
+.line-accent { color: var(--hero-accent); }
 
 .slide-sub {
   margin-top: 26px;
   max-width: 560px;
   font-size: 1.05rem;
-  color: var(--ink-dim);
+  color: var(--hero-ink-dim);
   text-wrap: pretty;
 }
 
 .slide-actions { display: flex; gap: 14px; margin-top: 36px; flex-wrap: wrap; }
+/* 照片上：幽灵按钮无条件用亮色描边/文字（深、浅主题都不变暗） */
+.slide-actions .btn-ghost {
+  border-color: var(--hero-line-strong);
+  color: var(--hero-ink-dim);
+}
+.slide-actions .btn-ghost:hover {
+  border-color: var(--hero-accent);
+  color: var(--hero-accent);
+  background: rgba(45, 226, 166, 0.08);
+}
 
 /* ---- 右侧 HUD ---- */
 .hero-hud {
@@ -164,7 +174,7 @@ onMounted(() => {
   list-style: none;
   display: flex;
   gap: clamp(22px, 3.4vw, 46px);
-  color: var(--ink-dim);
+  color: var(--hero-ink-dim);
   font-size: 0.92rem;
 }
 .hero-notes li { display: flex; align-items: baseline; gap: 8px; }
@@ -172,7 +182,7 @@ onMounted(() => {
   font-family: var(--mono);
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--hero-ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -189,10 +199,10 @@ onMounted(() => {
   font-family: var(--mono);
   font-size: 0.6rem;
   letter-spacing: 0.3em;
-  color: var(--ink-faint);
+  color: var(--hero-ink-faint);
 }
-.cue-line { width: 1px; height: 24px; background: linear-gradient(to bottom, var(--accent), transparent); animation: cue 1.8s var(--ease-expo) infinite; }
-.cue-tri { font-style: normal; color: var(--accent); animation: pulse-dot 1.8s ease-in-out infinite; }
+.cue-line { width: 1px; height: 24px; background: linear-gradient(to bottom, var(--hero-accent), transparent); animation: cue 1.8s var(--ease-expo) infinite; }
+.cue-tri { font-style: normal; color: var(--hero-accent); animation: pulse-dot 1.8s ease-in-out infinite; }
 
 @media (max-width: 1080px) {
   .hero-hud { display: none; }

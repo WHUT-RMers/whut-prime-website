@@ -90,12 +90,12 @@ function onGroupClick(g: GroupInfo, e: MouseEvent) {
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 34px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 60%);
+  background: linear-gradient(160deg, var(--deck-sheen), transparent 60%);
   transition: border-color 0.3s, background 0.3s, transform 0.35s var(--ease-expo);
 }
 .group:hover {
   border-color: hsl(var(--deck-hue, 158), 60%, 58%);
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), transparent 60%);
+  background: linear-gradient(160deg, var(--deck-sheen-strong), transparent 60%);
   transform: translateY(-2px);
 }
 .group-media { min-width: 0; }
@@ -111,7 +111,7 @@ function onGroupClick(g: GroupInfo, e: MouseEvent) {
   border-radius: 6px;
   padding: 3px 8px;
 }
-.group-en { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em; color: #5b6673; }
+.group-en { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em; color: var(--ink-faint); }
 
 .group-name { margin-top: 16px; font-size: 1.7rem; }
 .group-desc { margin-top: 12px; color: var(--ink-dim); font-size: 0.98rem; }

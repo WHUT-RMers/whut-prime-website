@@ -3,9 +3,11 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { gsap } from 'gsap'
 import { prefersReducedMotion } from '../utils/motion'
+import { useTheme } from '../utils/theme'
 
 const route = useRoute()
 const nav = ref<HTMLElement | null>(null)
+const { theme, toggle } = useTheme()
 const prog = ref<HTMLElement | null>(null)
 const drawer = ref<HTMLElement | null>(null)
 const scrolled = ref(false)
@@ -105,6 +107,21 @@ function closeDrawer() {
       </nav>
 
       <div class="nav-right">
+        <button
+          type="button"
+          class="theme-btn"
+          :aria-label="theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'"
+          :title="theme === 'dark' ? '浅色模式' : '深色模式'"
+          @click="toggle"
+        >
+          <svg v-if="theme === 'dark'" class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.4" />
+            <path d="M12 2.6v2.4M12 19v2.4M2.6 12h2.4M19 12h2.4M5.2 5.2l1.7 1.7M17.1 17.1l1.7 1.7M18.8 5.2l-1.7 1.7M6.9 17.1l-1.7 1.7" />
+          </svg>
+          <svg v-else class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M20.4 14.2A8.4 8.4 0 0 1 9.8 3.6a8.4 8.4 0 1 0 10.6 10.6Z" />
+          </svg>
+        </button>
         <RouterLink to="/recruit" class="btn btn-primary nav-cta" data-magnet>
           加入战队 <i class="cta-dot" aria-hidden="true"></i>
         </RouterLink>
@@ -157,7 +174,7 @@ function closeDrawer() {
   background: transparent;
 }
 .nav.scrolled {
-  background: rgba(8, 10, 17, 0.94);
+  background: var(--bg-glass);
   border-bottom-color: var(--line);
 }
 
@@ -230,6 +247,22 @@ function closeDrawer() {
 .nav-right { display: flex; align-items: center; gap: 14px; }
 .cta-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-ink); animation: pulse-dot 1.6s ease-in-out infinite; }
 
+.theme-btn {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-dim);
+  transition: color 0.3s, border-color 0.3s, background 0.3s, transform 0.35s var(--ease-expo);
+}
+.theme-btn:hover { color: var(--accent); border-color: var(--accent); background: var(--deck-sheen); }
+.theme-btn:active { transform: scale(0.94); }
+.theme-icon { width: 18px; height: 18px; }
+
 .nav-burger {
   display: none;
   flex-direction: column;
@@ -261,7 +294,7 @@ function closeDrawer() {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 18px max(24px, env(safe-area-inset-right)) max(34px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
-  background: #0a0c13;
+  background: var(--bg);
   border-bottom: 1px solid var(--line-strong);
   clip-path: inset(0 0 100% 0);
   pointer-events: none;

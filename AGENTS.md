@@ -86,6 +86,7 @@ npm run build        # 产物到 frontend/dist
 ## 6. 设计系统（frontend/src/style.css）
 
 - **风格**：motion-driven + **扁平化**（flat）：深空蓝黑底（`--bg: #07080d`）× 荧光青绿主强调（`--accent`），`--surface` 实色面板 + 1px 细线边框，几何装饰（点阵/线框方块/描边字），**无重玻璃拟态与辉光**。
+- **主题**：深色为默认；浅色由 `html[data-theme="light"]` 一键切换（`index.html` 内联防闪烁脚本 + 顶栏开关（SiteNav `.theme-btn`）+ localStorage `whut-prime-theme` 持久化，未手动设置时跟随系统 `prefers-color-scheme`）；所有组件颜色必须走 `:root` 语义 token（`--bg/--surface/--ink/--line/--accent...`），**首屏照片区用 `--hero-*` 亮色 token**（两种主题下都压在照片上，勿换成页面 token）；浅色调色板集中在 style.css 的 `:root[data-theme='light']`。
 - **配色**：`--bg: #06070d`、`--accent: #2de2a6`（主强调）、`--accent-2: #4da3ff`（电光蓝）、`--accent-warm: #ffb45e`（暖橙点缀）。
 - **字体**：标题/展示用 `Russo One`，正文/等宽用 `Chakra Petch`（均为自托管 latin woff2 子集，@font-face 优先 `local()` 回退打包文件）；中文由系统无衬线（PingFang SC / HarmonyOS Sans SC / Microsoft YaHei / Noto Sans SC）回退。
 - **动效曲线**：`--ease-expo: cubic-bezier(0.16,1,0.3,1)`（expo 系），入场 expo.out、退场比入场快；按钮按下 scale(0.96) 回弹微交互。

@@ -51,6 +51,18 @@
   --accent-2: #4da3ff;
   --accent-warm: #ffb45e;
   --accent-ink: #04130c;
+  --input-bg: #090b10;
+  /* 首屏照片区专属：两种主题下都保持亮（压在暗色照片/暗角上） */
+  --hero-accent: #2de2a6;
+  --hero-ink: #eef2f9;
+  --hero-ink-dim: #97a3b6;
+  --hero-ink-faint: #6b7684;
+  --hero-line: rgba(233, 241, 255, 0.2);
+  --hero-line-strong: rgba(233, 241, 255, 0.34);
+  /* 卡片微光晕（深色白色微光 / 浅色墨色微光） */
+  --deck-sheen: rgba(255, 255, 255, 0.03);
+  --deck-sheen-strong: rgba(255, 255, 255, 0.05);
+  --deck-line: rgba(233, 241, 255, 0.05);
   --display: "Russo One", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
   --sans: "Chakra Petch", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
   --serif: var(--display);
@@ -62,6 +74,29 @@
   --radius: 14px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: dark;
+}
+
+/* ---- 浅色主题：由 index.html 内联防闪烁脚本写入 html[data-theme="light"] ---- */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f3f5fa;
+  --surface: #ffffff;
+  --surface-2: #eef1f7;
+  --bg-glass: rgba(255, 255, 255, 0.86);
+  --ink: #17202e;
+  --ink-dim: #505b72;
+  --ink-faint: #8b94a8;
+  --line: rgba(23, 32, 46, 0.1);
+  --line-strong: rgba(23, 32, 46, 0.2);
+  --accent: #0a8f68;
+  --accent-2: #2f6fd6;
+  --accent-warm: #cf7a1d;
+  --accent-ink: #ffffff;
+  --input-bg: #ffffff;
+  --deck-sheen: rgba(23, 32, 46, 0.03);
+  --deck-sheen-strong: rgba(23, 32, 46, 0.05);
+  --deck-line: rgba(23, 32, 46, 0.06);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -124,6 +159,17 @@ body::after {
   mask-image: radial-gradient(90% 70% at 50% 12%, #000 0%, transparent 78%);
 }
 
+/* ---- 浅色主题背景点缀 ---- */
+:root[data-theme='light'] body::before {
+  background:
+    linear-gradient(180deg, rgba(226, 232, 243, 0.7), transparent 30%),
+    radial-gradient(880px 480px at 88% -8%, rgba(10, 143, 104, 0.06), transparent 62%),
+    radial-gradient(820px 460px at 2% 14%, rgba(47, 111, 214, 0.05), transparent 62%);
+}
+:root[data-theme='light'] body::after {
+  background-image: radial-gradient(rgba(23, 32, 46, 0.09) 1px, transparent 1px);
+}
+
 .container {
   width: min(var(--maxw), calc(100% - (var(--page-gutter) * 2)));
   margin-inline: auto;
@@ -173,6 +219,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 400; letter-spacing: 0.02em
 .btn:active { transform: scale(0.96); }
 .btn-primary { background: var(--accent); color: var(--accent-ink); }
 .btn-primary:hover { background: #7cf0c8; transform: translateY(-2px); }
+:root[data-theme='light'] .btn-primary:hover { background: #12b583; }
 .btn-ghost { border-color: var(--line-strong); color: var(--ink-dim); background: transparent; }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: rgba(45, 226, 166, 0.06); transform: translateY(-2px); }
 

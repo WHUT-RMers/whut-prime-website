@@ -120,7 +120,7 @@ const contact = {
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 24px 18px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), transparent 60%);
+  background: linear-gradient(160deg, var(--deck-sheen), transparent 60%);
   transition: border-color 0.35s, transform 0.35s var(--ease);
 }
 .tier:hover { border-color: rgba(45, 226, 166, 0.5); transform: translateY(-4px); }
@@ -154,7 +154,7 @@ const contact = {
   color: var(--ink-dim);
   padding: 12px 14px;
 }
-.matrix-row:not(:last-child) { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+.matrix-row:not(:last-child) { border-bottom: 1px solid var(--deck-line); }
 .matrix-row:hover { background: rgba(255, 255, 255, 0.02); }
 .mr-name { padding: 12px 14px; font-size: 0.88rem; }
 .mr-cell { padding: 12px 6px; text-align: center; }
@@ -167,12 +167,12 @@ const contact = {
   box-shadow: 0 0 6px rgba(45, 226, 166, 0.5);
 }
 .count { font-family: var(--mono); font-size: 0.66rem; color: var(--accent); white-space: nowrap; }
-.dash { color: #3a434f; }
+.dash { color: var(--ink-faint); }
 
 .matrix-note {
   margin-top: 16px;
   font-size: 0.78rem;
-  color: #5b6673;
+  color: var(--ink-dim);
 }
 
 .contact {
