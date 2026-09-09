@@ -46,12 +46,12 @@ function selectFiles(event: Event) {
 
 function removeAttachment(index: number) { attachments.value.splice(index, 1) }
 
-function formReadyForVerification() {
-  const required = ['name', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class', 'primary_choice', 'introduction', 'availability'] as const
-  if (required.some((key) => !form[key]?.trim())) { error.value = '请先完整填写报名信息，再发送邮箱验证链接。'; return false }
-  if (!editingExisting.value && !attachments.value.length) { error.value = '请至少上传一份报名材料。'; return false }
-  if (!form.consent) { error.value = '请先同意个人信息使用说明。'; return false }
-  if (form.accepts_adjustment && form.second_choice === form.primary_choice) { error.value = '第二志愿不能与第一志愿相同。'; return false }
+function formEmailValid() {
+  const email = form.email.trim()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    error.value = '请先填写有效的邮箱地址。'
+    return false
+  }
   return true
 }
 
@@ -106,7 +106,7 @@ function startVerifyPoll() {
 
 async function sendEmailCode() {
   error.value = ''; emailHint.value = ''; emailError.value = false; emailVerified.value = false
-  if (!formReadyForVerification()) return
+  if (!formEmailValid()) return
   sendingCode.value = true
   try {
     emailHint.value = (await api.sendRecruitmentEmailCode(form.email)).message
