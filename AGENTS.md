@@ -29,6 +29,7 @@
 │       ├── main.ts          # GSAP + ScrollTrigger 注册、挂载
 │       ├── style.css        # 设计系统变量、@font-face、主题化滚动条
 │       ├── utils/text.ts    # charsHtml() 逐字拆分（GSAP 字符动画）
+│       ├── data/hero.ts     # 首屏大图轮播文案 + 图片槽位（slide.image 留空 → 扁平几何占位）
 │       ├── composables/useGsapReveal.ts  # 滚动入场通用逻辑
 │       ├── assets/fonts/    # woff2：Inter-400/700（latin 子集，中文回退系统字体）
 │       └── components/      # 见 §5 组件清单
@@ -70,7 +71,8 @@ npm run build        # 产物到 frontend/dist
 | 组件 | 职责 |
 |---|---|
 | `SiteNav.vue` | 固定导航：六大板块锚点 + 加入战队 CTA |
-| `HeroSection.vue` | 首屏：字符级 GSAP 入场、环境光斑漂浮、战队数据 |
+| `HeroSection.vue` | 首屏编排：轮播文案（`data/hero.ts`）+ 右侧 HUD + 底部数据条 + 滚动提示 |
+| `HeroCarousel.vue` | **首屏全屏大图轮播引擎**：交叉淡入 + 图片呼吸（scale 1→1.06 正弦往复）、自动轮播（仅标签页隐藏/滚出视口时停，不做悬停暂停）、刻度/箭头/触摸滑动/方向键、carousel 无障碍语义；`slide.image` 留空时渲染扁平几何占位面板 |
 | `MarqueeBand.vue` | 兵种关键词无限滚动 |
 | `EventSection.vue` | 01 赛事介绍：要点 + 占位图 |
 | `NewsSection.vue` | 02 战队资讯：新闻卡片（日期/分类/占位图） |
@@ -97,6 +99,7 @@ npm run build        # 产物到 frontend/dist
 - 路由已全部**同步加载**（无懒加载），保证切页零空窗。
 - 桌面端（≥1001px）组别板块为 **pin + scrub 横向穿行**（GroupsSection，gsap.matchMedia 隔离，移动端退化为纵向堆叠）。
 - 跑马灯速率与**滚动速度联动**（MarqueeBand，ScrollTrigger.getVelocity → timeScale）。
+- 首屏大图轮播（HeroCarousel）：自动轮播由 GSAP tween 驱动（底部进度条与计时同步，6.5s/屏），图片呼吸为独立 yoyo tween（5s 单程 + 无限 repeat），与逐字入场同屏编排；**首屏铺满全屏，故不做悬停暂停**（否则鼠标一动就停），只在标签页隐藏/滚出视口时 pause·resume；`prefers-reduced-motion` 下不自动播放、不呼吸。
 
 ## 8. GSAP 历史规范（承上）
 
@@ -119,4 +122,5 @@ npm run build        # 产物到 frontend/dist
 - **db.sqlite3 未提交**：clone 后需 `migrate` + 重新创建管理员，才有后台账号。
 - `SECRET_KEY` 为 demo 硬编码密钥；`ALLOWED_HOSTS=['*']`、`DEBUG=True` 仅限开发，公开部署前需处理。
 - 简历表单（§5 RecruitSection）目前只是前端 demo 提示，未接后端存储；接入时表单字段/提交接口按现有结构扩展。
+- **首屏大图素材**：三张实拍横图在 `frontend/public/hero/`（`arena-battle.jpg` 赛场 / `pits-debug.jpg` 调试区 / `team-group.jpg` 全队合影，1620×1080、q82 渐进式 JPEG，各 180–270KB），`data/hero.ts` 用 `image: '/static/hero/xxx.jpg'` 引用，`focus` 控制 `object-position`（移动端竖屏裁切主要靠它）；把 `image` 留空即回退到扁平几何占位面板。
 - 组别当前为 4 个（机械/电控/算法/运营），导航、Hero、招新资讯、投递表单等多处文案需同步，改动时全局搜索确认。

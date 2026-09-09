@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { gsap } from 'gsap'
 import { prefersReducedMotion } from '../utils/motion'
@@ -26,6 +26,9 @@ const links = [
  * 这里手动按路径前缀判断——详情页仍高亮所属板块（主页 '/' 需精确匹配）。
  */
 const isActive = (to: string) => (to === '/' ? route.path === '/' : route.path.startsWith(to))
+
+/** 首页首屏（大图轮播）顶部：导航透明化，让大图贯通到顶；滚动后回落为实色条 */
+const overHero = computed(() => route.path === '/' && !scrolled.value && !open.value)
 
 let onScroll: (() => void) | undefined
 
@@ -80,7 +83,7 @@ function closeDrawer() {
 </script>
 
 <template>
-  <header ref="nav" class="nav" :class="{ scrolled }">
+  <header ref="nav" class="nav" :class="{ scrolled, 'over-hero': overHero }">
     <div class="nav-progress" aria-hidden="true"><span ref="prog"></span></div>
 
     <div class="container nav-inner">
@@ -149,6 +152,9 @@ function closeDrawer() {
   background: var(--bg);
   border-bottom: 1px solid transparent;
   transition: background 0.35s var(--ease-expo), border-color 0.35s var(--ease-expo);
+}
+.nav.over-hero {
+  background: transparent;
 }
 .nav.scrolled {
   background: rgba(8, 10, 17, 0.94);
