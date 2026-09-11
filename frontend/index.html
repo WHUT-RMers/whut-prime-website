@@ -7,15 +7,13 @@
     <title>WHUT PRIME — 武汉理工大学机甲大师 PRIME 战队 · 2027 赛季</title>
     <meta name="description" content="武汉理工大学机甲大师 PRIME 战队官网（2027 赛季）。精研 · 覃思 · 笃志 · 力行。赛事介绍、战队资讯、历史荣誉、组别与技术栈、简历投递、商业合作。" />
     <script>
-      // 首屏主题防闪烁：渲染前从 localStorage / 系统偏好决定主题
+      // 首屏主题防闪烁：默认深色；用户手动切换（localStorage）后以用户选择为准
       ;(function () {
-        var t;
+        var t = 'dark';
         try {
           var s = localStorage.getItem('whut-prime-theme');
-          t = s === 'dark' || s === 'light'
-            ? s
-            : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
-        } catch (e) { t = 'dark' }
+          if (s === 'dark' || s === 'light') t = s;
+        } catch (e) { /* 隐私模式忽略 */ }
         document.documentElement.setAttribute('data-theme', t)
       })()
     </script>
