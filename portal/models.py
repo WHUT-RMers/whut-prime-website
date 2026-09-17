@@ -20,6 +20,11 @@ def resume_upload_to(instance, filename: str) -> str:
     return f'private/resumes/{timezone.now():%Y/%m}/{uuid.uuid4().hex}.pdf'
 
 
+def recruitment_photo_upload_to(instance, filename: str) -> str:
+    extension = os.path.splitext(filename)[1].lower() or '.jpg'
+    return f'private/recruitment_photos/{timezone.now():%Y/%m}/{uuid.uuid4().hex}{extension}'
+
+
 def recruitment_attachment_upload_to(instance, filename: str) -> str:
     return f'private/recruitment_attachments/{timezone.now():%Y/%m}/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}'
 
@@ -72,14 +77,35 @@ def validate_resume(value) -> None:
         raise ValidationError('请上传 PDF 格式的简历。')
 
 
+def validate_recruitment_photo(value) -> None:
+    if not value:
+        return
+    if value.size > 5 * 1024 * 1024:
+        raise ValidationError('个人照片不能超过 5 MB。')
+    try:
+        value.open('rb')
+        with Image.open(value.file) as image:
+            image.verify()
+    except (FileNotFoundError, UnidentifiedImageError, OSError) as error:
+        raise ValidationError('无法读取照片，请上传 JPG、PNG 或 WebP 图片。') from error
+    finally:
+        try:
+            value.seek(0)
+        except (AttributeError, OSError):
+            pass
+    extension = os.path.splitext(value.name)[1].lower()
+    if extension not in {'.jpg', '.jpeg', '.png', '.webp'}:
+        raise ValidationError('照片仅支持 JPG、PNG 或 WebP 格式。')
+
+
 def validate_recruitment_attachment(value) -> None:
     if value.size > 15 * 1024 * 1024:
         raise ValidationError('单个附件不能超过 15 MB。')
     allowed = {
         '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp',
-        '.txt', '.md', '.csv', '.json',
-        '.mp4', '.mov', '.webm', '.mp3', '.wav', '.m4a',
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.avif', '.svg',
+        '.txt', '.md', '.csv', '.json', '.log', '.xml', '.html', '.htm', '.css', '.js', '.ts', '.tsx', '.jsx', '.vue', '.yaml', '.yml', '.ini', '.toml', '.sql', '.py', '.java', '.c', '.cpp', '.h', '.sh', '.bat',
+        '.mp4', '.mov', '.webm', '.m4v', '.ogv', '.avi', '.mkv', '.mp3', '.wav', '.m4a', '.ogg', '.oga', '.flac', '.aac',
         '.zip', '.rar', '.7z',
     }
     if os.path.splitext(value.name)[1].lower() not in allowed:
@@ -121,6 +147,7 @@ class NewsArticle(models.Model):
     is_pinned = models.BooleanField('置顶', default=False)
     is_featured = models.BooleanField('首页推荐', default=False)
     external_url = models.URLField('原文链接', blank=True)
+    xiumi_article_id = models.CharField('秀米图文 ID', max_length=64, unique=True, null=True, blank=True, editable=False)
     published_at = models.DateTimeField('发布时间', null=True, blank=True)
     is_trashed = models.BooleanField('已移入回收站', default=False)
     view_count = models.PositiveIntegerField('总浏览量', default=0, editable=False)
@@ -212,6 +239,21 @@ class NewsRevision(models.Model):
         ordering = ('-created_at',)
 
 
+class XiumiBinding(models.Model):
+    partner_user_id = models.CharField('平台用户 ID', max_length=120, unique=True)
+    open_id = models.CharField('秀米用户 ID', max_length=120, unique=True)
+    bind_name = models.CharField('绑定名称', max_length=40, blank=True)
+    created_at = models.DateTimeField('绑定时间', auto_now_add=True)
+    updated_at = models.DateTimeField('更新时间', auto_now=True)
+
+    class Meta:
+        verbose_name = '秀米绑定'
+        verbose_name_plural = '秀米绑定'
+
+    def __str__(self):
+        return f'{self.partner_user_id} → {self.open_id}'
+
+
 class RecruitmentSettings(models.Model):
     is_open = models.BooleanField('开放在线报名', default=False)
     notice = models.CharField('报名提示', max_length=240, blank=True, default='招新暂未开放，请关注战队最新资讯。')
@@ -243,9 +285,12 @@ class RecruitmentApplication(models.Model):
         TALENT_POOL = 'talent_pool', '人才库'
 
     GROUPS = [('mechanical', '机械组'), ('electrical', '电控组'), ('algorithm', '算法组'), ('operations', '运营组')]
+    GENDER_CHOICES = [('male', '男'), ('female', '女')]
 
     application_no = models.CharField('报名编号', max_length=20, unique=True, editable=False)
     name = models.CharField('姓名', max_length=32)
+    # 新表单要求填写性别；保留 blank 以兼容已存在的历史报名记录。
+    gender = models.CharField('性别', max_length=16, choices=GENDER_CHOICES, default='', blank=True)
     qq = models.CharField('QQ', max_length=20, default='')
     wechat = models.CharField('微信', max_length=80, default='')
     email = models.EmailField('邮箱', max_length=254, default='')
@@ -262,10 +307,15 @@ class RecruitmentApplication(models.Model):
     primary_choice = models.CharField('第一志愿', max_length=16, choices=GROUPS, default='mechanical')
     accepts_adjustment = models.BooleanField('服从组别调剂', default=False)
     second_choice = models.CharField('第二志愿', max_length=16, choices=GROUPS, blank=True)
-    introduction = models.TextField('自我介绍')
-    experience = models.TextField('项目/竞赛经历', blank=True)
-    availability = models.CharField('每周可投入时间', max_length=80)
-    resume = models.FileField('PDF 简历', upload_to=resume_upload_to, validators=[FileExtensionValidator(['pdf']), validate_resume])
+    introduction = models.TextField('个人简介')
+    honors = models.TextField('个人荣誉', default='')
+    roles = models.TextField('任职情况', default='')
+    technical_foundation = models.TextField('技术基础', default='')
+    experience = models.TextField('项目/竞赛经历')
+    # 历史数据仍保留该列；新报名流程不再采集或展示投入时间。
+    availability = models.CharField('每周可投入时间', max_length=80, blank=True, default='')
+    photo = models.ImageField('个人照片', upload_to=recruitment_photo_upload_to, blank=True, validators=[validate_recruitment_photo])
+    resume = models.FileField('PDF 简历', upload_to=resume_upload_to, blank=True, validators=[FileExtensionValidator(['pdf']), validate_resume])
     consent = models.BooleanField('已同意个人信息使用')
     status = models.CharField('审核状态', max_length=16, choices=Status.choices, default=Status.PENDING)
     internal_note = models.TextField('内部备注', blank=True)

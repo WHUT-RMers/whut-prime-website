@@ -16,12 +16,15 @@
     document.addEventListener('DOMContentLoaded', function () {
       var bar = document.querySelector('[data-recruitment-filter]');
       var button = document.querySelector('[data-recruitment-filter-submit]');
-      if (!bar || !button) return;
-      button.addEventListener('click', function () {
-        var params = new URLSearchParams();
-        bar.querySelectorAll('select').forEach(function (select) { if (select.value) params.set(select.name, select.value); });
-        window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-      });
+      if (bar && button) {
+        button.addEventListener('click', function () {
+          var params = new URLSearchParams();
+          bar.querySelectorAll('select').forEach(function (select) { if (select.value) params.set(select.name, select.value); });
+          window.location.href = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        });
+      }
+      var query = window.location.search;
+      if (query) document.querySelectorAll('.recruitment-application-preview-link').forEach(function (link) { link.href += query; });
     });
   </script>
 {% endblock %}

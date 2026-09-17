@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import PageHeader from '../components/PageHeader.vue'
 import { api, type RecruitmentApplicationSummary } from '../api'
 
@@ -20,13 +20,22 @@ const editingExisting = ref(false)
 const success = ref('')
 const error = ref('')
 const attachments = ref<File[]>([])
+const profileFields = ref<HTMLElement | null>(null)
+const draftRestored = ref(false)
+const draftSaved = ref(false)
+const draftStorageKey = 'whut-prime-recruitment-draft-v1'
+let draftTimer: ReturnType<typeof window.setTimeout> | undefined
+let draftActive = true
 const form = reactive({
-  name: '', qq: '', wechat: '', email: '', phone: '', college: '', major_class: '',
-  primary_choice: '', accepts_adjustment: false, second_choice: '', introduction: '', experience: '', availability: '', consent: false,
+  name: '', gender: '', qq: '', wechat: '', email: '', phone: '', college: '', major_class: '',
+  primary_choice: '', accepts_adjustment: false, second_choice: '', introduction: '', honors: '', roles: '', technical_foundation: '', experience: '', consent: false,
 })
 const groups = [['mechanical', '机械组'], ['electrical', '电控组'], ['algorithm', '算法组'], ['operations', '运营组']]
 
 onMounted(async () => {
+  restoreDraft()
+  window.addEventListener('beforeunload', saveDraft)
+  resizeProfileFields()
   try {
     const status = await api.recruitmentStatus()
     open.value = status.is_open
@@ -34,6 +43,55 @@ onMounted(async () => {
   }
   catch { error.value = '暂时无法获取报名状态，请稍后重试。' }
 })
+
+watch(form, scheduleDraftSave, { deep: true })
+
+function restoreDraft() {
+  try {
+    const raw = window.localStorage.getItem(draftStorageKey)
+    if (!raw) return
+    const parsed = JSON.parse(raw)
+    const savedForm = parsed?.form
+    if (!savedForm || typeof savedForm !== 'object') return
+    const keys = Object.keys(form).filter((key) => key !== 'consent')
+    for (const key of keys) {
+      const value = savedForm[key]
+      if (typeof value === 'string' || (key === 'accepts_adjustment' && typeof value === 'boolean')) {
+        ;(form as Record<string, unknown>)[key] = value
+      }
+    }
+    draftRestored.value = true
+  }
+  catch {
+    window.localStorage.removeItem(draftStorageKey)
+  }
+}
+
+function scheduleDraftSave() {
+  if (!draftActive) return
+  if (draftTimer) window.clearTimeout(draftTimer)
+  draftTimer = window.setTimeout(saveDraft, 350)
+}
+
+function saveDraft() {
+  if (!draftActive) return
+  draftTimer = undefined
+  try {
+    const { consent: _consent, ...draft } = form
+    window.localStorage.setItem(draftStorageKey, JSON.stringify({ version: 1, form: draft }))
+    draftSaved.value = true
+  }
+  catch { /* 浏览器禁用本地存储时不影响正常提交 */ }
+}
+
+function clearDraft() {
+  draftActive = false
+  if (draftTimer) window.clearTimeout(draftTimer)
+  draftTimer = undefined
+  try { window.localStorage.removeItem(draftStorageKey) } catch { /* ignore */ }
+  draftRestored.value = false
+  draftSaved.value = false
+}
 
 function selectFiles(event: Event) {
   const input = event.target as HTMLInputElement
@@ -45,6 +103,22 @@ function selectFiles(event: Event) {
 }
 
 function removeAttachment(index: number) { attachments.value.splice(index, 1) }
+
+function syncTextareaHeight(textarea: HTMLTextAreaElement) {
+  const maxHeight = 360
+  textarea.style.height = 'auto'
+  const height = Math.min(Math.max(textarea.scrollHeight, 128), maxHeight)
+  textarea.style.height = `${height}px`
+  textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden'
+}
+
+function autoGrow(event: Event) {
+  syncTextareaHeight(event.currentTarget as HTMLTextAreaElement)
+}
+
+function resizeProfileFields() {
+  profileFields.value?.querySelectorAll<HTMLTextAreaElement>('textarea').forEach(syncTextareaHeight)
+}
 
 function formEmailValid() {
   const email = form.email.trim()
@@ -70,6 +144,8 @@ function startResendCountdown(seconds = 60) {
 onUnmounted(() => {
   if (resendTimer) window.clearInterval(resendTimer)
   stopVerifyPoll()
+  if (draftTimer) window.clearTimeout(draftTimer)
+  window.removeEventListener('beforeunload', saveDraft)
 })
 
 /**
@@ -128,16 +204,41 @@ function startEditingExisting() {
   editingExisting.value = true
   success.value = ''
   error.value = ''
+  nextTick(resizeProfileFields)
 }
 
 async function submit() {
   error.value = ''; success.value = ''
   if (!open.value) { error.value = '当前不在报名时间，暂不接收报名信息。'; return }
-  if (emailVerificationRequired.value && !emailVerified.value) { error.value = '请先完成邮箱验证。'; return }
   if (existingApplication.value && !editingExisting.value) { error.value = '该邮箱已有报名记录，请点击“修改报名信息”后再提交。'; return }
-  if (!form.primary_choice) { error.value = '请选择第一志愿。'; return }
-  if (form.accepts_adjustment && form.second_choice === form.primary_choice) { error.value = '第二志愿不能与第一志愿相同。'; return }
-  if ((!existingApplication.value || !editingExisting.value) && !attachments.value.length) { error.value = '请至少上传一份报名材料。'; return }
+  const requiredFields: Array<[keyof typeof form, string]> = [
+    ['name', '姓名'], ['gender', '性别'], ['college', '学院'], ['major_class', '专业与班级'],
+    ['qq', 'QQ'], ['wechat', '微信'], ['email', '邮箱'],
+    ['phone', '手机号码'], ['primary_choice', '第一志愿'], ['introduction', '个人简介'],
+    ['honors', '个人荣誉'], ['roles', '任职情况'], ['technical_foundation', '技术基础'],
+    ['experience', '项目或竞赛经历'],
+  ]
+  const missing = requiredFields
+    .filter(([field]) => !String(form[field] ?? '').trim())
+    .map(([, label]) => label)
+  if (!form.consent) missing.push('个人信息使用同意')
+  if (missing.length) {
+    error.value = `请补充以下必填项：${missing.join('、')}。`
+    return
+  }
+  if (!['male', 'female'].includes(form.gender)) {
+    error.value = '性别只能选择“男”或“女”。'
+    return
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    error.value = '邮箱格式不正确，请填写有效的邮箱地址。'
+    return
+  }
+  if (emailVerificationRequired.value && !emailVerified.value) { error.value = '请先完成邮箱验证。'; return }
+  if (form.accepts_adjustment && form.second_choice === form.primary_choice) {
+    error.value = '第二志愿不能与第一志愿相同，请重新选择。'
+    return
+  }
   sending.value = true
   const data = new FormData()
   Object.entries(form).forEach(([key, value]) => data.append(key, Array.isArray(value) ? JSON.stringify(value) : String(value)))
@@ -153,6 +254,7 @@ async function submit() {
       const result = await api.apply(data)
       success.value = `投递成功，你的报名编号是 ${result.application_no}。请留意后续通知。`
     }
+    clearDraft()
   }
   catch (reason: any) { error.value = reason?.error || '提交失败，请检查填写内容后重试。' }
   finally { sending.value = false }
@@ -164,16 +266,16 @@ async function submit() {
     <PageHeader eyebrow="05 / 投递简历" title="加入 PRIME" desc="每年九月初招新开启，春夏赛季开放补录。零基础没关系，我们只要你肯学、能熬、爱折腾。" />
     <div class="recruit-poster" aria-label="招新海报占位区域"><span class="poster-dot"></span><span class="poster-icon">▣</span><p>2027 赛季招新海报</p><small>PHOTO PLACEHOLDER</small></div>
     <div class="steps">
-      <div><b>01</b><h3>提交材料</h3><p>填写表单并上传至少一份报名材料。</p></div><div><b>02</b><h3>简历筛选</h3><p>各组负责人根据方向与经历初筛。</p></div><div><b>03</b><h3>组内面试</h3><p>聊一聊项目、思路与热情。</p></div><div><b>04</b><h3>试用期</h3><p>在实战任务中双向选择。</p></div>
+      <div><b>01</b><h3>填写信息</h3><p>填写报名信息，材料可选。</p></div><div><b>02</b><h3>简历筛选</h3><p>各组负责人根据方向与经历初筛。</p></div><div><b>03</b><h3>组内面试</h3><p>聊一聊项目、思路与热情。</p></div><div><b>04</b><h3>试用期</h3><p>在实战任务中双向选择。</p></div>
     </div>
-    <div class="apply-layout"><section class="form-card"><form @submit.prevent="submit">
-      <div class="form-heading"><h2>在线投递</h2><p>提交前请确认信息真实；简历仅用于本次战队招新审核。</p></div>
-      <div class="two"><label>姓名<input v-model="form.name" required maxlength="32" placeholder="你的姓名" /></label><label>学院<input v-model="form.college" required maxlength="80" placeholder="例如：自动化学院" /></label><label>专业与班级<input v-model="form.major_class" required maxlength="120" placeholder="例如：机械设计制造及其自动化 2301 班" /></label><label>每周可投入时间<input v-model="form.availability" required maxlength="80" placeholder="例如：每周 12 小时" /></label></div>
+    <div class="apply-layout"><section class="form-card"><form novalidate @submit.prevent="submit">
+       <div class="form-heading"><h2>在线投递</h2><p>请确认信息真实；简历仅用于本次招新审核。</p></div>
+       <div class="two"><label>姓名<input v-model="form.name" required maxlength="32" placeholder="你的姓名" /></label><fieldset class="gender-field"><legend>性别</legend><div class="gender-options"><label class="gender-option"><input v-model="form.gender" type="radio" name="gender" value="male" required /><span>男</span></label><label class="gender-option"><input v-model="form.gender" type="radio" name="gender" value="female" /><span>女</span></label></div></fieldset><label>学院<input v-model="form.college" required maxlength="80" placeholder="例如：自动化学院" /></label><label>专业与班级<input v-model="form.major_class" required maxlength="120" placeholder="例如：机械设计制造及其自动化 2301 班" /></label></div>
       <fieldset><legend>联系方式（以下四项均为必填）</legend><div class="two"><label>QQ<input v-model="form.qq" required maxlength="20" inputmode="numeric" placeholder="QQ 号码" /></label><label>微信<input v-model="form.wechat" required maxlength="80" placeholder="微信号" /></label><div class="email-cell"><div class="email-head"><span class="email-title">邮箱</span><button v-if="emailVerificationRequired" class="vp-link" :class="{ ok: emailVerified, counting: sendingCode || resendSeconds > 0 }" type="button" :aria-label="emailVerified ? '邮箱已验证' : '发送验证链接'" :disabled="sendingCode || resendSeconds > 0 || emailVerified" @click="sendEmailCode"><span v-if="emailVerified" class="vp-check" aria-hidden="true">✓</span><span v-else-if="sendingCode">发送中…</span><span v-else-if="resendSeconds > 0">{{ resendSeconds }}s 后重发</span><span v-else>发送验证链接</span></button></div><input v-model="form.email" required type="email" aria-label="邮箱" placeholder="name@example.com" @input="emailVerified = false; existingApplication = null; editingExisting = false; stopVerifyPoll()" /><p v-if="(pollingEmail && !emailVerified) || emailError" class="vp-hint" :class="{ err: emailError }"><template v-if="pollingEmail && !emailVerified">链接已发送至邮箱，点击邮件中的链接即可自动验证。</template><template v-else>{{ emailHint || '发送失败，请稍后再试。' }}</template></p></div><label>手机号码<input v-model="form.phone" required type="tel" maxlength="32" placeholder="常用手机号" /></label></div></fieldset>
-      <section v-if="existingApplication && !editingExisting" class="existing-application" aria-live="polite"><span>已完成身份验证</span><h3>你已经提交过报名</h3><dl><div><dt>报名编号</dt><dd>{{ existingApplication.application_no }}</dd></div><div><dt>第一志愿</dt><dd>{{ groups.find((group) => group[0] === existingApplication?.primary_choice)?.[1] }}</dd></div><div><dt>当前状态</dt><dd>{{ existingApplication.status }}</dd></div><div><dt>最后提交</dt><dd>{{ existingApplication.created_at }}</dd></div></dl><p v-if="existingApplication.can_edit">当前仍未审核，可在线修改 {{ 2 - existingApplication.modification_count }} 次；每次修改都会覆盖此前填写内容，并刷新最后提交时间。</p><p v-else>报名已进入处理流程，或修改次数已用完；如有问题请联系管理员。</p><button v-if="existingApplication.can_edit" type="button" class="btn btn-primary" @click="startEditingExisting">修改报名信息（剩余 {{ 2 - existingApplication.modification_count }} 次）</button></section>
+      <section v-if="existingApplication && !editingExisting" class="existing-application" aria-live="polite"><span>已完成身份验证</span><h3>你已经提交过报名</h3><dl><div><dt>报名编号</dt><dd>{{ existingApplication.application_no }}</dd></div><div><dt>第一志愿</dt><dd>{{ groups.find((group) => group[0] === existingApplication?.primary_choice)?.[1] }}</dd></div><div><dt>当前状态</dt><dd>{{ existingApplication.status }}</dd></div><div><dt>最后提交</dt><dd>{{ existingApplication.created_at }}</dd></div></dl><p v-if="existingApplication.can_edit">可直接修改报名信息，提交后以最新内容为准。</p><p v-else>报名已进入处理流程，暂不能在线修改。</p><button v-if="existingApplication.can_edit" type="button" class="btn btn-primary" @click="startEditingExisting">修改报名信息</button></section>
       <template v-if="!existingApplication || editingExisting">
       <fieldset><legend>志愿与调剂</legend><p class="field-tip">第一志愿为唯一的优先投递方向。若选择服从调剂，可指定一个不同的第二志愿，或接受战队统筹安排。</p><label>第一志愿<select v-model="form.primary_choice" required><option value="" disabled>请选择最想加入的组别</option><option v-for="group in groups" :key="group[0]" :value="group[0]">{{ group[1] }}</option></select></label><label class="check"><input v-model="form.accepts_adjustment" type="checkbox" />我愿意服从组别调剂</label><label v-if="form.accepts_adjustment">第二志愿 / 调剂意向<select v-model="form.second_choice"><option value="">接受战队统筹安排</option><option v-for="group in groups.filter((group) => group[0] !== form.primary_choice)" :key="group[0]" :value="group[0]">{{ group[1] }}</option></select></label></fieldset>
-      <label>自我介绍<textarea v-model="form.introduction" required rows="4" /></label><label>项目或竞赛经历（选填）<textarea v-model="form.experience" rows="3" placeholder="可填写项目、竞赛、作品链接或相关经历。" /></label><section class="attachment-field"><span>报名材料（可多选，可分多次添加）</span><label class="file-picker"><input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.txt,.md,.csv,.json,.mp4,.mov,.webm,.mp3,.wav,.m4a,.zip,.rar,.7z" @change="selectFiles" /><strong>＋ 选择文件并添加</strong></label><small>{{ editingExisting ? '原有附件会保留；可继续分批追加新材料。' : '至少上传一份材料；支持常见文档、表格、演示、图片、音视频、文本和压缩包。单个附件不超过 15 MB。' }}</small></section><ul v-if="attachments.length" class="file-list"><li v-for="(file, index) in attachments" :key="`${file.name}-${file.lastModified}`"><span>{{ file.name }}</span><button type="button" @click="removeAttachment(index)">移除</button></li></ul><label class="check consent"><input v-model="form.consent" type="checkbox" required />我同意战队仅为本次招新收集、使用以上个人信息。</label><button class="btn btn-primary" :disabled="sending">{{ sending ? '正在提交…' : editingExisting ? `确认修改（剩余 ${2 - (existingApplication?.modification_count || 0)} 次）` : '提交简历' }}</button><p v-if="error" class="error" role="alert">{{ error }}</p><p v-if="success" class="success">{{ success }}</p>
+      <div ref="profileFields" class="profile-fields"><fieldset><legend>个人情况（必填；没有内容请填“无”）</legend><div class="profile-grid"><label>个人简介<textarea v-model="form.introduction" required rows="4" placeholder="兴趣、性格、学习经历" @input="autoGrow" /></label><label>个人荣誉<textarea v-model="form.honors" required rows="3" placeholder="奖项、证书、表彰" @input="autoGrow" /></label><label>任职情况（社团、班级等）<textarea v-model="form.roles" required rows="3" placeholder="社团、班级、学生组织任职" @input="autoGrow" /></label><label>技术基础<textarea v-model="form.technical_foundation" required rows="4" placeholder="相关知识、工具和技能" @input="autoGrow" /></label><label class="profile-experience">项目或竞赛经历<textarea v-model="form.experience" required rows="4" placeholder="项目、竞赛、作品链接或相关经历" @input="autoGrow" /></label></div></fieldset></div><section class="attachment-field"><span>报名材料（选填）</span><label class="file-picker"><input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.avif,.svg,.txt,.md,.csv,.json,.log,.xml,.html,.htm,.css,.js,.ts,.tsx,.jsx,.vue,.yaml,.yml,.ini,.toml,.sql,.py,.java,.c,.cpp,.h,.sh,.bat,.mp4,.mov,.webm,.m4v,.ogv,.avi,.mkv,.mp3,.wav,.m4a,.ogg,.oga,.flac,.aac,.zip,.rar,.7z" @change="selectFiles" /><strong>＋ 选择文件并添加</strong></label><small>{{ editingExisting ? '原有附件会保留；可继续分批追加新材料。' : '附件可不上传；支持常见文档、表格、演示、图片、音视频、文本和压缩包。单个附件不超过 15 MB。' }}</small></section><ul v-if="attachments.length" class="file-list"><li v-for="(file, index) in attachments" :key="file.name + '-' + file.lastModified"><span>{{ file.name }}</span><button type="button" @click="removeAttachment(index)">移除</button></li></ul><label class="check consent"><input v-model="form.consent" type="checkbox" required />我同意战队仅为本次招新收集、使用以上个人信息。</label><button class="btn btn-primary" :disabled="sending">{{ sending ? '正在提交…' : editingExisting ? '保存报名信息' : '提交简历' }}</button><p v-if="error" class="error" role="alert">{{ error }}</p><p v-if="success" class="success">{{ success }}</p>
       </template>
     </form></section>
     <aside class="faq-card">
@@ -188,7 +290,7 @@ async function submit() {
 </template>
 
 <style scoped>
-.page{padding-bottom:var(--section-space)}.recruit-poster{height:300px;margin-top:40px;border:1px solid var(--line);border-radius:var(--radius);display:grid;place-items:center;align-content:center;background:repeating-linear-gradient(135deg,var(--surface-2) 0 18px,var(--bg) 18px 36px);color:var(--ink-dim)}.poster-icon{font-size:2rem;color:var(--accent)}.recruit-poster p{margin-top:10px}.recruit-poster small{margin-top:8px;font:12px var(--mono);letter-spacing:.16em}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:42px}.steps>div,.form-card,.faq-card{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}.steps>div{padding:24px}.steps b{color:var(--accent);font:700 .75rem var(--mono)}.steps h3{margin-top:18px}.steps p,.form-heading p{margin-top:9px;color:var(--ink-dim);line-height:1.65}.apply-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.9fr);gap:28px;margin-top:52px;align-items:start}.form-card,.faq-card{padding:34px}.form-card form{display:flex;flex-direction:column;gap:22px}.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:flex;flex-direction:column;gap:8px;color:var(--ink-dim);font-size:.9rem}input,textarea,.form-card select{box-sizing:border-box;width:100%;min-height:50px;background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font:inherit}textarea{resize:vertical;line-height:1.7}input:focus,textarea:focus,.form-card select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,226,166,.08)}input[type=file]{height:auto;padding:10px}fieldset{min-width:0;border:1px solid var(--line);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:14px}legend{padding:0 5px;color:var(--ink);font-weight:700}.field-tip,.file-list,.form-card small{margin:0;color:var(--ink-dim);font-size:.82rem;line-height:1.65}.file-list{color:var(--accent)}.check{min-height:30px;display:flex;flex-direction:row;align-items:center;gap:10px;color:var(--ink);cursor:pointer}.check input{flex:0 0 auto;width:18px;height:18px;min-height:0;accent-color:var(--accent)}.error{color:var(--accent-warm)}.success{color:var(--accent)}.faq-card{position:sticky;top:calc(var(--nav-h) + 24px)}.faq-card article{padding:20px 0;border-bottom:1px solid var(--line)}.faq-card article p{margin-top:9px;color:var(--ink-dim);line-height:1.7}.faq-contact{padding-top:22px;display:flex;flex-direction:column;gap:10px;color:var(--ink-dim)}.faq-contact a{color:var(--accent)}@media(max-width:980px){.apply-layout{grid-template-columns:1fr}.faq-card{position:static}.steps{grid-template-columns:1fr 1fr}}@media(max-width:620px){.two,.steps{grid-template-columns:1fr}.form-card,.faq-card{padding:22px}.recruit-poster{height:230px}}
+.page{padding-bottom:var(--section-space)}.recruit-poster{height:300px;margin-top:40px;border:1px solid var(--line);border-radius:var(--radius);display:grid;place-items:center;align-content:center;background:repeating-linear-gradient(135deg,var(--surface-2) 0 18px,var(--bg) 18px 36px);color:var(--ink-dim)}.poster-icon{font-size:2rem;color:var(--accent)}.recruit-poster p{margin-top:10px}.recruit-poster small{margin-top:8px;font:12px var(--mono);letter-spacing:.16em}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:42px}.steps>div,.form-card,.faq-card{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}.steps>div{padding:24px}.steps b{color:var(--accent);font:700 .75rem var(--mono)}.steps h3{margin-top:18px}.steps p,.form-heading p{margin-top:9px;color:var(--ink-dim);line-height:1.65}.draft-status{display:block;margin-top:8px;color:var(--accent);font-size:.75rem;line-height:1.4}.apply-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,.9fr);gap:28px;margin-top:52px;align-items:start}.form-card,.faq-card{padding:34px}.form-card form{display:flex;flex-direction:column;gap:22px}.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:flex;flex-direction:column;gap:8px;color:var(--ink-dim);font-size:.9rem}input,textarea,.form-card select{box-sizing:border-box;width:100%;min-height:50px;background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font:inherit}textarea{resize:vertical;line-height:1.7}input:focus,textarea:focus,.form-card select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,226,166,.08)}input[type=file]{height:auto;padding:10px}fieldset{min-width:0;border:1px solid var(--line);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:14px}legend{padding:0 5px;color:var(--ink);font-weight:700}.field-tip,.file-list,.form-card small{margin:0;color:var(--ink-dim);font-size:.82rem;line-height:1.65}.file-list{color:var(--accent)}.check{min-height:30px;display:flex;flex-direction:row;align-items:center;gap:10px;color:var(--ink);cursor:pointer}.check input{flex:0 0 auto;width:18px;height:18px;min-height:0;accent-color:var(--accent)}.error{color:var(--accent-warm)}.success{color:var(--accent)}.faq-card{position:sticky;top:calc(var(--nav-h) + 24px)}.faq-card article{padding:20px 0;border-bottom:1px solid var(--line)}.faq-card article p{margin-top:9px;color:var(--ink-dim);line-height:1.7}.faq-contact{padding-top:22px;display:flex;flex-direction:column;gap:10px;color:var(--ink-dim)}.faq-contact a{color:var(--accent)}@media(max-width:980px){.apply-layout{grid-template-columns:1fr}.faq-card{position:static}.steps{grid-template-columns:1fr 1fr}}@media(max-width:620px){.two,.steps{grid-template-columns:1fr}.form-card,.faq-card{padding:22px}.recruit-poster{height:230px}}
 </style>
 <style scoped>
 .email-cell{ display:flex; flex-direction:column; gap:8px; }
@@ -217,8 +319,10 @@ async function submit() {
 .vp-link.ok .vp-check{ color:#fff; font-size:.72rem; line-height:1; }
 .vp-hint{ margin:0; font-size:.78rem; color:var(--ink-dim); line-height:1.55; }
 .vp-hint.err{ color:var(--accent-warm); }
-.attachment-field{display:grid;gap:9px;color:var(--ink-dim);font-size:.9rem}.file-picker{position:relative;display:flex;align-items:center;justify-content:center;min-height:54px;border:1px dashed rgba(45,226,166,.45);border-radius:8px;background:rgba(45,226,166,.035);color:var(--accent);cursor:pointer;transition:.18s ease}.file-picker:hover{border-color:var(--accent);background:rgba(45,226,166,.08)}.file-picker input{position:absolute;inset:0;width:100%;min-height:0;opacity:0;cursor:pointer}.file-picker strong{font-size:.9rem}
+ .attachment-field{display:grid;gap:9px;color:var(--ink-dim);font-size:.9rem}.file-picker{position:relative;display:flex;align-items:center;justify-content:center;min-height:54px;border:1px dashed rgba(45,226,166,.45);border-radius:8px;background:rgba(45,226,166,.035);color:var(--accent);cursor:pointer;transition:.18s ease}.file-picker:hover{border-color:var(--accent);background:rgba(45,226,166,.08)}.file-picker input{position:absolute;inset:0;width:100%;min-height:0;opacity:0;cursor:pointer}.file-picker strong{font-size:.9rem}
 .file-list{display:grid;gap:7px;padding:0;list-style:none}.file-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:1px solid rgba(45,226,166,.18);border-radius:6px;background:rgba(45,226,166,.035)}.file-list span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.file-list button{border:0;background:transparent;color:var(--accent-warm);font:inherit;font-size:.78rem;cursor:pointer}
 .existing-application{position:relative;overflow:hidden;padding:25px;border:1px solid rgba(45,226,166,.35);border-radius:10px;background:linear-gradient(135deg,rgba(45,226,166,.09),rgba(77,163,255,.045))}.existing-application:after{position:absolute;right:-35px;top:-52px;width:140px;height:140px;border:1px solid rgba(45,226,166,.34);border-radius:50%;content:""}.existing-application>span{color:var(--accent);font:700 .72rem var(--mono);letter-spacing:.12em}.existing-application h3{margin:9px 0 18px;font-size:1.35rem}.existing-application dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:0;border:1px solid var(--line);background:var(--line)}.existing-application dl div{padding:12px 14px;background:#0a0d12}.existing-application dt{margin-bottom:4px;color:var(--ink-dim);font-size:.75rem}.existing-application dd{margin:0;color:var(--ink);font-weight:700}.existing-application p{margin:16px 0;color:var(--ink-dim);font-size:.84rem;line-height:1.7}.existing-application .btn{position:relative;z-index:1}
+.profile-fields fieldset{gap:18px}.profile-grid{display:grid;grid-template-columns:1fr;gap:18px}.profile-grid textarea,.profile-experience textarea{min-height:128px;max-height:360px;overflow-y:hidden;resize:vertical}.profile-experience{margin-top:0}
+.gender-field{margin:0;min-height:50px;padding:8px 13px 9px;gap:6px;border-color:var(--line)}.gender-field legend{font-size:.9rem;color:var(--ink-dim)}.gender-options{display:flex;align-items:center;gap:22px;min-height:30px}.gender-option{display:inline-flex;flex-direction:row;align-items:center;gap:8px;color:var(--ink);cursor:pointer;font-size:.9rem}.gender-option input{width:17px;height:17px;min-height:0;margin:0;accent-color:var(--accent)}.gender-option input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 @media(max-width:620px){.existing-application dl{grid-template-columns:1fr}}
 </style>

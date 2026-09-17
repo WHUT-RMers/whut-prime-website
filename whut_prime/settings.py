@@ -11,7 +11,12 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 import os
+import mimetypes
 from pathlib import Path
+
+# Django's development static handler may otherwise serve ES modules as
+# text/plain on Windows, which prevents the PDF.js worker from starting.
+mimetypes.add_type('text/javascript', '.mjs')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -166,6 +171,13 @@ DEFAULT_FROM_EMAIL = (
     if _configured_from_email and 'noreply@example.com' not in _configured_from_email
     else EMAIL_HOST_USER or 'PRIME 招新 <noreply@example.com>'
 )
+
+# 秀米同步应用配置。AppID 可以公开出现在绑定链接中，Secret 只能留在服务器
+# 环境变量或本机 `.env`，不能写进前端代码，也不要提交到 Git。
+XIUMI_APP_ID = os.environ.get('XIUMI_APP_ID', '').strip()
+XIUMI_APP_SECRET = os.environ.get('XIUMI_APP_SECRET', '').strip()
+XIUMI_BIND_NAME = os.environ.get('XIUMI_BIND_NAME', 'WHUT PRIME 官网').strip()[:20]
+XIUMI_BASE_URL = os.environ.get('XIUMI_BASE_URL', 'https://xiumi.us').rstrip('/')
 
 # 去掉 SimpleUI 默认的版本、Gitee、GitHub 宣传卡片；首页快捷入口会自动
 # 扩展为整行，避免留下右侧空白。

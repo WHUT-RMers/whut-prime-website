@@ -27,7 +27,7 @@ useScrollReveal(root, { blur: 8, stagger: 0.07 })
       <RouterLink to="/recruit" class="recruit-form" data-reveal>
         <p class="eyebrow">ONLINE / APPLY</p>
         <h3>在线投递通道</h3>
-        <p class="form-lead">填写完整报名信息、上传报名材料，并在提交前确认个人信息使用说明。</p>
+        <p class="form-lead">填写完整报名信息，报名材料可按需上传，并在提交前确认个人信息使用说明。</p>
         <span class="btn btn-primary submit-btn">前往投递 →</span>
       </RouterLink>
     </div>

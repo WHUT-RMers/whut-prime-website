@@ -23,6 +23,11 @@ class PortalApiTests(TestCase):
             cover_caption='机器人在赛场进行调试',
         )
 
+    def photo_upload(self, filename='portrait.jpg'):
+        photo_buffer = BytesIO()
+        Image.new('RGB', (480, 640), '#dbeef2').save(photo_buffer, 'JPEG')
+        return SimpleUploadedFile(filename, photo_buffer.getvalue(), content_type='image/jpeg')
+
     def test_public_news_and_deduplicated_view(self):
         item = self.client.get(reverse('portal:news-list')).json()['items'][0]
         self.assertEqual(item['slug'], self.article.slug)
@@ -41,19 +46,99 @@ class PortalApiTests(TestCase):
     def test_open_recruitment_accepts_pdf(self):
         settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
         response = self.client.post(reverse('portal:recruitment-submit'), {
-            'name': '张同学', 'qq': '12345678', 'wechat': 'prime-zhang', 'email': 'zhang@example.com', 'phone': '13800000000',
+            'name': '张同学', 'gender': 'male', 'qq': '12345678', 'wechat': 'prime-zhang', 'email': 'zhang@example.com', 'phone': '13800000000',
             'college': '计算机学院', 'major_class': '软件工程 2301 班',
-            'intended_groups': ['algorithm'], 'introduction': '热爱机器人', 'experience': '', 'availability': '每周 12 小时', 'consent': 'true',
+            'intended_groups': ['algorithm'], 'introduction': '热爱机器人', 'honors': '无', 'roles': '无', 'technical_foundation': 'Python 基础', 'experience': '无', 'availability': '每周 12 小时', 'consent': 'true',
+            'photo': self.photo_upload('zhang.jpg'),
             'resume': SimpleUploadedFile('resume.pdf', b'%PDF-1.4 test', content_type='application/pdf'),
         })
         self.assertEqual(response.status_code, 201, response.content.decode())
 
+    def test_open_recruitment_accepts_without_attachment(self):
+        settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
+        response = self.client.post(reverse('portal:recruitment-submit'), {
+            'name': '无附件同学', 'gender': 'female', 'qq': '12345679', 'wechat': 'prime-no-file', 'email': 'no-file@example.com', 'phone': '13800000009',
+            'college': '计算机学院', 'major_class': '软件工程 2302 班', 'primary_choice': 'algorithm',
+            'introduction': '暂时没有附件', 'honors': '无', 'roles': '无', 'technical_foundation': '正在学习 Python',
+            'experience': '无', 'availability': '每周 8 小时', 'consent': 'true',
+            'photo': self.photo_upload('no-file.jpg'),
+        })
+        self.assertEqual(response.status_code, 201, response.content.decode())
+        application = RecruitmentApplication.objects.get(name='无附件同学')
+        self.assertFalse(application.resume)
+        self.assertEqual(application.attachments.count(), 0)
+
+    def test_latest_submission_replaces_previous_application_for_email(self):
+        settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
+        first = self.client.post(reverse('portal:recruitment-submit'), {
+            'name': '第一次提交', 'gender': 'male', 'qq': '10001', 'wechat': 'latest-demo', 'email': 'latest@example.com', 'phone': '13800000001',
+            'college': '计算机学院', 'major_class': '软件工程 2301 班', 'primary_choice': 'algorithm',
+            'introduction': '第一次内容', 'honors': '无', 'roles': '无', 'technical_foundation': 'Python', 'experience': '第一次经历', 'consent': 'true',
+            'attachments': SimpleUploadedFile('first.txt', b'first'),
+        })
+        self.assertEqual(first.status_code, 201, first.content.decode())
+        original = RecruitmentApplication.objects.get(email='latest@example.com')
+        original_id = original.pk
+
+        second = self.client.post(reverse('portal:recruitment-submit'), {
+            'name': '最后一次提交', 'gender': 'female', 'qq': '10002', 'wechat': 'latest-demo', 'email': 'latest@example.com', 'phone': '13800000002',
+            'college': '自动化学院', 'major_class': '自动化 2301 班', 'primary_choice': 'electrical',
+            'introduction': '最后一次内容', 'honors': '一等奖', 'roles': '无', 'technical_foundation': 'C++', 'experience': '最后一次经历', 'consent': 'true',
+            'attachments': SimpleUploadedFile('latest.txt', b'latest'),
+        })
+        self.assertEqual(second.status_code, 200, second.content.decode())
+        self.assertEqual(RecruitmentApplication.objects.filter(email='latest@example.com').count(), 1)
+        application = RecruitmentApplication.objects.get(email='latest@example.com')
+        self.assertEqual(application.pk, original_id)
+        self.assertEqual(application.name, '最后一次提交')
+        self.assertEqual(application.primary_choice, 'electrical')
+        self.assertEqual(application.attachments.count(), 1)
+        self.assertEqual(application.attachments.get().original_name, 'latest.txt')
+
+    def test_open_recruitment_accepts_optional_photo(self):
+        settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
+        photo_buffer = BytesIO()
+        Image.new('RGB', (480, 640), '#dbeef2').save(photo_buffer, 'JPEG')
+        response = self.client.post(reverse('portal:recruitment-submit'), {
+            'name': '照片同学', 'gender': 'male', 'qq': '12345681', 'wechat': 'prime-photo', 'email': 'photo@example.com', 'phone': '13800000011',
+            'college': '计算机学院', 'major_class': '软件工程 2304 班', 'primary_choice': 'algorithm',
+            'introduction': '热爱机器人', 'honors': '无', 'roles': '无', 'technical_foundation': 'Python 基础', 'experience': '无',
+            'availability': '每周 8 小时', 'consent': 'true',
+            'photo': SimpleUploadedFile('portrait.jpg', photo_buffer.getvalue(), content_type='image/jpeg'),
+        })
+        self.assertEqual(response.status_code, 201, response.content.decode())
+        self.assertTrue(RecruitmentApplication.objects.get(name='照片同学').photo)
+
+    def test_open_recruitment_accepts_without_photo(self):
+        settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
+        response = self.client.post(reverse('portal:recruitment-submit'), {
+            'name': '缺照片同学', 'gender': 'male', 'qq': '12345682', 'wechat': 'prime-no-photo', 'email': 'no-photo@example.com', 'phone': '13800000012',
+            'college': '计算机学院', 'major_class': '软件工程 2305 班', 'primary_choice': 'algorithm',
+            'introduction': '热爱机器人', 'honors': '无', 'roles': '无', 'technical_foundation': 'Python 基础', 'experience': '无',
+            'availability': '每周 8 小时', 'consent': 'true',
+        })
+        self.assertEqual(response.status_code, 201, response.content.decode())
+        self.assertFalse(RecruitmentApplication.objects.get(name='缺照片同学').photo)
+
+    def test_open_recruitment_requires_all_profile_text(self):
+        settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
+        response = self.client.post(reverse('portal:recruitment-submit'), {
+            'name': '缺少经历同学', 'gender': 'female', 'qq': '12345680', 'wechat': 'prime-missing', 'email': 'missing@example.com', 'phone': '13800000010',
+            'college': '计算机学院', 'major_class': '软件工程 2303 班', 'primary_choice': 'algorithm',
+            'introduction': '热爱机器人', 'honors': '无', 'roles': '无', 'technical_foundation': 'Python 基础',
+            'experience': '', 'availability': '每周 8 小时', 'consent': 'true',
+            'photo': self.photo_upload('missing.jpg'),
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('experience', response.json()['errors'])
+
     def test_open_recruitment_accepts_any_supported_attachment(self):
         settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
         response = self.client.post(reverse('portal:recruitment-submit'), {
-            'name': '材料同学', 'qq': '12345678', 'wechat': 'prime-file', 'email': 'file@example.com', 'phone': '13800000002',
+            'name': '材料同学', 'gender': 'male', 'qq': '12345678', 'wechat': 'prime-file', 'email': 'file@example.com', 'phone': '13800000002',
             'college': '计算机学院', 'major_class': '软件工程 2301 班', 'primary_choice': 'algorithm',
-            'introduction': '用 Word 材料报名', 'availability': '每周 12 小时', 'consent': 'true',
+            'introduction': '用 Word 材料报名', 'honors': '无', 'roles': '无', 'technical_foundation': 'Office 基础', 'experience': '无', 'availability': '每周 12 小时', 'consent': 'true',
+            'photo': self.photo_upload('file.jpg'),
             'attachments': SimpleUploadedFile('portfolio.docx', b'not-a-real-docx-but-a-valid-upload', content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
         })
         self.assertEqual(response.status_code, 201, response.content.decode())
@@ -97,9 +182,10 @@ class PortalApiTests(TestCase):
         verify = self.client.get(reverse('portal:recruitment-email-verify'), {'token': token})
         self.assertEqual(verify.status_code, 200, verify.content.decode())
         response = self.client.post(reverse('portal:recruitment-submit'), {
-            'name': '验证同学', 'qq': '12345678', 'wechat': 'verified-prime', 'email': email, 'phone': '13800000000',
+            'name': '验证同学', 'gender': 'female', 'qq': '12345678', 'wechat': 'verified-prime', 'email': email, 'phone': '13800000000',
             'college': '计算机学院', 'major_class': '软件工程 2301 班', 'primary_choice': 'algorithm',
-            'introduction': '热爱机器人', 'availability': '每周 12 小时', 'consent': 'true',
+            'introduction': '热爱机器人', 'honors': '无', 'roles': '无', 'technical_foundation': 'C++ 基础', 'experience': '无', 'availability': '每周 12 小时', 'consent': 'true',
+            'photo': self.photo_upload('verified.jpg'),
             'attachments': SimpleUploadedFile('resume.pdf', b'%PDF-1.4 test', content_type='application/pdf'),
         })
         self.assertEqual(response.status_code, 201, response.content.decode())
@@ -118,9 +204,10 @@ class PortalApiTests(TestCase):
         self.assertEqual(self.client.get(reverse('portal:recruitment-email-verify'), {'token': token}).status_code, 200)
         settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
         response = self.client.post(reverse('portal:recruitment-submit'), {
-            'name': '多材料同学', 'qq': '87654321', 'wechat': 'multi-material', 'email': email, 'phone': '13800000003',
+            'name': '多材料同学', 'gender': 'male', 'qq': '87654321', 'wechat': 'multi-material', 'email': email, 'phone': '13800000003',
             'college': '自动化学院', 'major_class': '自动化 2301 班', 'primary_choice': 'algorithm',
-            'introduction': '使用多种材料报名', 'availability': '每周 12 小时', 'consent': 'true',
+            'introduction': '使用多种材料报名', 'honors': '无', 'roles': '无', 'technical_foundation': 'Python 基础', 'experience': '无', 'availability': '每周 12 小时', 'consent': 'true',
+            'photo': self.photo_upload('multi-material.jpg'),
             'attachments': [
                 SimpleUploadedFile('portfolio.docx', b'document'),
                 SimpleUploadedFile('note.md', b'# note'),
@@ -155,8 +242,9 @@ class PortalApiTests(TestCase):
     def test_verified_applicant_can_modify_pending_application_once(self):
         application = RecruitmentApplication.objects.create(
             name='可修改同学', qq='111', wechat='editable', email='editable@example.com', phone='13800000001',
-            college='自动化学院', major_class='自动化 2301 班', primary_choice='electrical', intended_groups=['electrical'],
+            gender='male', college='自动化学院', major_class='自动化 2301 班', primary_choice='electrical', intended_groups=['electrical'],
             introduction='原始介绍', availability='每周 10 小时', consent=True,
+            photo=self.photo_upload('editable.jpg'),
             resume=SimpleUploadedFile('resume.pdf', b'%PDF-1.4 editable', content_type='application/pdf'),
         )
         # 链接点击后：数据库记录 verified_at 已写入（新流程以记录为准，不再依赖会话）
@@ -171,9 +259,9 @@ class PortalApiTests(TestCase):
         status = self.client.post(reverse('portal:recruitment-application-status'), {'email': application.email})
         self.assertTrue(status.json()['application']['can_edit'])
         response = self.client.post(reverse('portal:recruitment-update', args=[application.pk]), {
-            'name': application.name, 'qq': application.qq, 'wechat': application.wechat, 'email': application.email, 'phone': application.phone,
+            'name': application.name, 'gender': application.gender, 'qq': application.qq, 'wechat': application.wechat, 'email': application.email, 'phone': application.phone,
             'college': application.college, 'major_class': application.major_class, 'primary_choice': 'algorithm',
-            'introduction': '更新后的介绍', 'experience': '', 'availability': application.availability, 'consent': 'true',
+            'introduction': '更新后的介绍', 'honors': '无', 'roles': '无', 'technical_foundation': 'Python 基础', 'experience': '更新后的项目经历', 'availability': application.availability, 'consent': 'true',
         })
         self.assertEqual(response.status_code, 200, response.content.decode())
         application.refresh_from_db()
@@ -184,10 +272,11 @@ class PortalApiTests(TestCase):
     def test_recruitment_choices_attachments_and_grouped_export(self):
         settings = RecruitmentSettings.current(); settings.is_open = True; settings.save()
         response = self.client.post(reverse('portal:recruitment-submit'), {
-            'name': '李同学', 'qq': '12345678', 'wechat': 'prime-li', 'email': 'li@example.com', 'phone': '13900000000',
+            'name': '李同学', 'gender': 'female', 'qq': '12345678', 'wechat': 'prime-li', 'email': 'li@example.com', 'phone': '13900000000',
             'college': '自动化学院', 'major_class': '自动化 2301 班', 'primary_choice': 'algorithm',
-            'accepts_adjustment': 'true', 'second_choice': 'electrical', 'introduction': '热爱机器人',
+            'accepts_adjustment': 'true', 'second_choice': 'electrical', 'introduction': '热爱机器人', 'honors': '无', 'roles': '无', 'technical_foundation': 'C++ 基础', 'experience': '无',
             'availability': '每周 12 小时', 'consent': 'true',
+            'photo': self.photo_upload('li.jpg'),
             'attachments': [SimpleUploadedFile('resume.pdf', b'%PDF-1.4 test', content_type='application/pdf'), SimpleUploadedFile('award.pdf', b'%PDF-1.4 award', content_type='application/pdf')],
         })
         self.assertEqual(response.status_code, 201, response.content.decode())
@@ -229,6 +318,33 @@ class PortalApiTests(TestCase):
             200,
         )
 
+    def test_staff_can_preview_application_form_and_navigate_filtered(self):
+        photo_buffer = BytesIO()
+        Image.new('RGB', (480, 640), '#dbeef2').save(photo_buffer, 'JPEG')
+        first = RecruitmentApplication.objects.create(
+            name='表单预览一号', qq='7654301', wechat='preview-one', email='preview-one@example.com', phone='13700000011',
+            college='计算机学院', major_class='软件工程 2301 班', primary_choice='algorithm', intended_groups=['algorithm'],
+            introduction='第一份报名表', availability='每周 10 小时', consent=True,
+            photo=SimpleUploadedFile('first.jpg', photo_buffer.getvalue(), content_type='image/jpeg'),
+        )
+        second = RecruitmentApplication.objects.create(
+            name='表单预览二号', qq='7654302', wechat='preview-two', email='preview-two@example.com', phone='13700000012',
+            college='自动化学院', major_class='自动化 2302 班', primary_choice='algorithm', intended_groups=['algorithm'],
+            introduction='第二份报名表', availability='每周 8 小时', consent=True,
+        )
+        user = get_user_model().objects.create_superuser('form-preview-admin', 'form-preview@example.com', 'safe-password-123')
+        self.client.force_login(user)
+        preview_url = reverse('admin:portal_recruitmentapplication_preview', args=[first.pk]) + '?status=pending'
+        response = self.client.get(preview_url)
+        self.assertEqual(response.status_code, 200, response.content.decode())
+        self.assertContains(response, '报名表预览')
+        self.assertContains(response, first.name)
+        self.assertContains(response, '下一份')
+        self.assertContains(response, reverse('admin:portal_recruitmentapplication_preview', args=[second.pk]))
+        photo_response = self.client.get(reverse('admin:portal_recruitment_photo_preview', args=[first.pk]))
+        self.assertEqual(photo_response.status_code, 200)
+        self.assertEqual(photo_response.headers['Content-Type'], 'image/jpeg')
+
     def test_staff_can_preview_common_office_and_archive_materials(self):
         from docx import Document
         from openpyxl import Workbook
@@ -241,14 +357,21 @@ class PortalApiTests(TestCase):
         )
         document_buffer = BytesIO(); document = Document(); document.add_paragraph('Word 文档预览内容'); document.save(document_buffer)
         spreadsheet_buffer = BytesIO(); workbook = Workbook(); workbook.active.title = '报名信息'; workbook.active.append(['姓名', '组别']); workbook.active.append(['小王', '电控组']); workbook.save(spreadsheet_buffer)
+        from PIL import Image
+        image_buffer = BytesIO(); Image.new('RGB', (120, 80), '#2de2a6').save(image_buffer, 'JPEG')
         archive_buffer = BytesIO()
         with zipfile.ZipFile(archive_buffer, 'w') as archive:
             archive.writestr('作品/说明.txt', '作品说明')
+            archive.writestr('作品/图片.jpg', image_buffer.getvalue())
+            archive.writestr('作品/简历.docx', document_buffer.getvalue())
         attachments = [
             application.attachments.create(original_name='portfolio.docx', file=SimpleUploadedFile('portfolio.docx', document_buffer.getvalue())),
             application.attachments.create(original_name='works.xlsx', file=SimpleUploadedFile('works.xlsx', spreadsheet_buffer.getvalue())),
             application.attachments.create(original_name='materials.zip', file=SimpleUploadedFile('materials.zip', archive_buffer.getvalue())),
         ]
+        image_attachment = application.attachments.create(
+            original_name='poster.jpg', file=SimpleUploadedFile('poster.jpg', image_buffer.getvalue(), content_type='image/jpeg'),
+        )
         user = get_user_model().objects.create_superuser('materials-admin', 'materials-admin@example.com', 'safe-password-123')
         self.client.force_login(user)
         expected_kinds = ['document', 'spreadsheet', 'archive']
@@ -256,6 +379,27 @@ class PortalApiTests(TestCase):
             response = self.client.get(reverse('admin:portal_recruitment_attachment_preview_data', args=[application.pk, attachment.pk]))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()['kind'], expected_kind)
+            if expected_kind == 'document':
+                self.assertIn('Word 文档预览内容', response.json()['paragraphs'])
+                self.assertNotIn('ocr', response.json())
+            if expected_kind == 'archive':
+                archive_preview = response.json()
+                self.assertEqual(archive_preview['files'][0]['path'], '作品/说明.txt')
+                entry = archive_preview['files'][0]
+                entry_response = self.client.get(entry['preview'])
+                self.assertEqual(entry_response.status_code, 200)
+                self.assertEqual(entry_response['Content-Type'], 'text/plain')
+                self.assertEqual(entry_response.content.decode(), '作品说明')
+                image_entry = next(item for item in archive_preview['files'] if item['name'] == '图片.jpg')
+                self.assertEqual(self.client.get(image_entry['preview']).headers['Content-Type'], 'image/jpeg')
+                docx_entry = next(item for item in archive_preview['files'] if item['name'] == '简历.docx')
+                nested_docx = self.client.get(docx_entry['dataPreview'])
+                self.assertEqual(nested_docx.status_code, 200)
+                self.assertIn('Word 文档预览内容', nested_docx.json()['paragraphs'])
+        image_response = self.client.get(reverse('admin:portal_recruitment_attachment_preview_data', args=[application.pk, image_attachment.pk]))
+        self.assertEqual(image_response.status_code, 200)
+        self.assertEqual(image_response.json()['kind'], 'image')
+        self.assertNotIn('ocr', image_response.json())
 
     def test_staff_can_upload_an_inline_body_image(self):
         user = get_user_model().objects.create_superuser('editor', 'editor@example.com', 'safe-password-123')
@@ -299,6 +443,28 @@ class PortalApiTests(TestCase):
         self.assertContains(response, 'portal/carousel_manager.css')
         self.assertContains(response, 'portal/editor/prime-editor.js')
         self.assertContains(response, '官网实时预览')
+
+    @override_settings(XIUMI_APP_ID='', XIUMI_APP_SECRET='')
+    def test_news_editor_exposes_xiumi_setup_entry(self):
+        user = get_user_model().objects.create_superuser('xiumi-setup', 'xiumi-setup@example.com', 'safe-password-123')
+        self.client.force_login(user)
+        editor = self.client.get(reverse('admin:portal_newsarticle_change', args=[self.article.pk]))
+        self.assertContains(editor, '秀米编辑')
+        setup = self.client.get(reverse('admin:portal_news_xiumi', args=[self.article.pk]))
+        self.assertEqual(setup.status_code, 200)
+        self.assertContains(setup, '尚未配置秀米同步应用')
+        self.assertContains(setup, 'XIUMI_APP_SECRET')
+
+    @override_settings(XIUMI_APP_ID='demo-app-id', XIUMI_APP_SECRET='server-only-secret')
+    def test_xiumi_entry_creates_signed_bind_redirect_without_exposing_secret(self):
+        user = get_user_model().objects.create_superuser('xiumi-bound', 'xiumi-bound@example.com', 'safe-password-123')
+        self.client.force_login(user)
+        response = self.client.get(reverse('admin:portal_news_xiumi', args=[self.article.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('https://xiumi.us/auth/partner/bind?', response['Location'])
+        self.assertIn('appid=demo-app-id', response['Location'])
+        self.assertIn('partner_user_id=admin%3A', response['Location'])
+        self.assertNotIn('server-only-secret', response['Location'])
 
     def test_news_add_page_opens_without_existing_images(self):
         user = get_user_model().objects.create_superuser('add-editor', 'add@example.com', 'safe-password-123')

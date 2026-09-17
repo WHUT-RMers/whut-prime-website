@@ -25,7 +25,7 @@
     <section class="recruitment-card recruitment-status" aria-label="在线报名状态">
       <span class="recruitment-status__label">在线报名通道</span>
       <div class="recruitment-status__state"><span class="recruitment-status__dot"></span>{% if setting.is_open %}报名已开放{% else %}报名未开放{% endif %}</div>
-      <p class="recruitment-status__hint">{% if setting.is_open %}官网正在接收新的报名资料，投递者可以填写表单并上传至少一份报名材料。{% else %}官网仍会展示报名入口，但不会接收新的报名资料；重新开启后即可恢复提交。{% endif %}</p>
+      <p class="recruitment-status__hint">{% if setting.is_open %}官网正在接收新的报名资料，投递者需要完整填写个人信息，报名附件可按需上传。{% else %}官网仍会展示报名入口，但不会接收新的报名资料；重新开启后即可恢复提交。{% endif %}</p>
       <div class="recruitment-actions">
         <form method="post" action="{% url 'admin:portal_recruitment_open' %}">{% csrf_token %}<button type="submit" class="recruitment-actions__open">开启在线报名</button></form>
         <form method="post" action="{% url 'admin:portal_recruitment_close' %}" onsubmit="return confirm('关闭后官网将立即停止接收新的报名资料，确定继续吗？');">{% csrf_token %}<button type="submit" class="recruitment-actions__close">关闭在线报名</button></form>

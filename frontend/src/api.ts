@@ -56,9 +56,10 @@ export interface RecruitmentApplicationSummary {
   created_at: string
   can_edit: boolean
   modification_count: number
+  has_photo: boolean
   form: {
-    name: string; qq: string; wechat: string; email: string; phone: string; college: string; major_class: string
-    primary_choice: string; accepts_adjustment: boolean; second_choice: string; introduction: string; experience: string; availability: string; consent: boolean
+    name: string; gender: string; qq: string; wechat: string; email: string; phone: string; college: string; major_class: string
+    primary_choice: string; accepts_adjustment: boolean; second_choice: string; introduction: string; honors: string; roles: string; technical_foundation: string; experience: string; consent: boolean
   }
   attachments: string[]
 }

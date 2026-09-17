@@ -45,6 +45,9 @@ class Command(BaseCommand):
                 accepts_adjustment=adjusted, second_choice=second,
                 intended_groups=[primary] + ([second] if second else []),
                 introduction='用于后台筛选、分组导出与材料归档的测试报名数据。',
+                honors='校级机器人竞赛一等奖。',
+                roles='班级学习委员。',
+                technical_foundation='掌握 Python、C++ 与基础电控知识。',
                 experience='测试用竞赛经历。', availability=f'每周 {8 + index % 10} 小时',
                 consent=True, status=STATUSES[index % len(STATUSES)],
             )

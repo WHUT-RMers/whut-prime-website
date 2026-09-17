@@ -8,7 +8,7 @@
 - **项目**：WHUT PRIME 战队官网（demo），六大板块：赛事介绍 / 战队资讯 / 历史与荣誉 / 组别介绍（技术栈）/ 简历投递 / 商业合作。
 - **后端**：Django 6.1 + django-simpleui（管理后台），SQLite。
 - **前端**：Vue 3（Composition API + `<script setup lang="ts">`）+ Vite 7 + GSAP（ScrollTrigger）。
-- **Git 仓库**：https://github.com/niconieryr/whut-prime-website（public，默认分支 `main`）。
+- **Git 仓库**：https://github.com/WHUT-RMers/whut-prime-website（public，默认分支 `main`）。
 
 ## 2. 目录结构
 

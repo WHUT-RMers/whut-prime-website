@@ -1,0 +1,88 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+    <link rel="stylesheet" href="{% static 'portal/recruitment_preview.css' %}?v=20260918-preview10">
+{% endblock %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">首页</a>
+    <span>›</span>
+    <a href="{{ list_url }}">招新报名</a>
+    <span>›</span>
+    <span>{{ application.name }}的报名表</span>
+  </div>
+{% endblock %}
+
+{% block content %}
+  <main class="recruitment-preview-page">
+    <header class="recruitment-preview-toolbar">
+      <div>
+        <h1>报名表预览</h1>
+        <p class="recruitment-preview-count">当前筛选结果第 {{ position }} / {{ total }} 份</p>
+      </div>
+      <nav class="recruitment-preview-nav" aria-label="报名表切换">
+        {% if previous_url %}<a class="recruitment-preview-nav-button" href="{{ previous_url }}">← 上一份</a>{% else %}<span class="recruitment-preview-nav-button is-disabled">← 上一份</span>{% endif %}
+        {% if next_url %}<a class="recruitment-preview-nav-button is-primary" href="{{ next_url }}">下一份 →</a>{% else %}<span class="recruitment-preview-nav-button is-disabled">下一份 →</span>{% endif %}
+      </nav>
+    </header>
+
+    <div class="recruitment-preview-actions">
+      <a href="{{ list_url }}">返回报名列表</a>
+      <a href="{{ edit_url }}">编辑审核状态</a>
+      <span class="recruitment-preview-status">{{ application.get_status_display }}</span>
+    </div>
+
+    <article class="recruitment-form-paper">
+      <header class="recruitment-form-heading">
+        <div>
+          <h2>武汉理工大学机甲大师 PRIME 战队报名表</h2>
+          <p>报名编号：{{ application.application_no }} · 提交时间：{{ application.created_at|date:'Y-m-d H:i' }}</p>
+        </div>
+      </header>
+
+      <table class="recruitment-form-table recruitment-identity-table">
+        <colgroup><col class="identity-label"><col class="identity-value"><col class="identity-label"><col class="identity-value"></colgroup>
+        <tbody>
+          <tr><th>姓名</th><td>{{ application.name|default:'—' }}</td><th>性别</th><td>{{ application.get_gender_display|default:'—' }}</td></tr>
+          <tr><th>学院</th><td>{{ application.college|default:'—' }}</td><th>专业与班级</th><td>{{ application.major_class|default:'—' }}</td></tr>
+          <tr><th>第一志愿</th><td colspan="3">{{ application.get_primary_choice_display }}</td></tr>
+          <tr><th>手机号码</th><td>{{ application.phone|default:'—' }}</td><th>微信号</th><td>{{ application.wechat|default:'—' }}</td></tr>
+          <tr><th>QQ 号</th><td>{{ application.qq|default:'—' }}</td><th>电子邮箱</th><td>{{ application.email|default:'—' }}</td></tr>
+          <tr><th>第二志愿</th><td colspan="3">{% if application.accepts_adjustment %}{% if application.second_choice %}{{ application.get_second_choice_display }}{% else %}接受统筹安排{% endif %}{% else %}不服从调剂{% endif %}</td></tr>
+        </tbody>
+      </table>
+
+      <table class="recruitment-form-table recruitment-long-table">
+        <colgroup><col class="long-label"><col class="long-value"></colgroup>
+        <tbody>
+          <tr><th>个人简介</th><td>{{ application.introduction|default:'—'|linebreaksbr }}</td></tr>
+          <tr><th>个人荣誉</th><td>{{ application.honors|default:'—'|linebreaksbr }}</td></tr>
+          <tr><th>任职情况<br><small>社团、班级等</small></th><td>{{ application.roles|default:'—'|linebreaksbr }}</td></tr>
+          <tr><th>技术基础<br><small>相关知识以及技能掌握情况</small></th><td>{{ application.technical_foundation|default:'—'|linebreaksbr }}</td></tr>
+          <tr><th>项目或竞赛经历</th><td>{{ application.experience|default:'—'|linebreaksbr }}</td></tr>
+        </tbody>
+      </table>
+
+      <section class="recruitment-form-attachments">
+        <header><div><h3>报名材料</h3><span>选填 · {{ attachments|length }} 份{% if resume_url %} · 含 PDF 简历{% endif %}</span></div>{% if materials_json != '[]' %}<button type="button" class="recruitment-preview-trigger recruitment-form-preview-button" data-materials="{{ materials_json|escape }}">预览全部材料</button>{% endif %}</header>
+        {% if attachments or resume_url %}
+          <ul>
+            {% for attachment in attachments %}<li><span>{{ attachment.original_name }}</span><a href="{% url 'admin:portal_recruitment_attachment_file' application.pk attachment.pk %}?download=1">下载</a></li>{% endfor %}
+            {% if resume_url %}<li><span>PDF 简历</span><a href="{{ resume_url }}" target="_blank" rel="noreferrer">查看</a></li>{% endif %}
+          </ul>
+        {% else %}<p>未上传报名材料。</p>{% endif %}
+      </section>
+    </article>
+
+    <footer class="recruitment-preview-footer">
+      {% if previous_url %}<a href="{{ previous_url }}">← 上一份</a>{% else %}<span>已是第一份</span>{% endif %}
+      <span>{{ application.name }} · {{ application.application_no }}</span>
+      {% if next_url %}<a href="{{ next_url }}">下一份 →</a>{% else %}<span>已是最后一份</span>{% endif %}
+    </footer>
+    <script src="{% static 'portal/recruitment_pdf_viewer.js' %}?v=20260918-preview11"></script>
+    <script src="{% static 'portal/recruitment_material_preview_v3.js' %}?v=20260918-preview11"></script>
+  </main>
+{% endblock %}

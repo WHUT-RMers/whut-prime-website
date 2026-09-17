@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.contrib.admin.views.decorators import staff_member_required
 import json
 import mimetypes
+import re
 import secrets
 import io
 import zipfile
@@ -10,21 +11,24 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
+from django.core.exceptions import ValidationError
 from django.core import signing
 from django.core.mail import send_mail
 from django.core.cache import cache
+from django.db import transaction
 from django.db.models import F
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import get_valid_filename
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import RecruitmentApplicationForm
 from .models import (NewsArticle, NewsCoverSlide, NewsImage, NewsView,
                      RecruitmentApplication,
-                     RecruitmentEmailVerification, RecruitmentSettings)
+                     RecruitmentEmailVerification, RecruitmentSettings, XiumiBinding)
 
 
 EMAIL_CODE_SESSION_KEY = 'recruitment_verified_email'
@@ -33,6 +37,112 @@ EMAIL_CODE_RESEND_WAIT = timedelta(seconds=60)
 EMAIL_CODE_DAILY_LIMIT = 5
 EMAIL_CODE_IP_HOURLY_LIMIT = 10
 EMAIL_VERIFY_SALT = 'whut-prime-recruit-email-verify'
+
+
+def _xiumi_authorized(request):
+    configured_secret = getattr(settings, 'XIUMI_APP_SECRET', '').strip()
+    authorization = request.headers.get('Authorization', '')
+    expected = f'secret {configured_secret}' if configured_secret else ''
+    return bool(expected and secrets.compare_digest(authorization, expected))
+
+
+def _xiumi_error(message, status=401):
+    return JsonResponse({'code': 1, 'msg': message}, status=status)
+
+
+def _xiumi_image_tokens(value):
+    return re.findall(r'/content-images/([0-9a-fA-F-]{36})/', value or '')
+
+
+@csrf_exempt
+@require_POST
+def xiumi_upload_image(request):
+    if not _xiumi_authorized(request):
+        return _xiumi_error('unauthorized')
+    image_file = request.FILES.get('img-upload')
+    if not image_file:
+        return _xiumi_error('img-upload is required', 400)
+    image = NewsImage(image=image_file)
+    try:
+        image.full_clean()
+        image.save()
+    except ValidationError as error:
+        return _xiumi_error(error.messages[0], 400)
+    image_url = request.build_absolute_uri(reverse('portal:news-content-image', args=[image.token]))
+    return JsonResponse({'code': 0, 'msg': '', 'data': {'url': image_url}})
+
+
+@csrf_exempt
+@require_POST
+def xiumi_receive_article(request):
+    if not _xiumi_authorized(request):
+        return _xiumi_error('unauthorized')
+    partner_user_id = request.GET.get('partner_user_id', '').strip()
+    if not partner_user_id:
+        return _xiumi_error('partner_user_id is required', 400)
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return _xiumi_error('invalid JSON', 400)
+    articles = payload.get('articles') if isinstance(payload, dict) else None
+    if not isinstance(articles, list) or not articles:
+        return _xiumi_error('articles is required', 400)
+    for item in articles:
+        if not isinstance(item, dict):
+            return _xiumi_error('invalid article', 400)
+        article_id = str(item.get('article_id') or '').strip()
+        title = str(item.get('title') or '').strip()[:120]
+        if not article_id or not title:
+            return _xiumi_error('article_id and title are required', 400)
+        body = str(item.get('description') or '')
+        summary = str(item.get('summary') or '')[:240]
+        article = NewsArticle.objects.filter(xiumi_article_id=article_id).first()
+        if article is None:
+            article = NewsArticle(
+                xiumi_article_id=article_id,
+                title=title,
+                summary=summary,
+                category='秀米',
+                body=body,
+                status=NewsArticle.Status.DRAFT,
+            )
+        else:
+            article.title = title
+            article.summary = summary
+            article.body = body
+        article.save()
+        tokens = _xiumi_image_tokens(body)
+        if tokens:
+            NewsImage.objects.filter(token__in=tokens).update(article=article)
+        cover_token = next(iter(_xiumi_image_tokens(str(item.get('picurl') or ''))), None)
+        if cover_token:
+            cover_image = NewsImage.objects.filter(token=cover_token, article=article).first()
+            if cover_image:
+                article.cover = cover_image.image.name
+                article.save(update_fields=['cover', 'updated_at'])
+    return JsonResponse({'code': 0, 'msg': 'success'})
+
+
+@csrf_exempt
+@require_POST
+def xiumi_notify(request):
+    if not _xiumi_authorized(request):
+        return _xiumi_error('unauthorized')
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return _xiumi_error('invalid JSON', 400)
+    message_type = payload.get('type') if isinstance(payload, dict) else None
+    partner_user_id = str(payload.get('partner_user_id') or '').strip()
+    open_id = str(payload.get('open_id') or '').strip()
+    if message_type == 'bind' and partner_user_id and open_id:
+        XiumiBinding.objects.update_or_create(
+            partner_user_id=partner_user_id,
+            defaults={'open_id': open_id, 'bind_name': str(payload.get('bind_name') or '')[:40]},
+        )
+    elif message_type == 'unbind' and partner_user_id:
+        XiumiBinding.objects.filter(partner_user_id=partner_user_id).delete()
+    return JsonResponse({'code': 0, 'msg': 'success'})
 
 
 def normalize_email(value: str) -> str:
@@ -83,10 +193,32 @@ def check_email_code_ip_limit(request) -> bool:
 
 
 def can_applicant_edit(application: RecruitmentApplication) -> bool:
-    return (
-        application.status == RecruitmentApplication.Status.PENDING
-        and application.modification_count < 2
-    )
+    return application.status == RecruitmentApplication.Status.PENDING
+
+
+def remove_older_applications_for_email(application: RecruitmentApplication) -> None:
+    """Keep one current submission for a verified email address."""
+    older = RecruitmentApplication.objects.filter(
+        email__iexact=application.email,
+    ).exclude(pk=application.pk).prefetch_related('attachments')
+    for item in older:
+        for attachment in item.attachments.all():
+            attachment.file.delete(save=False)
+        if item.photo:
+            item.photo.delete(save=False)
+        if item.resume:
+            item.resume.delete(save=False)
+        item.delete()
+
+
+def replace_application_attachments(application: RecruitmentApplication) -> None:
+    """When a new material set is submitted, discard the previous set."""
+    for attachment in application.attachments.all():
+        attachment.file.delete(save=False)
+        attachment.delete()
+    if application.resume:
+        application.resume.delete(save=False)
+        application.resume = ''
 
 
 def application_payload(application: RecruitmentApplication, include_form=False) -> dict:
@@ -96,13 +228,14 @@ def application_payload(application: RecruitmentApplication, include_form=False)
         'created_at': timezone.localtime(application.created_at).strftime('%Y-%m-%d %H:%M'),
         'can_edit': can_applicant_edit(application),
         'modification_count': application.modification_count,
+        'has_photo': bool(application.photo),
     }
     if include_form:
         payload['form'] = {
             field: getattr(application, field) for field in (
-                'name', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class',
+                'name', 'gender', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class',
                 'primary_choice', 'accepts_adjustment', 'second_choice', 'introduction',
-                'experience', 'availability', 'consent',
+                'honors', 'roles', 'technical_foundation', 'experience', 'consent',
             )
         }
         payload['attachments'] = [attachment.original_name for attachment in application.attachments.all()]
@@ -110,10 +243,15 @@ def application_payload(application: RecruitmentApplication, include_form=False)
 
 
 def form_error_message(form: RecruitmentApplicationForm) -> str:
-    """Return a concise, user-facing summary while retaining structured errors."""
+    """Return field-labelled validation reasons while retaining structured errors."""
     messages = []
-    for field_errors in form.errors.get_json_data().values():
-        messages.extend(item['message'] for item in field_errors)
+    for field_name, field_errors in form.errors.get_json_data().items():
+        label = form.fields.get(field_name).label if field_name in form.fields else field_name
+        for item in field_errors:
+            message = item['message']
+            if message == 'This field is required.':
+                message = '请填写此项。'
+            messages.append(f'{label}：{message}')
     return '；'.join(messages) or '提交信息不完整，请检查后重试。'
 
 
@@ -345,14 +483,27 @@ def recruitment_submit(request):
     email = data['email']
     if email_verification_enabled() and not is_email_verified(email):
         return JsonResponse({'error': '请先完成邮箱验证。'}, status=400)
-    form = RecruitmentApplicationForm(data, request.FILES)
+    existing = RecruitmentApplication.objects.filter(email__iexact=email).order_by('-created_at', '-pk').first()
+    form = RecruitmentApplicationForm(data, request.FILES, instance=existing)
     if not form.is_valid():
         return JsonResponse({'error': form_error_message(form), 'errors': form.errors.get_json_data()}, status=400)
-    application = form.save()
-    application.email_verified = email_verification_enabled()
-    application.save(update_fields=['email_verified'])
+    with transaction.atomic():
+        if existing and (request.FILES.getlist('attachments') or request.FILES.getlist('resume')):
+            replace_application_attachments(existing)
+        application = form.save()
+        application.email_verified = email_verification_enabled()
+        if existing:
+            application.modification_count += 1
+            application.created_at = timezone.now()
+            application.save(update_fields=['email_verified', 'modification_count', 'created_at', 'updated_at'])
+        else:
+            application.save(update_fields=['email_verified'])
+        remove_older_applications_for_email(application)
     request.session.pop(EMAIL_CODE_SESSION_KEY, None)
-    return JsonResponse({'application_no': application.application_no}, status=201)
+    return JsonResponse({
+        'application_no': application.application_no,
+        'message': '报名信息已更新。' if existing else '报名提交成功。',
+    }, status=200 if existing else 201)
 
 
 @require_POST
@@ -365,10 +516,12 @@ def recruitment_update(request, pk):
     if email_verification_enabled() and not is_email_verified(email):
         return JsonResponse({'error': '请先完成邮箱验证。'}, status=403)
     if not can_applicant_edit(application):
-        return JsonResponse({'error': '此报名已进入处理流程，或修改次数已用完，暂不能在线修改。'}, status=403)
+        return JsonResponse({'error': '此报名已进入处理流程，暂不能在线修改。'}, status=403)
     form = RecruitmentApplicationForm(data, request.FILES, instance=application)
     if not form.is_valid():
         return JsonResponse({'error': form_error_message(form), 'errors': form.errors.get_json_data()}, status=400)
+    if request.FILES.getlist('attachments') or request.FILES.getlist('resume'):
+        replace_application_attachments(application)
     application = form.save()
     application.modification_count += 1
     application.email_verified = True
@@ -376,6 +529,7 @@ def recruitment_update(request, pk):
     application.created_at = timezone.now()
     application.save(update_fields=['modification_count', 'email_verified', 'created_at', 'updated_at'])
     request.session.pop(EMAIL_CODE_SESSION_KEY, None)
+    remove_older_applications_for_email(application)
     return JsonResponse({'application_no': application.application_no, 'message': '报名信息已更新。'})
 
 

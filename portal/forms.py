@@ -2,7 +2,8 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.html import format_html
 
-from .models import RecruitmentApplication, RecruitmentAttachment, validate_image, validate_recruitment_attachment
+from .models import (RecruitmentApplication, RecruitmentAttachment, validate_image,
+                     validate_recruitment_attachment, validate_recruitment_photo)
 
 
 class CarouselImageInput(forms.ClearableFileInput):
@@ -67,14 +68,26 @@ class RichTextWidget(forms.Textarea):
 
 
 class RecruitmentApplicationForm(forms.ModelForm):
+    gender = forms.ChoiceField(
+        choices=RecruitmentApplication.GENDER_CHOICES,
+        required=True,
+        label='性别',
+        error_messages={'required': '请选择性别。', 'invalid_choice': '性别只能选择男或女。'},
+    )
+    photo = forms.ImageField(
+        required=False,
+        label='个人照片',
+        validators=[validate_recruitment_photo],
+        error_messages={'invalid': '请上传有效的 JPG、PNG 或 WebP 照片。'},
+    )
     primary_choice = forms.ChoiceField(choices=RecruitmentApplication.GROUPS, required=False)
     accepts_adjustment = forms.BooleanField(required=False)
     second_choice = forms.ChoiceField(choices=[('', '接受战队统筹安排')] + RecruitmentApplication.GROUPS, required=False)
-    attachments = MultipleAttachmentField(required=False, widget=CarouselImageInput(attrs={'multiple': True, 'accept': '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.txt,.md,.csv,.json,.mp4,.mov,.webm,.mp3,.wav,.m4a,.zip,.rar,.7z'}))
+    attachments = MultipleAttachmentField(required=False, widget=CarouselImageInput(attrs={'multiple': True, 'accept': '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.avif,.svg,.txt,.md,.csv,.json,.log,.xml,.html,.htm,.css,.js,.ts,.tsx,.jsx,.vue,.yaml,.yml,.ini,.toml,.sql,.py,.java,.c,.cpp,.h,.sh,.bat,.mp4,.mov,.webm,.m4v,.ogv,.avi,.mkv,.mp3,.wav,.m4a,.ogg,.oga,.flac,.aac,.zip,.rar,.7z'}))
 
     class Meta:
         model = RecruitmentApplication
-        fields = ('name', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class', 'primary_choice', 'accepts_adjustment', 'second_choice', 'introduction', 'experience', 'availability', 'consent')
+        fields = ('name', 'gender', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class', 'primary_choice', 'accepts_adjustment', 'second_choice', 'introduction', 'honors', 'roles', 'technical_foundation', 'experience', 'photo', 'consent')
 
     def clean(self):
         cleaned = super().clean()
@@ -94,9 +107,6 @@ class RecruitmentApplicationForm(forms.ModelForm):
             self.add_error('second_choice', '第二志愿不能与第一志愿相同。')
         if not accepts:
             cleaned['second_choice'] = ''
-        has_existing_material = bool(self.instance and self.instance.pk and (self.instance.attachments.exists() or self.instance.resume))
-        if not has_existing_material and not files:
-            self.add_error('attachments', '请至少上传一份报名材料。')
         for file in files:
             try:
                 validate_recruitment_attachment(file)

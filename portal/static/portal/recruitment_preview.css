@@ -1,0 +1,120 @@
+.recruitment-preview-page{max-width:1220px;margin:0 auto;padding:18px 20px 64px;color:#253746}
+.recruitment-preview-toolbar{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:14px}
+.recruitment-preview-eyebrow{display:none}
+.recruitment-preview-toolbar h1{margin:0;font-size:25px;font-weight:800;letter-spacing:.01em}
+.recruitment-preview-count{margin:6px 0 0;color:#708293;font-size:13px}
+.recruitment-preview-nav{display:flex;gap:8px;align-items:center}
+.recruitment-preview-nav-button{display:inline-flex;align-items:center;justify-content:center;min-width:104px;height:38px;padding:0 14px;border:1px solid #c8dce6;border-radius:7px;background:#fff;color:#176e96;font-weight:700;text-decoration:none;box-sizing:border-box;transition:border-color .16s ease,background-color .16s ease,color .16s ease}
+.recruitment-preview-nav-button:hover{border-color:#168cc0;background:#edf9fd;color:#0d6b93}.recruitment-preview-nav-button.is-primary{border-color:#168cc0;background:#168cc0;color:#fff}.recruitment-preview-nav-button.is-primary:hover{background:#0b719e}.recruitment-preview-nav-button.is-disabled{border-color:#e0e8ed;background:#f5f8fa;color:#a6b4bf;cursor:not-allowed}
+.recruitment-preview-actions{display:flex;align-items:center;gap:16px;margin-bottom:18px;font-size:13px}.recruitment-preview-actions a{color:#1683ae;text-decoration:none}.recruitment-preview-actions a:hover{text-decoration:underline}.recruitment-preview-status{margin-left:auto;padding:6px 12px;border-radius:999px;background:#e7f7ef;color:#158457;font-weight:700}
+.recruitment-form-paper{max-width:1080px;margin:0 auto;background:#fff;border:1px solid #d7e2e9;box-shadow:0 13px 35px rgba(36,61,79,.1)}
+.recruitment-form-heading{display:block;padding:32px 36px 25px;border-bottom:1px solid #c9d8e0;background:linear-gradient(135deg,#f7fbfd,#eef7f8)}
+.recruitment-form-heading{text-align:center}.recruitment-form-heading h2{margin:0;color:#203744;font-family:"STSong","SimSun","Songti SC","Noto Serif CJK SC",serif;font-size:27px;font-weight:700;line-height:1.35;letter-spacing:.02em}.recruitment-form-heading p:last-child{margin:10px 0 0;color:#718391;font-size:12px}
+.recruitment-form-heading>div{min-width:0}
+.recruitment-form-table{width:100%;border-collapse:collapse;table-layout:fixed}.recruitment-form-table th,.recruitment-form-table td{border-right:1px solid #bfd0d7;border-bottom:1px solid #bfd0d7;padding:13px 15px;vertical-align:middle;line-height:1.65}.recruitment-form-table th:last-child,.recruitment-form-table td:last-child{border-right:0}.recruitment-identity-table col.identity-label{width:13%}.recruitment-identity-table col.identity-value{width:37%}.recruitment-identity-table th{background:#e8f2f3;color:#466472;font-size:13px;text-align:center;font-weight:800;white-space:nowrap}.recruitment-identity-table td{color:#273d49;font-size:14px;word-break:break-word}.recruitment-long-table col.long-label{width:13%}.recruitment-long-table col.long-value{width:87%}.recruitment-long-table th{background:#f0f5e8;color:#536650;font-size:14px;text-align:center;font-weight:800;vertical-align:middle}.recruitment-long-table th small{font-size:11px;font-weight:600;color:#71806e}.recruitment-long-table td{min-height:68px;color:#30444e;font-size:14px;white-space:pre-wrap;word-break:break-word;background:#fbfdf9}.recruitment-long-table tr:last-child th,.recruitment-long-table tr:last-child td{border-bottom:0}
+.recruitment-form-attachments{margin:22px 28px 28px;padding:16px 18px;border:1px solid #dbe6eb;border-radius:8px;background:#f8fbfc}.recruitment-form-attachments header{display:flex;align-items:center;justify-content:space-between;gap:12px}.recruitment-form-attachments header>div{display:grid;gap:4px}.recruitment-form-attachments h3{margin:0;color:#314c5b;font-size:15px}.recruitment-form-attachments header span,.recruitment-form-attachments p{margin:0;color:#7a8b96;font-size:12px}.recruitment-form-preview-button{border:1px solid #1683ae;border-radius:6px;padding:7px 11px;background:#fff;color:#1683ae;font:inherit;font-size:12px;font-weight:700;cursor:pointer}.recruitment-form-preview-button:hover{background:#eaf8fc;border-color:#0c7199}.recruitment-form-attachments ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0;padding:0;list-style:none}.recruitment-form-attachments li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;border:1px solid #dce8ed;border-radius:6px;background:#fff;color:#405966;font-size:13px}.recruitment-form-attachments li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.recruitment-form-attachments li a{color:#1683ae;text-decoration:none;font-weight:700;white-space:nowrap}.recruitment-form-attachments li a:hover{text-decoration:underline}
+.recruitment-preview-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;max-width:1080px;margin:14px auto 0;color:#7a8b96;font-size:12px}.recruitment-preview-footer a{color:#1683ae;text-decoration:none;font-weight:700}.recruitment-preview-footer a:hover{text-decoration:underline}
+@media(max-width:760px){.recruitment-preview-page{padding:10px 10px 40px}.recruitment-preview-toolbar{display:block}.recruitment-preview-nav{margin-top:13px}.recruitment-preview-nav-button{flex:1}.recruitment-preview-actions{margin-top:14px}.recruitment-form-heading{padding:22px 16px 18px}.recruitment-form-heading h2{font-size:20px}.recruitment-identity-table col.identity-label{width:20%}.recruitment-identity-table col.identity-value{width:30%}.recruitment-long-table col.long-label{width:20%}.recruitment-long-table col.long-value{width:80%}.recruitment-form-table th{padding:10px 7px;font-size:12px}.recruitment-form-table td{padding:10px 9px;font-size:13px}.recruitment-form-attachments{margin:15px 12px 18px;padding:13px}.recruitment-form-attachments ul{grid-template-columns:1fr}.recruitment-preview-footer{font-size:11px}}
+
+/* 材料预览：目录与内容共用一套可键盘操作的工作区。 */
+body.recruitment-preview-open{overflow:hidden}
+.recruitment-preview-modal{position:fixed;z-index:10050;inset:0;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:24px;font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;background:rgba(12,28,39,.68);backdrop-filter:blur(5px);overscroll-behavior:contain}
+.recruitment-preview-panel{display:flex;flex-direction:column;width:min(1120px,100%);height:min(780px,calc(100vh - 48px));min-height:0;overflow:hidden;border:1px solid #d7e2e9;border-radius:16px;background:#fff;box-shadow:0 26px 80px rgba(12,28,39,.32)}
+.recruitment-preview-panel header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 22px;background:#f6fafc}
+.recruitment-preview-panel header>div{min-width:0;flex:1}
+.recruitment-preview-panel h2{font-size:19px;letter-spacing:.01em}
+.recruitment-preview-close{flex:0 0 auto;width:40px;height:40px;margin-left:auto;border:1px solid #cfe0e8;border-radius:10px;background:#fff;font-size:23px;transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .16s ease}
+.recruitment-preview-close:hover{border-color:#168cc0;background:#edf8fb;color:#126f93;transform:translateY(-1px)}
+.recruitment-preview-close:focus-visible,.recruitment-preview-list button:focus-visible,.recruitment-archive-entry:focus-visible,.recruitment-preview-back:focus-visible{outline:2px solid #168cc0;outline-offset:2px}
+.recruitment-preview-content{display:grid;grid-template-columns:270px minmax(0,1fr);min-height:0;flex:1}
+.recruitment-preview-list{padding:14px;background:#f7fafc}
+.recruitment-preview-list button{display:flex;align-items:center;gap:9px;min-height:52px;margin-bottom:8px;padding:10px 12px;border:1px solid #e0eaf0;border-radius:10px;background:#fff;color:#405b6b;transition:border-color .16s ease,background-color .16s ease,color .16s ease,transform .16s ease}
+.recruitment-preview-list button:hover{border-color:#a8d2e1;background:#f0fafc;color:#167a9f;transform:translateY(-1px)}
+.recruitment-preview-list button.is-active{border-color:#74c3d7;background:#e8f7fb;color:#106e92;box-shadow:inset 3px 0 #168cc0}
+.recruitment-preview-list button strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.recruitment-preview-list button small{margin-left:auto;color:#8ba0ac;font-size:10px;letter-spacing:.08em}
+.recruitment-preview-stage{padding:20px;background:#eef4f7}
+.recruitment-preview-stage iframe,.recruitment-preview-stage img,.recruitment-preview-stage video,.recruitment-preview-entry-stage iframe,.recruitment-preview-entry-stage img,.recruitment-preview-entry-stage video{outline:1px solid rgba(0,0,0,.1)}
+.recruitment-preview-stage iframe,.recruitment-preview-entry-stage iframe{min-height:0}
+.recruitment-structured-preview{width:min(760px,100%);height:100%;box-sizing:border-box;overflow:auto;padding:24px;border:1px solid #d6e3ea;border-radius:12px;background:#fff;box-shadow:0 5px 18px rgba(29,49,67,.07)}
+.recruitment-structured-preview h3{margin:0 0 18px;color:#284657;font-size:18px;overflow-wrap:anywhere}
+.recruitment-structured-preview h4{margin:20px 0 9px;color:#197da3;font-size:13px}
+.recruitment-document-text{color:#304a58;font-size:13px;line-height:1.75}.recruitment-document-text p{margin:0 0 10px;white-space:pre-wrap;overflow-wrap:anywhere}.recruitment-document-images{display:grid;gap:12px;margin-top:16px}.recruitment-document-images figure{margin:0;padding:10px;border:1px solid #dce8ed;border-radius:8px;background:#f7fafc}.recruitment-document-images img{display:block;width:100%;max-height:460px;object-fit:contain;background:#fff}.recruitment-document-images figcaption{margin-top:6px;color:#8397a1;font-size:11px;overflow-wrap:anywhere}
+.recruitment-archive-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #e5edf1}
+.recruitment-archive-header p{margin:0;color:#4e6776;font-size:13px;line-height:1.6}
+.recruitment-archive-header span{flex:none;padding:5px 8px;border-radius:999px;background:#e9f7f8;color:#21809a;font-size:10px}
+.recruitment-archive-list{display:grid;gap:7px;margin:0;padding:0;list-style:none}
+.recruitment-archive-entry{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;padding:10px 11px;border:1px solid #e0e9ee;border-radius:9px;background:#fbfdfe;color:#425e6e;text-align:left;cursor:pointer;transition:border-color .16s ease,background-color .16s ease,transform .16s ease}
+.recruitment-archive-entry:hover{border-color:#8ac9d9;background:#f0fafc;transform:translateY(-1px)}
+.recruitment-file-icon{display:grid;place-items:center;width:34px;height:26px;border-radius:6px;background:#e6f1f5;color:#197b9e;font:700 9px/1 ui-monospace,Consolas,monospace}
+.recruitment-file-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.recruitment-archive-entry small{color:#8aa0ac;font-size:11px;white-space:nowrap}
+.recruitment-preview-back{align-self:flex-start;margin-bottom:12px;padding:8px 11px;border:1px solid #bcd8e2;border-radius:8px;background:#fff;color:#176f92;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.recruitment-preview-entry-stage{display:flex;min-width:0;min-height:calc(100% - 48px);align-items:center;justify-content:center}
+.recruitment-preview-entry-stage .recruitment-structured-preview{height:100%;max-height:100%}
+.recruitment-preview-entry-stage .recruitment-preview-empty{align-self:center}
+.recruitment-archive-list p{color:#738b98;text-align:center}
+.recruitment-preview-download{display:inline-flex;align-items:center;justify-content:center;min-height:38px;box-sizing:border-box;margin-top:16px;padding:0 13px;border:1px solid #168cc0;border-radius:8px;background:#168cc0;color:#fff!important;font-size:12px;font-weight:700;text-decoration:none;transition:background-color .16s ease,transform .16s ease}
+.recruitment-preview-download:hover{background:#0d719b;transform:translateY(-1px)}
+@media(max-width:700px){.recruitment-preview-modal{padding:10px}.recruitment-preview-panel{height:calc(100vh - 20px);border-radius:12px}.recruitment-preview-panel header{padding:15px}.recruitment-preview-content{grid-template-columns:1fr;grid-template-rows:154px minmax(0,1fr)}.recruitment-preview-list{border-right:0;border-bottom:1px solid #e3edf2;padding:10px;overflow-x:auto;white-space:nowrap}.recruitment-preview-list button{display:inline-flex;width:220px;margin:0 7px 0 0;vertical-align:top}.recruitment-preview-stage{padding:10px}.recruitment-structured-preview{padding:16px}.recruitment-archive-header{display:block}.recruitment-archive-header span{display:inline-block;margin-top:8px}.recruitment-preview-entry-stage{min-height:calc(100% - 48px)}}
+@media(prefers-reduced-motion:reduce){.recruitment-preview-close,.recruitment-preview-list button,.recruitment-archive-entry,.recruitment-preview-download{transition:none;transform:none}}
+
+/* 文件树：顶层材料与 ZIP 内目录统一放在左侧，右侧只承载当前文件内容。 */
+.recruitment-preview-list{padding:10px;overflow:auto;white-space:normal}
+.recruitment-file-tree{display:grid;gap:2px;min-width:0}
+.recruitment-tree-row{display:flex;align-items:stretch;min-width:0}
+.recruitment-tree-toggle,.recruitment-tree-spacer{flex:0 0 calc(24px + var(--tree-indent, 0px));width:calc(24px + var(--tree-indent, 0px));min-height:38px;padding:0;border:0;background:transparent;color:#78909d;text-align:center}
+.recruitment-tree-toggle{cursor:pointer}
+.recruitment-tree-toggle:hover{color:#147da8;background:#edf8fb}
+.recruitment-tree-chevron{display:grid;place-items:center;height:100%;font-size:15px}
+.recruitment-tree-button{display:flex!important;align-items:center!important;gap:9px!important;min-width:0!important;width:100%!important;min-height:38px!important;margin:0!important;padding:6px 8px!important;border:1px solid transparent!important;border-radius:7px!important;background:transparent!important;color:#536778!important;font:inherit!important;font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif!important;text-align:left!important;cursor:pointer!important;transform:none!important;transition:border-color .16s ease,background-color .16s ease,color .16s ease!important}
+.recruitment-tree-button:hover{border-color:#bee0ee!important;background:#eaf8fd!important;color:#147ba8!important;transform:none!important}
+.recruitment-tree-button.is-active{border-color:#74c3d7!important;background:#e8f7fb!important;color:#106e92!important;box-shadow:inset 3px 0 #168cc0!important;font-weight:700!important}
+.recruitment-tree-button.is-branch{font-weight:700!important}
+.recruitment-tree-icon.is-file,.recruitment-tree-icon.is-archive{position:relative;display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;box-sizing:border-box;border:0;border-radius:7px;background:#6d7f90;color:#fff;overflow:hidden;font:700 7px/1 "Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;letter-spacing:-.02em}
+.recruitment-tree-icon.is-file:before,.recruitment-tree-icon.is-archive:before{position:absolute;top:0;right:0;width:9px;height:9px;background:rgba(255,255,255,.42);clip-path:polygon(0 0,100% 100%,0 100%);content:""}
+.recruitment-tree-icon.is-file:after,.recruitment-tree-icon.is-archive:after{content:attr(data-label);position:relative;margin-top:2px}
+.recruitment-tree-icon.is-word{background:#367bc1}.recruitment-tree-icon.is-pdf{background:#d55252}.recruitment-tree-icon.is-excel{background:#2e9567}.recruitment-tree-icon.is-powerpoint{background:#d97943}.recruitment-tree-icon.is-image{background:#8067b2}.recruitment-tree-icon.is-video{background:#516fa7}.recruitment-tree-icon.is-audio{background:#428a8a}.recruitment-tree-icon.is-text{background:#687d8c}.recruitment-tree-icon.is-document{background:#447f91}.recruitment-tree-icon.is-archive{background:#c3893f}
+.recruitment-tree-icon.is-folder{position:relative;display:block;flex:0 0 22px;width:22px;height:16px;margin:7px 4px 0;box-sizing:border-box;border:1px solid #a8bca8;border-radius:3px;background:#eaf3e8}
+.recruitment-tree-icon.is-folder:before{position:absolute;top:-3px;left:1px;width:7px;height:4px;border:1px solid #a8bca8;border-bottom:0;border-radius:2px 2px 0 0;background:#eaf3e8;content:""}
+.recruitment-tree-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.recruitment-tree-meta{flex:none;margin-left:auto;color:#8ba0ac;font-size:10px;white-space:nowrap}
+.recruitment-tree-children{min-width:0}
+.recruitment-tree-pending{margin:4px 8px 7px 40px;color:#91a2ad;font-size:11px}
+.recruitment-preview-stage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-width:0;min-height:0}
+.recruitment-preview-stage iframe{width:100%;height:calc(100% - 50px);min-height:0;flex:1 1 auto;box-sizing:border-box}
+.recruitment-preview-stage img{max-width:100%;max-height:calc(100% - 50px);object-fit:contain}
+.recruitment-preview-stage video{max-width:100%;max-height:calc(100% - 50px)}
+.recruitment-image-preview{display:flex;flex-direction:column;align-items:center;gap:12px;width:min(900px,100%);max-height:100%;overflow:auto}.recruitment-image-preview>img{max-width:100%;max-height:none;object-fit:contain}
+.recruitment-preview-empty{max-width:440px;padding:34px;text-align:center;color:#647789}
+.recruitment-preview-empty span{display:inline-block;margin-bottom:15px;padding:7px 9px;border-radius:5px;background:#dcecf3;color:#2181ad;font-size:11px;font-weight:700}
+.recruitment-preview-empty strong{display:block;margin-bottom:8px;color:#34495b;overflow-wrap:anywhere}
+.recruitment-preview-empty p{margin:0 0 18px;line-height:1.65}
+.recruitment-pdf-viewer{display:flex;flex-direction:column;width:100%;height:100%;min-height:0;overflow:hidden;border:1px solid #202225;border-radius:9px;background:#252627;box-shadow:0 8px 24px rgba(16,26,32,.2)}
+.recruitment-pdf-toolbar{display:flex;align-items:center;gap:4px;min-height:48px;padding:0 10px;background:#363738;color:#f4f5f6;box-sizing:border-box;flex:none}
+.recruitment-pdf-title{min-width:0;max-width:min(34%,420px);margin-right:auto;overflow:hidden;color:#fff;font-size:12px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
+.recruitment-pdf-page-label{min-width:38px;color:#d4d7d9;font-size:12px;text-align:left;white-space:nowrap}
+.recruitment-pdf-page-input{width:30px;height:26px;box-sizing:border-box;padding:0 3px;border:0;border-radius:3px;background:#242526;color:#fff;font:inherit;font-size:12px;text-align:center;outline:0}.recruitment-pdf-page-input:focus{box-shadow:0 0 0 2px #76a9e8}.recruitment-pdf-page-input::-webkit-inner-spin-button,.recruitment-pdf-page-input::-webkit-outer-spin-button{margin:0;-webkit-appearance:none}.recruitment-pdf-page-input{-moz-appearance:textfield}
+.recruitment-pdf-zoom-label{min-width:42px;color:#d4d7d9;font-size:12px;text-align:center;white-space:nowrap}
+.recruitment-pdf-control{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 7px;border:0;border-radius:4px;background:transparent;color:#f4f5f6;font:inherit;font-size:12px;cursor:pointer}.recruitment-pdf-control.is-icon-only{padding:0}.recruitment-pdf-icon{display:block;width:17px;height:17px}.recruitment-pdf-control:hover:not(:disabled),.recruitment-pdf-download:hover{background:#4a4b4d}.recruitment-pdf-control:disabled{color:#76787b;cursor:not-allowed}.recruitment-pdf-control[aria-pressed="true"]{background:#4f5f70;color:#fff;box-shadow:inset 0 0 0 1px #7897b5}.recruitment-pdf-divider{width:1px;height:24px;margin:0 4px;background:#5a5b5d}.recruitment-pdf-download{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border-radius:4px;color:#fff!important;text-decoration:none}.recruitment-pdf-download .recruitment-pdf-icon{width:18px;height:18px}
+.recruitment-pdf-workspace{display:grid;grid-template-columns:154px minmax(0,1fr);flex:1;min-height:0;overflow:hidden;background:#252627}
+.recruitment-pdf-thumbnails{min-width:0;overflow:auto;padding:14px 10px;background:#2d2e2f;border-right:1px solid #414244;scrollbar-color:#6c6e70 #2d2e2f}
+.recruitment-pdf-thumbnail-list{display:grid;gap:12px;align-content:start}
+.recruitment-pdf-thumbnail{display:grid;justify-items:center;gap:6px;width:100%;padding:7px 6px 6px;border:1px solid transparent;border-radius:5px;background:transparent;color:#e7e9ea;cursor:pointer;font:inherit;transition:border-color .16s ease,background-color .16s ease}
+.recruitment-pdf-thumbnail:hover{border-color:#6b8e9c;background:#3a3b3d}.recruitment-pdf-thumbnail.is-active{border-color:#76a9e8;background:#414950;box-shadow:0 0 0 2px rgba(118,169,232,.25)}
+.recruitment-pdf-thumbnail-canvas{display:block;width:100%;height:auto;min-height:54px;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.35)}
+.recruitment-pdf-thumbnail-number{color:#d8dcde;font-size:11px;line-height:1}
+.recruitment-pdf-page-wrap{position:relative;min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;padding:24px 22px 56px;background:#252627;scroll-behavior:smooth;scrollbar-color:#6c6e70 #252627}
+.recruitment-pdf-pages{display:grid;justify-items:center;gap:22px;min-width:0}
+.recruitment-pdf-page{position:relative;display:flex;align-items:flex-start;justify-content:center;width:min(100%,880px);min-height:180px;overflow:hidden;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.36);scroll-margin-top:24px}
+.recruitment-pdf-canvas{display:block;flex:none;max-width:100%;height:auto;background:#fff}
+.recruitment-pdf-ink{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none;touch-action:none}.recruitment-pdf-viewer.is-annotating .recruitment-pdf-ink{pointer-events:auto;cursor:crosshair}
+.recruitment-pdf-canvas:not([data-ready]){visibility:hidden}
+.recruitment-pdf-page-placeholder{position:absolute;inset:0;display:grid;place-items:center;color:#7e8588;font-size:12px;background:#fff}
+.recruitment-pdf-page-placeholder[hidden]{display:none}
+.recruitment-pdf-loading{position:absolute;top:18px;left:50%;z-index:2;margin:0;padding:8px 11px;transform:translateX(-50%);border-radius:5px;background:rgba(28,30,31,.85);color:#e8eaeb;font-size:12px;pointer-events:none}.recruitment-pdf-loading[hidden]{display:none}
+.recruitment-pdf-thumbnails-hidden .recruitment-pdf-workspace{grid-template-columns:0 minmax(0,1fr)}
+.recruitment-pdf-thumbnails-hidden .recruitment-pdf-thumbnails{display:none}
+.recruitment-pdf-thumb-toggle[aria-expanded="false"]{background:#4a4b4d}
+@media(max-width:700px){.recruitment-preview-content{grid-template-rows:190px minmax(0,1fr)}.recruitment-preview-list{overflow:auto;white-space:normal}.recruitment-tree-button{display:flex!important;width:100%!important;margin:0!important}.recruitment-tree-toggle,.recruitment-tree-spacer{min-height:34px}.recruitment-tree-button{min-height:34px!important}.recruitment-preview-stage img,.recruitment-preview-stage video{max-height:calc(100% - 52px)}}
+@media(prefers-reduced-motion:reduce){.recruitment-tree-button,.recruitment-tree-toggle{transition:none!important}}

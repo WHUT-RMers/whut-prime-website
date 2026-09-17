@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'portal/xiumi_admin.css' %}?v=20260918-1">
+{% endblock %}
+
+{% block content %}
+<main class="xiumi-setup-page">
+  <section class="xiumi-setup-card">
+    <div class="xiumi-setup-kicker">资讯编辑</div>
+    <h1>秀米编辑</h1>
+    <p class="xiumi-setup-article">《{{ article.title }}》</p>
+
+    {% if xiumi_configured %}
+      <div class="xiumi-status xiumi-status-ready">
+        <span class="xiumi-status-dot"></span>
+        秀米同步应用已配置
+      </div>
+    {% else %}
+      <div class="xiumi-status xiumi-status-pending">
+        <span class="xiumi-status-dot"></span>
+        尚未配置秀米同步应用
+      </div>
+      <p class="xiumi-copy">先在秀米创建同步应用并通过审核，再把 AppID 和 Secret 写入服务器环境变量。</p>
+      <div class="xiumi-config-list">
+        <div><span>AppID</span><code>XIUMI_APP_ID</code></div>
+        <div><span>Secret</span><code>XIUMI_APP_SECRET</code></div>
+        <div><span>绑定名称</span><code>XIUMI_BIND_NAME</code></div>
+      </div>
+      <a class="xiumi-primary-button" href="{{ xiumi_console_url }}" target="_blank" rel="noopener">打开秀米同步应用控制台</a>
+    {% endif %}
+
+    <div class="xiumi-actions">
+      <a class="xiumi-secondary-button" href="{% url 'admin:portal_newsarticle_change' article.pk %}">返回文章编辑</a>
+      <a class="xiumi-text-link" href="https://ent.xiumi.us/" target="_blank" rel="noopener">查看接口说明</a>
+    </div>
+  </section>
+</main>
+{% endblock %}

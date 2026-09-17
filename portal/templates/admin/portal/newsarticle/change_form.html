@@ -3,6 +3,7 @@
 {% block extrahead %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'portal/news_editor_workbench.css' %}?v=20260821-4">
+  <link rel="stylesheet" href="{% static 'portal/xiumi_admin.css' %}?v=20260918-1">
 {% endblock %}
 {% block object-tools-items %}
   {% if original %}
@@ -12,6 +13,15 @@
     {% else %}
       <li><form method="post" action="{% url 'admin:portal_news_trash' original.pk %}" onsubmit="return confirm('移入回收站后，资讯会从前台隐藏。');">{% csrf_token %}<button type="submit" class="button">移入回收站</button></form></li>
     {% endif %}
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+{% block form_top %}
+  {% if original %}
+    <div class="xiumi-inline-action">
+      <span>秀米排版</span>
+      <a href="{% url 'admin:portal_news_xiumi' original.pk %}" target="_blank" rel="noopener">秀米编辑</a>
+    </div>
   {% endif %}
   {{ block.super }}
 {% endblock %}

@@ -2,16 +2,29 @@ from __future__ import annotations
 
 import json
 import io
+import base64
+import hashlib
 import mimetypes
+import os
+import secrets
+import shutil
+import subprocess
+import tempfile
+import time
 import zipfile
+import xml.etree.ElementTree as ElementTree
 from datetime import timedelta
+from functools import lru_cache
+from pathlib import Path
+from urllib.parse import urlencode
 
 from django import forms
+from django.conf import settings
 from django.contrib import admin, messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models
 from django.db.models import Sum
-from django.http import FileResponse, Http404, HttpResponseBadRequest, HttpResponseNotAllowed, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -22,7 +35,8 @@ from django.utils.text import get_valid_filename
 
 from .forms import CarouselImageField, RichTextWidget
 from .models import (NewsArticle, NewsCoverSlide, NewsImage, NewsRevision,
-                     NewsView, RecruitmentApplication, RecruitmentAttachment, RecruitmentSettings)
+                     NewsView, RecruitmentApplication, RecruitmentAttachment, RecruitmentSettings,
+                     XiumiBinding)
 
 
 class NewsArticleAdminForm(forms.ModelForm):
@@ -147,8 +161,52 @@ class NewsArticleAdmin(admin.ModelAdmin):
             path('bulk/restore/', self.admin_site.admin_view(self.bulk_restore), name='portal_news_bulk_restore'),
             path('bulk/purge/', self.admin_site.admin_view(self.bulk_purge), name='portal_news_bulk_purge'),
             path('<int:pk>/file/<str:kind>/<int:item_id>/', self.admin_site.admin_view(self.news_file), name='portal_news_file'),
+            path('<int:pk>/xiumi/', self.admin_site.admin_view(self.xiumi_edit), name='portal_news_xiumi'),
         ]
         return custom + urls
+
+    def xiumi_edit(self, request, pk):
+        """Open the official Xiumi bind flow, or show the one-time setup page.
+
+        The signing secret stays server-side.  Xiumi's bind endpoint receives
+        only the app id and the signed, short-lived request parameters.
+        """
+        article = get_object_or_404(NewsArticle, pk=pk)
+        if not self.has_change_permission(request, article):
+            raise PermissionDenied
+
+        app_id = getattr(settings, 'XIUMI_APP_ID', '')
+        app_secret = getattr(settings, 'XIUMI_APP_SECRET', '')
+        if not app_id or not app_secret:
+            return TemplateResponse(request, 'admin/portal/newsarticle/xiumi_setup.html', {
+                **self.admin_site.each_context(request),
+                'title': '秀米编辑',
+                'article': article,
+                'xiumi_configured': False,
+                'xiumi_console_url': 'https://xiumi.us/#/user/ownerpartnerbind',
+            })
+
+        partner_user_id = f'admin:{request.user.pk}'
+        binding = XiumiBinding.objects.filter(partner_user_id=partner_user_id).first()
+        if binding:
+            query = urlencode({'open_id': binding.open_id, 'article_id': article.xiumi_article_id or ''})
+            return redirect(f"{getattr(settings, 'XIUMI_BASE_URL', 'https://xiumi.us').rstrip('/')}/auth/partner/edit?{query}")
+        timestamp = str(int(time.time()))
+        nonce = secrets.token_urlsafe(12)
+        signature_parts = [app_secret, timestamp, nonce, partner_user_id]
+        signature_source = ''.join(sorted(signature_parts))
+        signature = hashlib.md5(
+            hashlib.md5(signature_source.encode('utf-8')).hexdigest().encode('utf-8')
+        ).hexdigest()
+        query = urlencode({
+            'signature': signature,
+            'timestamp': timestamp,
+            'nonce': nonce,
+            'partner_user_id': partner_user_id,
+            'appid': app_id,
+            'bind_name': getattr(settings, 'XIUMI_BIND_NAME', 'WHUT PRIME 官网'),
+        })
+        return redirect(f"{getattr(settings, 'XIUMI_BASE_URL', 'https://xiumi.us').rstrip('/')}/auth/partner/bind?{query}")
 
     def upload_inline_image(self, request):
         if request.method != 'POST':
@@ -330,24 +388,28 @@ class NewsArticleAdmin(admin.ModelAdmin):
 class RecruitmentApplicationAdmin(admin.ModelAdmin):
     form = RecruitmentApplicationAdminForm
     change_list_template = 'admin/portal/recruitmentapplication/change_list.html'
-    list_display = ('application_no', 'name', 'duplicate_alert', 'college', 'major_class', 'primary_group_display', 'adjustment_display', 'status', 'created_at', 'resume_link')
+    list_display = ('application_no', 'name', 'preview_link', 'college', 'major_class', 'primary_group_display', 'adjustment_display', 'status', 'created_at', 'resume_link')
     list_filter = ('primary_choice', 'status', 'accepts_adjustment', 'created_at')
     search_fields = ('application_no', 'name', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class')
-    readonly_fields = ('application_no', 'duplicate_check', 'created_at', 'updated_at', 'resume_link', 'attachments_display')
+    readonly_fields = ('application_no', 'created_at', 'updated_at', 'photo_preview', 'resume_link', 'attachments_display')
     list_editable = ('status',)
-    fields = ('application_no', 'duplicate_check', 'name', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class', 'primary_choice', 'accepts_adjustment', 'second_choice', 'introduction', 'experience', 'availability', 'resume_link', 'attachments_display', 'status', 'interview_at', 'internal_note', 'created_at', 'updated_at')
+    fields = ('application_no', 'name', 'gender', 'qq', 'wechat', 'email', 'phone', 'college', 'major_class', 'photo', 'photo_preview', 'primary_choice', 'accepts_adjustment', 'second_choice', 'introduction', 'honors', 'roles', 'technical_foundation', 'experience', 'resume_link', 'attachments_display', 'status', 'interview_at', 'internal_note', 'created_at', 'updated_at')
 
     class Media:
-        css = {'all': ('portal/admin_polish.css',)}
-        js = ('portal/recruitment_material_preview.js',)
+        css = {'all': ('portal/admin_polish.css', 'portal/recruitment_preview.css')}
+        js = ('portal/recruitment_pdf_viewer.js', 'portal/recruitment_material_preview_v3.js')
 
     def get_urls(self):
         return [
             path('export-filtered/', self.admin_site.admin_view(self.export_filtered), name='portal_recruitment_export_filtered'),
             path('export-all/', self.admin_site.admin_view(self.export_all), name='portal_recruitment_export_all'),
+            path('<int:pk>/preview/', self.admin_site.admin_view(self.application_preview), name='portal_recruitmentapplication_preview'),
+            path('<int:pk>/photo-preview/', self.admin_site.admin_view(self.photo_preview_file), name='portal_recruitment_photo_preview'),
             path('<int:pk>/resume-preview/', self.admin_site.admin_view(self.resume_preview), name='portal_recruitment_resume_preview'),
             path('<int:pk>/attachment/<int:attachment_id>/', self.admin_site.admin_view(self.attachment_file), name='portal_recruitment_attachment_file'),
             path('<int:pk>/attachment/<int:attachment_id>/preview-data/', self.admin_site.admin_view(self.attachment_preview_data), name='portal_recruitment_attachment_preview_data'),
+            path('<int:pk>/attachment/<int:attachment_id>/preview-entry/', self.admin_site.admin_view(self.attachment_preview_entry), name='portal_recruitment_attachment_preview_entry'),
+            path('<int:pk>/attachment/<int:attachment_id>/rendered-preview/', self.admin_site.admin_view(self.attachment_rendered_preview), name='portal_recruitment_attachment_rendered_preview'),
         ] + super().get_urls()
 
     def get_queryset(self, request):
@@ -364,17 +426,8 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
         return applications
 
     def _filtered_applications(self, request):
-        applications = RecruitmentApplication.objects.prefetch_related('attachments').all()
-        primary = request.GET.get('primary_choice')
-        status = request.GET.get('status')
-        if primary:
-            applications = applications.filter(primary_choice=primary)
-        if status:
-            applications = applications.filter(status=status)
-        adjustment = request.GET.get('accepts_adjustment')
-        if adjustment in {'0', '1'}:
-            applications = applications.filter(accepts_adjustment=adjustment == '1')
-        return applications
+        change_list = self.get_changelist_instance(request)
+        return change_list.get_queryset(request).prefetch_related('attachments')
 
     def _export_archive(self, applications, filename, grouped=False):
         from openpyxl import Workbook
@@ -386,7 +439,7 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
             workbook = Workbook()
             sheet = workbook.active
             sheet.title = '报名汇总'
-            headers = ['报名编号', '姓名', '第一志愿', '服从调剂', '第二志愿/统筹', '审核状态', '学院', '专业与班级', 'QQ', '微信', '邮箱', '手机', '每周投入', '自我介绍', '项目/竞赛经历', '报名时间', '附件数量']
+            headers = ['报名编号', '姓名', '性别', '第一志愿', '服从调剂', '第二志愿/统筹', '审核状态', '学院', '专业与班级', 'QQ', '微信', '邮箱', '手机', '个人简介', '个人荣誉', '任职情况', '技术基础', '项目/竞赛经历', '照片', '报名时间', '附件数量']
             items = list(applications)
             buckets = {key: [] for key in groups}
             if grouped:
@@ -409,16 +462,19 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
                 row += 1
                 for application in group_items:
                     second = groups.get(application.second_choice, '接受统筹安排') if application.accepts_adjustment else '不服从调剂'
-                    sheet.append([application.application_no, application.name, groups.get(application.primary_choice, application.primary_choice), '是' if application.accepts_adjustment else '否', second, application.get_status_display(), application.college, application.major_class, application.qq, application.wechat, application.email, application.phone, application.availability, application.introduction, application.experience, application.created_at.replace(tzinfo=None), application.attachments.count()])
+                    sheet.append([application.application_no, application.name, application.get_gender_display() or '—', groups.get(application.primary_choice, application.primary_choice), '是' if application.accepts_adjustment else '否', second, application.get_status_display(), application.college, application.major_class, application.qq, application.wechat, application.email, application.phone, application.introduction, application.honors, application.roles, application.technical_foundation, application.experience, '已上传' if application.photo else '未上传', application.created_at.replace(tzinfo=None), application.attachments.count()])
                     row += 1
                     folder_group = groups.get(application.primary_choice, application.primary_choice) if grouped else '报名材料'
                     folder = f'{folder_group}/{get_valid_filename(application.application_no)}_{get_valid_filename(application.name)}'
                     for attachment in application.attachments.all():
                         if attachment.file:
                             archive.writestr(f'{folder}/{get_valid_filename(attachment.original_name)}', attachment.file.read())
+                    if application.photo:
+                        extension = application.photo.name.rsplit('.', 1)[-1].lower() if '.' in application.photo.name else 'jpg'
+                        archive.writestr(f'{folder}/个人照片.{get_valid_filename(extension)}', application.photo.read())
                 row += 1 if grouped else 0
             sheet.freeze_panes = 'A2'
-            for column, width in {'A':18,'B':12,'C':12,'D':12,'E':18,'F':12,'G':18,'H':28,'I':14,'J':18,'K':28,'L':16,'M':16,'N':38,'O':38,'P':20,'Q':12}.items():
+            for column, width in {'A':18,'B':12,'C':10,'D':12,'E':12,'F':18,'G':12,'H':18,'I':28,'J':14,'K':18,'L':28,'M':16,'N':16,'O':34,'P':30,'Q':30,'R':34,'S':38,'T':12,'U':20,'V':12}.items():
                 sheet.column_dimensions[column].width = width
             xlsx = io.BytesIO(); workbook.save(xlsx)
             archive.writestr('报名信息.xlsx', xlsx.getvalue())
@@ -430,6 +486,67 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
 
     def export_all(self, request):
         return self._export_archive(RecruitmentApplication.objects.prefetch_related('attachments').all(), 'PRIME-全部报名归档.zip', grouped=True)
+
+    def _preview_query(self, request):
+        query = request.GET.copy()
+        query.pop('p', None)
+        return query.urlencode()
+
+    @admin.display(description='报名表')
+    def preview_link(self, obj):
+        return format_html(
+            '<a class="recruitment-application-preview-link" href="{}">查看报名表</a>',
+            reverse('admin:portal_recruitmentapplication_preview', args=[obj.pk]),
+        )
+
+    @admin.display(description='照片预览')
+    def photo_preview(self, obj):
+        if not obj or not obj.pk or not obj.photo:
+            return '未上传照片'
+        return format_html(
+            '<img class="recruitment-photo-admin-preview" src="{}" alt="{}">',
+            reverse('admin:portal_recruitment_photo_preview', args=[obj.pk]), obj.name or '报名者照片',
+        )
+
+    def application_preview(self, request, pk):
+        application = get_object_or_404(self.get_queryset(request), pk=pk)
+        applications = list(self._filtered_applications(request))
+        try:
+            position = next(index for index, item in enumerate(applications) if item.pk == application.pk)
+        except StopIteration:
+            applications = [application]
+            position = 0
+        query = self._preview_query(request)
+
+        def navigation_url(item):
+            url = reverse('admin:portal_recruitmentapplication_preview', args=[item.pk])
+            return f'{url}?{query}' if query else url
+
+        groups = dict(RecruitmentApplication.GROUPS)
+        return TemplateResponse(request, 'admin/portal/recruitmentapplication/preview.html', {
+            **self.admin_site.each_context(request),
+            'title': f'{application.name} · 报名表预览',
+            'opts': self.model._meta,
+            'application': application,
+            'groups': groups,
+            'position': position + 1,
+            'total': len(applications),
+            'previous_url': navigation_url(applications[position - 1]) if position > 0 else '',
+            'next_url': navigation_url(applications[position + 1]) if position + 1 < len(applications) else '',
+            'list_url': reverse('admin:portal_recruitmentapplication_changelist') + (f'?{query}' if query else ''),
+            'edit_url': reverse('admin:portal_recruitmentapplication_change', args=[application.pk]),
+            'photo_url': reverse('admin:portal_recruitment_photo_preview', args=[application.pk]) if application.photo else '',
+            'resume_url': reverse('admin:portal_recruitment_resume_preview', args=[application.pk]) if application.resume else '',
+            'attachments': application.attachments.all(),
+            'materials_json': json.dumps(self._preview_materials(application), ensure_ascii=False),
+        })
+
+    def photo_preview_file(self, request, pk):
+        application = get_object_or_404(RecruitmentApplication, pk=pk)
+        if not application.photo:
+            raise Http404('该报名者没有上传照片。')
+        content_type = mimetypes.guess_type(application.photo.name)[0] or 'image/jpeg'
+        return FileResponse(application.photo.open('rb'), content_type=content_type)
 
     def resume_preview(self, request, pk):
         application = get_object_or_404(RecruitmentApplication, pk=pk)
@@ -446,127 +563,473 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
             as_attachment=download, filename=attachment.original_name if download else None,
         )
 
-    def attachment_preview_data(self, request, pk, attachment_id):
-        """Extract a safe, lightweight preview for office documents and ZIP archives."""
-        attachment = get_object_or_404(RecruitmentAttachment, pk=attachment_id, application_id=pk)
-        suffix = attachment.original_name.rsplit('.', 1)[-1].lower() if '.' in attachment.original_name else ''
-        try:
-            with attachment.file.open('rb') as uploaded:
-                content = uploaded.read()
-            if suffix == 'docx':
-                from docx import Document
-                document = Document(io.BytesIO(content))
-                paragraphs = [paragraph.text.strip() for paragraph in document.paragraphs if paragraph.text.strip()]
-                return JsonResponse({'kind': 'document', 'title': attachment.original_name, 'paragraphs': paragraphs[:160]})
-            if suffix == 'xlsx':
-                from openpyxl import load_workbook
-                workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
-                sheets = []
-                for worksheet in list(workbook.worksheets)[:6]:
-                    rows = []
-                    for values in worksheet.iter_rows(max_row=80, max_col=20, values_only=True):
-                        rows.append(['' if value is None else str(value)[:240] for value in values])
-                    sheets.append({'name': worksheet.title, 'rows': rows})
-                return JsonResponse({'kind': 'spreadsheet', 'title': attachment.original_name, 'sheets': sheets})
-            if suffix == 'pptx':
-                from pptx import Presentation
-                presentation = Presentation(io.BytesIO(content))
-                slides = []
-                for number, slide in enumerate(presentation.slides, start=1):
-                    texts = [shape.text.strip() for shape in slide.shapes if getattr(shape, 'has_text_frame', False) and shape.text.strip()]
-                    slides.append({'number': number, 'text': texts[:20]})
-                return JsonResponse({'kind': 'presentation', 'title': attachment.original_name, 'slides': slides})
-            if suffix == 'zip':
-                with zipfile.ZipFile(io.BytesIO(content)) as archive:
-                    names = [info.filename for info in archive.infolist() if not info.is_dir()]
-                return JsonResponse({'kind': 'archive', 'title': attachment.original_name, 'files': names[:300], 'total': len(names)})
-        except Exception:
-            return JsonResponse({'kind': 'unsupported', 'title': attachment.original_name, 'message': '此文件无法生成在线预览，请下载后使用对应软件打开。'})
-        return JsonResponse({'kind': 'unsupported', 'title': attachment.original_name, 'message': '此格式暂不支持在线预览，请下载后使用对应软件打开。'})
+    PREVIEW_ENTRY_LIMIT = 30 * 1024 * 1024
+    DOCX_IMAGE_LIMIT = 6 * 1024 * 1024
+    OFFICE_RENDER_LIMIT = 80 * 1024 * 1024
+    OFFICE_RENDER_SUFFIXES = {
+        'doc', 'docx', 'docm', 'wps', 'rtf', 'odt',
+        'xls', 'xlsx', 'xlsm', 'et', 'ods',
+        'ppt', 'pptx', 'pptm', 'dps', 'odp',
+    }
+    # These are the WPS desktop formats verified on this Windows host. PPT is
+    # intentionally left for the Microsoft Office fallback below because the
+    # installed PowerPoint COM server is the reliable renderer for slides.
+    WPS_RENDER_SUFFIXES = {
+        'doc', 'docx', 'docm', 'wps', 'rtf', 'odt',
+        'xls', 'xlsx', 'xlsm', 'et', 'ods',
+    }
 
     @staticmethod
-    def _norm_contact(value: str) -> str:
-        """联系方式归一化：去首尾空白 + 小写，微信/邮箱/Q 号常见的空格与大小写差异不误判。"""
-        return (value or '').strip().lower()
+    def _suffix(name):
+        return name.rsplit('.', 1)[-1].lower() if '.' in name else ''
 
-    CONTACT_FIELDS = ('qq', 'wechat', 'phone', 'email')
-    CONTACT_LABELS = {'qq': 'QQ', 'wechat': '微信', 'phone': '手机号', 'email': '邮箱'}
+    @staticmethod
+    def _preview_kind(name):
+        suffix = RecruitmentApplicationAdmin._suffix(name)
+        if suffix == 'pdf':
+            return 'pdf'
+        if suffix in {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif', 'svg'}:
+            return 'image'
+        if suffix in {'mp4', 'mov', 'webm', 'm4v', 'ogv', 'avi', 'mkv'}:
+            return 'video'
+        if suffix in {'mp3', 'wav', 'm4a', 'ogg', 'oga', 'flac', 'aac'}:
+            return 'audio'
+        if suffix in {'txt', 'md', 'csv', 'json', 'log', 'xml', 'html', 'htm', 'css', 'js', 'ts', 'tsx', 'jsx', 'vue', 'yaml', 'yml', 'ini', 'toml', 'sql', 'py', 'java', 'c', 'cpp', 'h', 'sh', 'bat'}:
+            return 'text'
+        if suffix in RecruitmentApplicationAdmin.OFFICE_RENDER_SUFFIXES | {'zip'}:
+            return 'structured'
+        return 'other'
 
-    def _duplicate_matches(self, obj):
-        """比对当前报名与已有报名（不含自身）的个人信息：
-        强校验——QQ / 微信 / 手机号 / 邮箱 任一归一化后相同；
-        弱校验——姓名 + 学院 + 专业班级 三者同时相同。
-        返回 [(已有报名, 匹配字段列表), ...]，字段未命中则返回空列表。"""
-        from django.db.models import Q
-        if obj is None or not obj.pk:
-            return []
-        query = Q()
-        for field in self.CONTACT_FIELDS:
-            value = getattr(obj, field)
-            if value and value.strip():
-                query |= Q(**{f'{field}__iexact': value.strip()})
-        name = (obj.name or '').strip()
-        college = (obj.college or '').strip()
-        major = (obj.major_class or '').strip()
-        if name and college and major:
-            query |= Q(name__iexact=name, college__iexact=college, major_class__iexact=major)
-        if not query:
-            return []
-        results = []
-        for other in RecruitmentApplication.objects.filter(query).exclude(pk=obj.pk).order_by('created_at'):
-            matched = [field for field in self.CONTACT_FIELDS
-                       if self._norm_contact(getattr(other, field)) == self._norm_contact(getattr(obj, field))
-                       and self._norm_contact(getattr(obj, field))]
-            if (name.lower() and
-                    (other.name or '').strip().lower() == name.lower() and
-                    (other.college or '').strip().lower() == college.lower() and
-                    (other.major_class or '').strip().lower() == major.lower()):
-                matched.append('name_college_major')
-            if matched:
-                results.append((other, matched))
-        return results
+    @classmethod
+    def _wps_executable(cls):
+        """Return a locally installed WPS Writer executable when available."""
+        configured = os.environ.get('PRIME_WPS_EXECUTABLE', '').strip()
+        candidates = [Path(configured)] if configured else []
+        for root_name in ('LOCALAPPDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)'):
+            root = os.environ.get(root_name, '').strip()
+            if root:
+                candidates.extend(Path(root).glob('Kingsoft/WPS Office/*/office6/wps.exe'))
+        for candidate in candidates:
+            if candidate.is_file():
+                return candidate
+        return None
 
-    @admin.display(description='疑似重复')
-    def duplicate_alert(self, obj):
-        """列表页紧凑标识：命中即显示与哪些报名疑似重复。"""
-        matches = self._duplicate_matches(obj)
-        if not matches:
-            return mark_safe('<span style="color:#2de2a6">无</span>')
-        others = '、'.join(other.application_no for other, _ in matches)
-        return format_html('<span style="color:#ffb45e;font-weight:600;white-space:nowrap">⚠ 请勿重复提交：与 {}</span>', others)
+    @classmethod
+    def _libreoffice_executable(cls):
+        configured = os.environ.get('PRIME_LIBREOFFICE_EXECUTABLE', '').strip()
+        candidates = [Path(configured)] if configured else []
+        for command in ('soffice', 'libreoffice'):
+            located = shutil.which(command)
+            if located:
+                candidates.append(Path(located))
+        for root_name in ('PROGRAMFILES', 'PROGRAMFILES(X86)', 'LOCALAPPDATA'):
+            root = os.environ.get(root_name, '').strip()
+            if root:
+                candidates.extend([
+                    Path(root) / 'LibreOffice' / 'program' / 'soffice.exe',
+                    Path(root) / 'libreoffice' / 'program' / 'soffice.exe',
+                ])
+        for candidate in candidates:
+            if candidate.is_file():
+                return candidate
+        return None
 
-    @admin.display(description='重复信息比对')
-    def duplicate_check(self, obj):
-        """编辑页顶部提示条：列出每一条重复的来源报名与命中的具体字段。"""
-        matches = self._duplicate_matches(obj)
-        if not matches:
-            return mark_safe(
-                '<div style="border:1px solid rgba(45,226,166,.35);background:#0b1511;'
-                'border-radius:10px;padding:10px 14px;color:#2de2a6">'
-                '✓ 未发现与已有报名重复的个人信息。</div>')
-        rows = []
-        labels = {**self.CONTACT_LABELS, 'name_college_major': '姓名+学院+专业班级'}
-        for other, matched in matches:
-            fields = '、'.join(labels[field] for field in matched)
-            rows.append(format_html(
-                '<div style="margin:8px 0;border-left:3px solid #ffb45e;padding:8px 12px;background:#1a1106">'
-                '<b style="color:#ffb45e">请勿重复提交</b>：该报名与已有报名 '
-                '<a href="{}" target="_blank" style="color:#4da3ff;font-weight:600">{}</a> '
-                '（{} · {} 投递）信息重复，命中字段：{}{}'
-                '</div>',
-                reverse('admin:portal_recruitmentapplication_change', args=[other.pk]),
-                other.application_no,
-                other.name or '未填写姓名',
-                timezone.localtime(other.created_at).strftime('%Y-%m-%d %H:%M'),
-                fields,
-                ('；状态：' + other.get_status_display()) if other.status != 'pending' else '',
-            ))
-        return mark_safe(
-            '<div style="border:1px solid #ffb45e;border-radius:10px;padding:10px 14px;background:#140e05">'
-            + ''.join(rows)
-            + '<div style="margin-top:6px;color:#97a3b6;font-size:.85rem;line-height:1.7">'
-            '比对规则：QQ / 微信 / 手机号 / 邮箱 任一相同，或 姓名+学院+专业班级 三者全同，即判定为疑似重复。'
-            '请核对是否为同一人重复投递；确认无意重复后，可删除后一条或标记相应状态。</div></div>')
+    @classmethod
+    def _microsoft_office_executable(cls, suffix):
+        if os.name != 'nt':
+            return None
+        folder = (
+            'WINWORD.EXE' if suffix in {'doc', 'docx', 'docm', 'wps', 'rtf', 'odt'} else
+            'EXCEL.EXE' if suffix in {'xls', 'xlsx', 'xlsm', 'et', 'ods'} else
+            'POWERPNT.EXE'
+        )
+        candidates = []
+        for root_name in ('PROGRAMFILES', 'PROGRAMFILES(X86)'):
+            root = os.environ.get(root_name, '').strip()
+            if root:
+                base = Path(root) / 'Microsoft Office'
+                candidates.extend(base.glob(f'root/Office*/{folder}'))
+                candidates.extend(base.glob(f'Office*/{folder}'))
+        for candidate in candidates:
+            if candidate.is_file():
+                return candidate
+        return None
+
+    @classmethod
+    @lru_cache(maxsize=None)
+    def _renderer_for_suffix(cls, suffix):
+        """Pick a renderer on the server; the end user's Office software is irrelevant."""
+        if suffix not in cls.OFFICE_RENDER_SUFFIXES:
+            return ''
+        preference = os.environ.get('PRIME_DOCUMENT_RENDERER', 'auto').strip().lower()
+        if preference in {'wps', 'auto'} and suffix in cls.WPS_RENDER_SUFFIXES and cls._wps_executable():
+            return 'wps'
+        if preference in {'libreoffice', 'auto'} and cls._libreoffice_executable():
+            return 'libreoffice'
+        if preference in {'microsoft', 'office', 'auto'} and cls._microsoft_office_executable(suffix):
+            return 'microsoft'
+        return ''
+
+    @classmethod
+    def _office_render_cache(cls, content, filename):
+        if len(content) > cls.OFFICE_RENDER_LIMIT:
+            raise ValueError('office file is too large for online rendering')
+        suffix = cls._suffix(filename) or 'bin'
+        digest = hashlib.sha256(content).hexdigest()
+        cache_dir = Path(tempfile.gettempdir()) / 'whut-prime-office-previews'
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        source = cache_dir / f'{digest}.{suffix}'
+        target = cache_dir / f'{digest}.pdf'
+        if target.is_file() and target.stat().st_size:
+            return target
+        source.write_bytes(content)
+        return source, target
+
+    @classmethod
+    def _render_office_to_pdf(cls, content, filename):
+        """Convert an Office file to PDF with a locally installed office engine."""
+        cached = cls._office_render_cache(content, filename)
+        if isinstance(cached, Path):
+            return cached
+        source, target = cached
+        suffix = cls._suffix(filename)
+        renderer = cls._renderer_for_suffix(suffix)
+        if not renderer:
+            raise RuntimeError('no Office renderer is installed')
+
+        if renderer == 'libreoffice':
+            command = [
+                str(cls._libreoffice_executable()), '--headless', '--convert-to', 'pdf',
+                '--outdir', str(target.parent), str(source),
+            ]
+            subprocess.run(command, check=True, capture_output=True, timeout=120)
+            if not target.is_file():
+                raise RuntimeError('LibreOffice did not produce a PDF preview')
+            return target
+
+        if renderer == 'microsoft':
+            return cls._render_office_with_microsoft(source, target, suffix)
+
+        return cls._render_office_with_wps(source, target, suffix)
+
+    @classmethod
+    def _render_office_with_wps(cls, source, target, suffix):
+        """Export through WPS desktop automation without showing its window."""
+
+        import pythoncom
+        import win32com.client
+
+        writer_suffixes = {'doc', 'docx', 'docm', 'wps', 'rtf', 'odt'}
+        sheet_suffixes = {'xls', 'xlsx', 'xlsm', 'et', 'ods'}
+        presentation_suffixes = {'ppt', 'pptx', 'pptm', 'dps', 'odp'}
+        progids = (
+            ('Kwps.Application', 'WPS.Application', 'KWPS.Application') if suffix in writer_suffixes else
+            ('Ket.Application', 'ET.Application') if suffix in sheet_suffixes else
+            ('Kwpp.Application', 'WPP.Application') if suffix in presentation_suffixes else
+            ()
+        )
+        if not progids:
+            raise ValueError(f'unsupported office suffix: {suffix}')
+
+        pythoncom.CoInitialize()
+        app = None
+        document = None
+        workbook = None
+        presentation = None
+        try:
+            if suffix not in writer_suffixes and suffix not in sheet_suffixes:
+                # PowerPoint's ExportAsFixedFormat COM method requires its
+                # complete optional argument list and is more reliable via
+                # the normal Dispatch entry point.
+                app = win32com.client.Dispatch('PowerPoint.Application')
+            else:
+                for progid in progids:
+                    try:
+                        app = win32com.client.DispatchEx(progid)
+                        break
+                    except Exception:
+                        app = None
+            if app is None:
+                raise RuntimeError('WPS COM automation is unavailable')
+            try:
+                app.Visible = False
+                app.DisplayAlerts = False
+            except Exception:
+                pass
+
+            if suffix in writer_suffixes:
+                document = app.Documents.Open(str(source), ReadOnly=True, AddToRecentFiles=False, Visible=False)
+                try:
+                    document.ExportAsFixedFormat(str(target), 17)
+                except Exception:
+                    document.SaveAs(str(target), 17)
+            elif suffix in sheet_suffixes:
+                workbook = app.Workbooks.Open(str(source), ReadOnly=True)
+                workbook.ExportAsFixedFormat(0, str(target))
+            else:
+                presentation = app.Presentations.Open(str(source), ReadOnly=True, Untitled=True, WithWindow=False)
+                presentation.ExportAsFixedFormat(str(target), 2)
+        finally:
+            for item in (document, workbook, presentation):
+                if item is not None:
+                    try:
+                        item.Close(False)
+                    except Exception:
+                        pass
+            if app is not None:
+                try:
+                    app.Quit()
+                except Exception:
+                    pass
+            pythoncom.CoUninitialize()
+
+        if not target.is_file() or not target.stat().st_size:
+            raise RuntimeError('WPS did not produce a PDF preview')
+        return target
+
+    @classmethod
+    def _render_office_with_microsoft(cls, source, target, suffix):
+        """Export through Microsoft Office COM when it is the available engine."""
+        import pythoncom
+        import win32com.client
+
+        writer_suffixes = {'doc', 'docx', 'docm', 'wps', 'rtf', 'odt'}
+        sheet_suffixes = {'xls', 'xlsx', 'xlsm', 'et', 'ods'}
+        progids = (
+            ('Word.Application',) if suffix in writer_suffixes else
+            ('Excel.Application',) if suffix in sheet_suffixes else
+            ('PowerPoint.Application',)
+        )
+        pythoncom.CoInitialize()
+        app = None
+        document = None
+        workbook = None
+        presentation = None
+        try:
+            for progid in progids:
+                try:
+                    app = win32com.client.DispatchEx(progid)
+                    break
+                except Exception:
+                    app = None
+            if app is None:
+                raise RuntimeError('Microsoft Office COM automation is unavailable')
+            try:
+                app.Visible = False
+                app.DisplayAlerts = 0
+            except Exception:
+                pass
+            if suffix in writer_suffixes:
+                document = app.Documents.Open(str(source), ReadOnly=True, AddToRecentFiles=False, Visible=False)
+                document.ExportAsFixedFormat(str(target), 17)
+            elif suffix in sheet_suffixes:
+                workbook = app.Workbooks.Open(str(source), ReadOnly=True)
+                workbook.ExportAsFixedFormat(0, str(target))
+            else:
+                # PowerPoint refuses a hidden Application.Visible=False COM
+                # session for file conversion. Keep the window minimized so
+                # the server can still render PPT/PPTX without interrupting
+                # the operator's desktop, then save as a PDF.
+                app.Visible = True
+                try:
+                    app.WindowState = 2  # ppWindowMinimized
+                except Exception:
+                    pass
+                presentation = app.Presentations.Open(str(source), False, False, False)
+                presentation.SaveAs(str(target), 32)  # ppSaveAsPDF
+        finally:
+            for item in (document, workbook, presentation):
+                if item is not None:
+                    try:
+                        item.Close(False)
+                    except Exception:
+                        pass
+            if app is not None:
+                try:
+                    app.Quit()
+                except Exception:
+                    pass
+            pythoncom.CoUninitialize()
+        if not target.is_file() or not target.stat().st_size:
+            raise RuntimeError('Microsoft Office did not produce a PDF preview')
+        return target
+
+    @classmethod
+    def _structured_preview(cls, title, suffix, content):
+        if suffix == 'docx':
+            from docx import Document
+            document = Document(io.BytesIO(content))
+            paragraphs = [paragraph.text.strip() for paragraph in document.paragraphs if paragraph.text.strip()]
+            tables = []
+            for table in document.tables[:20]:
+                rows = []
+                for row in table.rows[:80]:
+                    rows.append([cell.text.strip()[:240] for cell in row.cells[:20]])
+                tables.append({'rows': rows})
+            images = []
+            try:
+                with zipfile.ZipFile(io.BytesIO(content)) as archive:
+                    if not paragraphs and not tables:
+                        paragraphs = cls._docx_xml_paragraphs(archive)
+                    used = 0
+                    for name in archive.namelist():
+                        if not name.startswith('word/media/') or name.endswith('/'):
+                            continue
+                        image = archive.read(name)
+                        if not image or len(image) > cls.DOCX_IMAGE_LIMIT or used + len(image) > cls.DOCX_IMAGE_LIMIT:
+                            continue
+                        mime = mimetypes.guess_type(name)[0] or 'application/octet-stream'
+                        images.append({
+                            'name': name.rsplit('/', 1)[-1],
+                            'src': f'data:{mime};base64,{base64.b64encode(image).decode("ascii")}',
+                        })
+                        used += len(image)
+                        if len(images) >= 8:
+                            break
+            except zipfile.BadZipFile:
+                pass
+            return {
+                'kind': 'document', 'title': title,
+                'paragraphs': paragraphs[:240], 'tables': tables, 'images': images,
+            }
+        if suffix in {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif', 'svg'}:
+            return {'kind': 'image', 'title': title}
+        if suffix == 'xlsx':
+            from openpyxl import load_workbook
+            workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+            sheets = []
+            for worksheet in list(workbook.worksheets)[:12]:
+                rows = []
+                for values in worksheet.iter_rows(max_row=160, max_col=30, values_only=True):
+                    rows.append(['' if value is None else str(value)[:240] for value in values])
+                sheets.append({'name': worksheet.title, 'rows': rows})
+            return {'kind': 'spreadsheet', 'title': title, 'sheets': sheets}
+        if suffix == 'pptx':
+            from pptx import Presentation
+            presentation = Presentation(io.BytesIO(content))
+            slides = []
+            for number, slide in enumerate(presentation.slides, start=1):
+                texts = [shape.text.strip() for shape in slide.shapes if getattr(shape, 'has_text_frame', False) and shape.text.strip()]
+                slides.append({'number': number, 'text': texts[:40]})
+            return {'kind': 'presentation', 'title': title, 'slides': slides}
+        return None
+
+    @staticmethod
+    def _docx_xml_paragraphs(archive):
+        """Read text boxes and drawing-layer text that python-docx omits."""
+        word_namespace = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+        paragraph_tag = f'{{{word_namespace}}}p'
+        text_tag = f'{{{word_namespace}}}t'
+        paragraphs = []
+        seen = set()
+        parts = [
+            name for name in archive.namelist()
+            if name.startswith('word/') and name.endswith('.xml')
+            and name.rsplit('/', 1)[-1] in {'document.xml', 'footnotes.xml', 'endnotes.xml'}
+        ]
+        for part in parts:
+            try:
+                root = ElementTree.fromstring(archive.read(part))
+            except (ElementTree.ParseError, KeyError):
+                continue
+            for paragraph in root.iter(paragraph_tag):
+                if any(node is not paragraph and node.tag == paragraph_tag for node in paragraph.iter()):
+                    continue
+                text = ''.join(node.text or '' for node in paragraph.iter(text_tag)).strip()
+                if text and text not in seen:
+                    seen.add(text)
+                    paragraphs.append(text[:2000])
+        return paragraphs
+
+    @classmethod
+    def _zip_entries(cls, content, entry_url, data_url, rendered_url=''):
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
+            files = []
+            for info in archive.infolist():
+                if info.is_dir():
+                    continue
+                query = urlencode({'entry': info.filename})
+                item = {
+                    'path': info.filename,
+                    'name': info.filename.rsplit('/', 1)[-1],
+                    'size': info.file_size,
+                    'kind': cls._preview_kind(info.filename),
+                    'preview': f'{entry_url}?{query}',
+                    'dataPreview': f'{data_url}?{query}',
+                    'download': f'{entry_url}?{query}&download=1',
+                }
+                if rendered_url and cls._renderer_for_suffix(cls._suffix(info.filename)):
+                    item['renderedPreview'] = f'{rendered_url}?{query}'
+                files.append(item)
+        return files
+
+    def _attachment_content(self, attachment, entry=''):
+        with attachment.file.open('rb') as uploaded:
+            content = uploaded.read()
+        if not entry:
+            return content, attachment.original_name
+        if self._suffix(attachment.original_name) != 'zip':
+            raise Http404('只有 ZIP 文件支持内部条目预览。')
+        normalized = entry.replace('\\', '/')
+        parts = [part for part in normalized.split('/') if part not in {'', '.'}]
+        if any(part == '..' for part in parts) or not parts:
+            raise Http404('压缩包条目路径无效。')
+        entry_name = '/'.join(parts)
+        try:
+            with zipfile.ZipFile(io.BytesIO(content)) as archive:
+                info = archive.getinfo(entry_name)
+                if info.is_dir() or info.file_size > self.PREVIEW_ENTRY_LIMIT:
+                    raise Http404('该条目过大，无法在线预览。')
+                return archive.read(info), info.filename
+        except KeyError as error:
+            raise Http404('压缩包中不存在该文件。') from error
+        except zipfile.BadZipFile as error:
+            raise Http404('ZIP 文件损坏。') from error
+
+    def attachment_preview_entry(self, request, pk, attachment_id):
+        attachment = get_object_or_404(RecruitmentAttachment, pk=attachment_id, application_id=pk)
+        content, name = self._attachment_content(attachment, request.GET.get('entry', ''))
+        content_type = mimetypes.guess_type(name)[0] or 'application/octet-stream'
+        response = HttpResponse(content, content_type=content_type)
+        safe_name = get_valid_filename(name.rsplit('/', 1)[-1])
+        disposition = 'attachment' if request.GET.get('download') == '1' else 'inline'
+        response['Content-Disposition'] = f'{disposition}; filename="{safe_name}"'
+        return response
+
+    def attachment_rendered_preview(self, request, pk, attachment_id):
+        """Return a WPS-exported PDF for an Office file or a ZIP child file."""
+        attachment = get_object_or_404(RecruitmentAttachment, pk=attachment_id, application_id=pk)
+        content, title = self._attachment_content(attachment, request.GET.get('entry', ''))
+        if self._suffix(title) not in self.OFFICE_RENDER_SUFFIXES or not self._renderer_for_suffix(self._suffix(title)):
+            raise Http404('该文件不是可转换的 Office 文档。')
+        try:
+            rendered = self._render_office_to_pdf(content, title)
+        except (ImportError, OSError, RuntimeError, ValueError):
+            return HttpResponse('当前服务器没有可用的 Office 文档渲染器。', status=503, content_type='text/plain; charset=utf-8')
+        response = FileResponse(rendered.open('rb'), content_type='application/pdf')
+        safe_name = get_valid_filename(title.rsplit('/', 1)[-1].rsplit('.', 1)[0]) or 'document'
+        response['Content-Disposition'] = f'inline; filename="{safe_name}.pdf"'
+        return response
+
+    def attachment_preview_data(self, request, pk, attachment_id):
+        """Extract an inspectable preview for common documents and ZIP entries."""
+        attachment = get_object_or_404(RecruitmentAttachment, pk=attachment_id, application_id=pk)
+        entry = request.GET.get('entry', '')
+        try:
+            content, title = self._attachment_content(attachment, entry)
+            suffix = self._suffix(title)
+            structured = self._structured_preview(title, suffix, content)
+            if structured:
+                return JsonResponse(structured)
+            if suffix == 'zip':
+                entry_url = reverse('admin:portal_recruitment_attachment_preview_entry', args=[pk, attachment.pk])
+                data_url = reverse('admin:portal_recruitment_attachment_preview_data', args=[pk, attachment.pk])
+                rendered_url = reverse('admin:portal_recruitment_attachment_rendered_preview', args=[pk, attachment.pk])
+                files = self._zip_entries(content, entry_url, data_url, rendered_url)
+                return JsonResponse({'kind': 'archive', 'title': title, 'files': files, 'total': len(files)})
+        except (ValueError, OSError, zipfile.BadZipFile, ImportError):
+            pass
+        return JsonResponse({'kind': 'unsupported', 'title': title if 'title' in locals() else attachment.original_name, 'message': '此文件无法生成在线预览，请下载后使用对应软件打开。'})
 
     @admin.display(description='意向组别')
     def groups_display(self, obj):
@@ -623,8 +1086,11 @@ class RecruitmentApplicationAdmin(admin.ModelAdmin):
                     'preview': preview_url,
                     'download': f'{preview_url}?download=1',
                     'dataPreview': reverse('admin:portal_recruitment_attachment_preview_data', args=[obj.pk, attachment.pk]),
+                    **({
+                        'renderedPreview': reverse('admin:portal_recruitment_attachment_rendered_preview', args=[obj.pk, attachment.pk]),
+                    } if self._renderer_for_suffix(self._suffix(attachment.original_name)) else {}),
                 })
-        if not materials and obj.resume:
+        if obj.resume and not any(item['name'] == '简历.pdf' for item in materials):
             preview_url = reverse('admin:portal_recruitment_resume_preview', args=[obj.pk])
             materials.append({
                 'name': '简历.pdf',
