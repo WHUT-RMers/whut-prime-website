@@ -16,11 +16,11 @@ const navLinks = [
 /**
  * 联系我们（首页目录 06）：摆法与字号参照 wute.club 页脚——单列竖排，
  * 小标签在上、数值在下，数值本身可点（tel: / mailto:）。
- * 队长手机号待补：拿到号码后把 value 写成 '蔡宇凡 · <号码>'、href 写成 'tel:<号码>' 即可。
+ * 三个条目都指向同一位/同一处：队长蔡宇凡、经理卞彦博、战队邮箱；电话条目带 tel: 可直接拨号。
  * 页脚是全站组件，所以这块联系方式每页页脚都能看到；#contact 锚点就在本组件上。
  */
 const contacts = [
-  { label: '车队队长', value: '蔡宇凡 · 待补充', href: '', note: '' },
+  { label: '车队队长', value: '蔡宇凡 · 13758214701', href: 'tel:13758214701', note: '' },
   { label: '车队经理', value: '卞彦博 · 13326243419', href: 'tel:13326243419', note: '' },
   { label: '车队邮箱', value: 'whut_prime@foxmail.com', href: 'mailto:whut_prime@foxmail.com', note: '' },
 ]
@@ -50,7 +50,7 @@ onMounted(() => {
           <RouterLink v-for="l in navLinks" :key="l.to" :to="l.to">{{ l.label }}</RouterLink>
         </nav>
         <p class="footer-line" data-reveal>
-          武汉理工大学机甲大师 PRIME 战队官网 · 2027 赛季
+          武汉理工大学机甲大师 PRIME 战队官网
         </p>
         <p class="footer-copy" data-reveal>© 2027 WHUT PRIME · 精研 覃思 笃志 力行</p>
       </div>
