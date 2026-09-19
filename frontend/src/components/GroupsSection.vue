@@ -92,7 +92,7 @@ onBeforeUnmount(() => {
       <header class="groups-head container">
         <p class="eyebrow" data-reveal>03 / 技术组别</p>
         <h2 class="groups-title" data-reveal>四大组别与技术栈</h2>
-        <p class="groups-lead" data-reveal>一辆车从图纸到赛场，需要四双手。</p>
+        <p class="groups-lead" data-reveal>一个机器人从图纸到赛场，需要四双手。</p>
       </header>
 
       <div ref="track" class="groups-track">

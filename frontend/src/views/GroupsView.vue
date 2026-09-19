@@ -25,7 +25,7 @@ function onGroupClick(g: GroupInfo, e: MouseEvent) {
       <PageHeader
         eyebrow="04 / 组别介绍"
         title="四大组别与技术栈"
-        desc="一辆车从图纸到赛场，需要四双手。无论你擅长结构、代码、算法还是运营，PRIME 都有你的位置。"
+        desc="一个机器人从图纸到赛场，需要四双手。无论你擅长结构、代码、算法还是运营，PRIME 都有你的位置。"
       />
     </div>
 

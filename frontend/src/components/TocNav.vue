@@ -14,7 +14,7 @@ const items = [
   { id: 'groups', no: '03', label: '技术组别' },
   { id: 'album', no: '04', label: '战队相册' },
   { id: 'cooperate', no: '05', label: '商务赞助' },
-  { id: 'recruit', no: '06', label: '联系我们' },
+  { id: 'contact', no: '06', label: '联系我们' },
 ]
 
 const activeId = ref('')

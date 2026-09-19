@@ -15,24 +15,6 @@ const tiers = [
   { name: '行业支持', seats: '若干', amount: '资金或技术支持', top: false },
 ]
 
-const benefits = [
-  '战队冠名权',
-  '队服广告位',
-  '机器人车体广告位',
-  '赛季纪录片独家致谢片段',
-  '社媒平台图文视频发布（最高 ≥8 篇）',
-  '提供宣传素材（照片、视频）',
-  '接待参观战队实验室',
-  '校内活动分发品牌物料',
-]
-
-const contact = {
-  name: '战队经理 卞彦博',
-  phone: '13326243419（微信同号）',
-  email: 'whut_prime@foxmail.com',
-  address: '湖北省武汉市洪山区珞狮路122号 · 武汉理工大学马房山校区东院自动化学院求实楼东附楼102室',
-}
-
 /**
  * 已合作赞助伙伴（logo 在 frontend/public/sponsors/）
  * alt 为厂商名；url 为其官网，点击 logo 新标签页打开；没有官网时留空则不跳转。
@@ -98,26 +80,6 @@ const sponsors = [
         </ul>
       </div>
 
-      <div class="cooperate-lower">
-        <div class="benefit-card" data-reveal>
-          <h3 class="benefit-title">赞助权益（部分）</h3>
-          <ul class="benefit-list">
-            <li v-for="b in benefits" :key="b">{{ b }}</li>
-          </ul>
-          <p class="benefit-note">注：具体项目经双方洽谈商定，最终权益以双方签署的赞助协议书为准。</p>
-        </div>
-
-        <div class="contact-card" data-reveal>
-          <h3 class="contact-title">联系我们</h3>
-          <dl class="contact-list">
-            <div><dt>联系人</dt><dd>{{ contact.name }}</dd></div>
-            <div><dt>电话</dt><dd><a :href="'tel:' + contact.phone">{{ contact.phone }}</a></dd></div>
-            <div><dt>邮箱</dt><dd><a href="mailto:whut_prime@foxmail.com">{{ contact.email }}</a></dd></div>
-            <div><dt>地址</dt><dd>{{ contact.address }}</dd></div>
-          </dl>
-          <a class="btn btn-primary" href="mailto:whut_prime@foxmail.com">邮件洽谈 <span aria-hidden="true">→</span></a>
-        </div>
-      </div>
     </div>
   </section>
 </template>
@@ -215,59 +177,11 @@ const sponsors = [
   .sponsor-item { min-height: 96px; padding: 18px 14px; }
 }
 
-.cooperate-lower {
-  margin-top: 44px;
-  display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
-  gap: 16px;
-}
-.benefit-card,
-.contact-card {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: 30px 32px;
-  transition: border-color 0.3s, background 0.3s;
-}
-.benefit-card:hover,
-.contact-card:hover { border-color: var(--accent); background: var(--surface-2); }
-.benefit-title,
-.contact-title { font-size: 1.3rem; }
-.benefit-list { list-style: none; margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
-.benefit-list li { position: relative; padding-left: 22px; font-size: 0.92rem; color: var(--ink-dim); }
-.benefit-list li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0.52em;
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  background: var(--accent);
-  transform: rotate(45deg);
-}
-.benefit-note { margin-top: 20px; font-size: 0.78rem; color: var(--ink-faint); }
-
-.contact-list { margin: 18px 0 22px; display: flex; flex-direction: column; gap: 14px; }
-.contact-list div { display: flex; gap: 16px; }
-.contact-list dt { flex-shrink: 0; width: 42px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; color: var(--accent); padding-top: 2px; }
-.contact-list dd { font-size: 0.95rem; color: var(--ink); transition: color 0.3s; }
-.contact-list div:hover dd { color: var(--ink); }
-.contact-list a { color: var(--accent); transition: opacity 0.25s; }
-.contact-list a:hover { opacity: 0.8; }
-
 @media (max-width: 1000px) {
   .tier-grid { grid-template-columns: repeat(3, 1fr); }
-  .cooperate-lower { grid-template-columns: 1fr; }
 }
 @media (max-width: 620px) {
   .tier-grid { grid-template-columns: repeat(2, 1fr); }
-  .benefit-list { grid-template-columns: 1fr; }
-  .cooperate-lower { margin-top: 34px; }
-  .benefit-card, .contact-card { padding: 26px 20px; }
-  .contact-list div { align-items: flex-start; gap: 10px; }
-  .contact-list dd { min-width: 0; overflow-wrap: anywhere; }
-  .contact-card .btn { width: 100%; }
 }
 @media (max-width: 380px) {
   .tier-grid { grid-template-columns: 1fr; }
