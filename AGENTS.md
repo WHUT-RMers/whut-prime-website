@@ -114,7 +114,7 @@ npm run build        # 产物到 frontend/dist
 
 - 页面文案一律中文，风格精炼、机甲主题（如「以代码铸甲，以热血参战」）。
 - 提交信息遵循 Conventional Commits（`feat:` / `fix:` / `docs:` …），推送到 `main`。
-- 西文/数字由 Russo One / Chakra Petch latin 子集覆盖、中文回退系统字体，新增字符无需子集化；改动样式后需重新 `npm run build`。改动页面时注意：强动画（pin/scrub）仅绑定桌面端（≥1001px），移动端已退化，勿全局开启。
+- 西文/数字由 Russo One / Chakra Petch latin 子集覆盖、中文回退系统字体，新增字符无需子集化；改动样式后需重新 `npm run build`。改动页面时注意：滚动驱动的强动画若要做，用 `gsap.matchMedia` 绑断点并给移动端简化/降级（组别板块的 pin + 横向穿行已于 2026-09 移除，改为 2×2 栅格，勿加回）。
 - 官方静态资源不落库：`frontend/dist/`、`frontend/node_modules/`、`.venv/`、`db.sqlite3` 均忽略。
 
 ## 10. 注意事项 / 陷阱
@@ -122,7 +122,7 @@ npm run build        # 产物到 frontend/dist
 - **管理员密码**：`polarbear / 219200` 仅 6 位，低于 Django 默认 8 位校验；创建时必须程序化绕过（`User.objects.create_superuser` + `set_password`），`createsuperuser` 交互命令会被校验拦下。
 - **db.sqlite3 未提交**：clone 后需 `migrate` + 重新创建管理员，才有后台账号。
 - `SECRET_KEY` 为 demo 硬编码密钥；`ALLOWED_HOSTS=['*']`、`DEBUG=True` 仅限开发，公开部署前需处理。
-- 简历表单（§5 RecruitSection）目前只是前端 demo 提示，未接后端存储；接入时表单字段/提交接口按现有结构扩展。
+- 简历表单在 `/recruit` 页面（首页已无投递板块，入口为顶部「加入我们」和各处 CTA），已接 portal 后端：`api.apply` / 邮箱验证码 / 报名状态查询。
 - **后台报名查重**：RecruitmentApplicationAdmin 自带疑似重复比对（列表列 + 编辑页顶部提示条），规则：QQ / 微信 / 手机号 / 邮箱 任一相同，或 姓名+学院+专业班级 三者全同；命中提示「请勿重复提交」。注意 format_html 无参数会抛 TypeError，空结果显示请用 mark_safe。
 - **首屏大图素材**：三张实拍横图在 `frontend/public/hero/`（`arena-battle.jpg` 赛场 / `pits-debug.jpg` 调试区 / `team-group.jpg` 全队合影，1620×1080、q82 渐进式 JPEG，各 180–270KB），`data/hero.ts` 用 `image: '/static/hero/xxx.jpg'` 引用，`focus` 控制 `object-position`（移动端竖屏裁切主要靠它）；把 `image` 留空即回退到扁平几何占位面板。
 - 组别当前为 4 个（机械/电控/算法/运营），导航、Hero、招新资讯、投递表单等多处文案需同步，改动时全局搜索确认。
