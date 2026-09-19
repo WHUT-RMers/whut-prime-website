@@ -21,7 +21,7 @@ const navLinks = [
  */
 const contacts = [
   { label: '车队队长', value: '蔡宇凡 · 待补充', href: '', note: '' },
-  { label: '车队经理', value: '卞彦博 · 13326243419', href: 'tel:13326243419', note: '微信同号' },
+  { label: '车队经理', value: '卞彦博 · 13326243419', href: 'tel:13326243419', note: '' },
   { label: '车队邮箱', value: 'whut_prime@foxmail.com', href: 'mailto:whut_prime@foxmail.com', note: '' },
 ]
 
