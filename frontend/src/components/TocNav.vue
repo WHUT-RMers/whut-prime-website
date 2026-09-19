@@ -2,7 +2,9 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { prefersReducedMotion } from '../utils/motion'
 
+const root = ref<HTMLElement | null>(null)
 const railFill = ref<HTMLElement | null>(null)
 
 const items = [
@@ -15,15 +17,70 @@ const items = [
 ]
 
 const activeId = ref('')
+const reduced = prefersReducedMotion()
+
 let cleanup: (() => void) | undefined
+/** 目录当前是否已出现（首屏之下才显示） */
+let shown = false
+let rafPending = false
+
+/**
+ * 出现时机：首屏（HeroSection 全屏大图）基本滚出视口后才滑入，滚回首屏则收回。
+ * 高度取首屏元素的实际值（兼容 max(100svh, 640px) 等矮屏兜底），取不到时退回视口高度；
+ * 留一屏 10% 的提前量，尾部这点余量已看不到首屏主体，也让 #event 锚点直达时目录不会反被收起。
+ */
+const GATE_LEAD = 0.1
+
+function gateY() {
+  const hero = document.querySelector<HTMLElement>('.hero-carousel')
+  const first = hero ? hero.offsetHeight : window.innerHeight
+  return first - window.innerHeight * GATE_LEAD
+}
+
+function setShown(on: boolean) {
+  const el = root.value
+  if (!el) return
+  // 减弱动态：直接显隐，不做位移动画
+  if (reduced) {
+    gsap.set(el, { autoAlpha: on ? 1 : 0 })
+    return
+  }
+  gsap.to(el, {
+    autoAlpha: on ? 1 : 0,
+    x: on ? 0 : -18,
+    duration: on ? 0.5 : 0.28,
+    ease: on ? 'expo.out' : 'power2.in',
+    overwrite: 'auto',
+  })
+}
+
+function update() {
+  rafPending = false
+  const next = window.scrollY > gateY()
+  if (next === shown) return
+  shown = next
+  setShown(shown)
+}
+
+/** 滚动 / 尺寸变化统一走 rAF 节流（显隐阈值依赖首屏高度，窗口变化后需重算） */
+function schedule() {
+  if (rafPending) return
+  rafPending = true
+  requestAnimationFrame(update)
+}
 
 onMounted(() => {
+  const el = root.value
+  shown = window.scrollY > gateY()
+  // 首帧直接落到目标状态，避免刷新在页面中部时出现一次多余的入场动画
+  if (el) gsap.set(el, shown ? { autoAlpha: 1, x: 0 } : { autoAlpha: 0, x: reduced ? 0 : -18 })
+
   const triggers = items
     .map((it) => {
-      const el = document.getElementById(it.id)
-      if (!el) return null
+      const node = document.getElementById(it.id)
+      if (!node) return null
       return ScrollTrigger.create({
-        trigger: el,
+        trigger: node,
         start: 'top 45%',
         end: 'bottom 45%',
         onToggle: (self) => {
@@ -42,9 +99,15 @@ onMounted(() => {
     },
   })
 
+  window.addEventListener('scroll', schedule, { passive: true })
+  window.addEventListener('resize', schedule)
+
   cleanup = () => {
+    window.removeEventListener('scroll', schedule)
+    window.removeEventListener('resize', schedule)
     triggers.forEach((t) => t.kill())
     st.kill()
+    if (root.value) gsap.killTweensOf(root.value)
   }
 })
 
@@ -52,7 +115,7 @@ onBeforeUnmount(() => cleanup?.())
 </script>
 
 <template>
-  <nav class="toc" aria-label="页面目录">
+  <nav ref="root" class="toc" aria-label="页面目录">
     <div class="toc-rail" aria-hidden="true"><span ref="railFill"></span></div>
     <a
       v-for="it in items"
@@ -71,8 +134,11 @@ onBeforeUnmount(() => cleanup?.())
 .toc {
   position: fixed;
   left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  /* 垂直居中交给 margin: auto：不与 GSAP 的 x 位移抢 transform */
+  margin-block: auto;
+  height: fit-content;
   z-index: 55;
   display: flex;
   flex-direction: column;
