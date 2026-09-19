@@ -12,7 +12,7 @@ const items = [
   { id: 'event', no: '01', label: '赛事简介' },
   { id: 'history', no: '02', label: '战队简介' },
   { id: 'groups', no: '03', label: '技术组别' },
-  { id: 'news', no: '04', label: '战队相册' },
+  { id: 'album', no: '04', label: '战队相册' },
   { id: 'cooperate', no: '05', label: '商务赞助' },
   { id: 'recruit', no: '06', label: '联系我们' },
 ]
