@@ -1,0 +1,14 @@
+/*
+ * Tailwind v4 入口（供 BorderGlow 等工具类组件使用）。
+ *
+ * 只引 theme + utilities，**故意不引 preflight**：
+ * 本站设计系统是手写的 src/style.css，preflight 会重置标题字号、列表样式、表单外观等，
+ * 对没有显式覆盖的元素仍会改变渲染。需要时把下面两行换回 @import "tailwindcss"; 即可。
+ *
+ * 注：Tailwind 的产物都带 @layer，而本站样式是「无层」的——按 CSS 层叠规则，
+ * 无层样式优先级高于任何 layer，所以不会出现 Tailwind 顶掉设计系统的情况。
+ */
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);

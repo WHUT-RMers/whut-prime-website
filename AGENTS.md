@@ -7,7 +7,7 @@
 
 - **项目**：WHUT PRIME 战队官网（demo）。首页六个板块：赛事简介 / 战队简介 / 技术组别 / 战队相册 / 商务赞助 / 联系我们（末项在页脚）。顶部主导航为站点级路由：主页 / 战队资讯 / 战队荣誉 / 战队相册(/album) / 技术组别 / 商业合作 + 「加入我们」CTA。
 - **后端**：Django 6.1 + django-simpleui（管理后台），SQLite。
-- **前端**：Vue 3（Composition API + `<script setup lang="ts">`）+ Vite 7 + GSAP（ScrollTrigger）。
+- **前端**：Vue 3（Composition API + `<script setup lang="ts">`）+ Vite 7 + GSAP（ScrollTrigger）+ Tailwind v4（**只引 theme/utilities，故意不引 preflight**，见 `src/tailwind.css`；Tailwind 产物都在 `@layer` 里，本站无层样式优先级更高，不会互相顶掉）。
 - **Git 仓库**：https://github.com/WHUT-RMers/whut-prime-website（public，默认分支 `main`）。
 
 ## 2. 目录结构
@@ -77,7 +77,8 @@ npm run build        # 产物到 frontend/dist
 | `TocNav.vue` | 首页左侧目录：六项锚点（末项 `#contact` 指向全站页脚的联系方式）；滚过首屏才滑入、滚回首屏收回，当前项按视口 45% 线实时判定、滚到页底点亮末项 |
 | `EventSection.vue` | 01 赛事简介：要点 + 占位图 |
 | `HistorySection.vue` | 02 战队简介：时间线（scrub 生长）+ 荣誉墙 + 计数动画 |
-| `GroupsSection.vue` | 03 技术组别：四组 **2×2 卡片栅格**（机械 MEC / 电控 ELC / 视觉算法 ALG / 运营 OPR，⚠️ 硬件组已移除，勿加回），卡片为「占位图 + 组名 + 一句话 + 技术栈 + 招募」 |
+| `GroupsSection.vue` | 03 技术组别：四组 **2×2 卡片栅格**（机械 MEC / 电控 ELC / 视觉算法 ALG / 运营 OPR，⚠️ 硬件组已移除，勿加回），卡片为「占位图 + 组名 + 一句话 + 技术栈 + 招募」，外壳用 `BorderGlow` |
+| `BorderGlow.vue` | **边缘发光卡片外壳**（Vue Bits 原版，Tailwind 工具类 + 内联 style）：指针靠近边缘时按方向点亮网格渐变描边与外发光，props 控制灵敏度/发光色/圆角/锥形张角等；当前用于技术组别四张卡 |
 | `AlbumSection.vue` | 04 战队相册（首页）：标题区 + 占位相册；与 `views/AlbumView.vue`（/album 页）共用 `AlbumGallery.vue`（6 栅格占位） |
 | `CooperateSection.vue` | 05 商务赞助：招商说明 + 赞助层级 + 赞助伙伴 |
 | `AppFooter.vue` | 页脚（全站）三列：品牌 + 站点说明 + 版权 ｜ **导航**（竖排六项，与顶部共用 `data/nav.ts`）｜ **联系我们**（车队队长 / 车队经理 / 车队邮箱，单列竖排，锚点 `#contact`） |
@@ -85,7 +86,7 @@ npm run build        # 产物到 frontend/dist
 
 ## 6. 设计系统（frontend/src/style.css）
 
-- **风格**：motion-driven + **扁平化**（flat）：深空蓝黑底（`--bg: #07080d`）× 荧光青绿主强调（`--accent`），`--surface` 实色面板 + 1px 细线边框，几何装饰（点阵/线框方块/描边字），**无重玻璃拟态与辉光**。
+- **风格**：motion-driven + **扁平化**（flat）：深空蓝黑底（`--bg: #07080d`）× 荧光青绿主强调（`--accent`），`--surface` 实色面板 + 1px 细线边框，几何装饰（点阵/线框方块/描边字），**无重玻璃拟态与辉光**（例外：技术组别四张卡用 `BorderGlow` 的边缘发光，见 §5）。
 - **主题**：深色为默认；浅色由 `html[data-theme="light"]` 一键切换（`index.html` 内联防闪烁脚本 + 顶栏开关（SiteNav `.theme-btn`）+ localStorage `whut-prime-theme` 持久化，未手动设置时跟随系统 `prefers-color-scheme`）；所有组件颜色必须走 `:root` 语义 token（`--bg/--surface/--ink/--line/--accent...`），**首屏照片区用 `--hero-*` 亮色 token**（两种主题下都压在照片上，勿换成页面 token）；浅色调色板集中在 style.css 的 `:root[data-theme='light']`。
 - **配色**：`--bg: #06070d`、`--accent: #2de2a6`（主强调）、`--accent-2: #4da3ff`（电光蓝）、`--accent-warm: #ffb45e`（暖橙点缀）。
 - **字体**：标题/展示用 `Russo One`，正文/等宽用 `Chakra Petch`（均为自托管 latin woff2 子集，@font-face 优先 `local()` 回退打包文件）；中文由系统无衬线（PingFang SC / HarmonyOS Sans SC / Microsoft YaHei / Noto Sans SC）回退。

@@ -1,22 +1,28 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import PlaceholderImage from './PlaceholderImage.vue'
+import BorderGlow from './BorderGlow.vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
-import { useMouseFx } from '../composables/useMouseFx'
 import { groups, groupRoute, type GroupInfo } from '../data/groups'
 import { groupOverlay } from '../composables/useGroupOverlay'
 
 /**
  * 03 技术组别：四个组按 2×2 排列（≤860px 收成单列）。
- * 卡片结构参照 wute.club 的技术组别卡片——上图 + 组名 + 一句话，
- * 额外保留我们的组别代码、技术栈标签与招募提示。
+ * 卡片外壳用 Vue Bits 的 BorderGlow（见 BorderGlow.vue）：指针靠近边缘时点亮网格描边与外发光，
+ * 每个组按自己的 hue 派生发光色；内容为「占位图 + 组别代码 + 组名 + 一句话 + 技术栈 + 招募」。
  * 图片为占位：素材到位后把 <PlaceholderImage> 换成 <img src="/static/groups/xxx.jpg" /> 即可。
  */
 const root = ref<HTMLElement | null>(null)
 useScrollReveal(root, { blur: 4, stagger: 0.09 })
-useMouseFx(root)
 
 const deckStyle = (g: GroupInfo) => ({ '--deck-hue': String(g.hue) })
+
+/** BorderGlow 的网格渐变三色：由组别 hue 派生，保留每组的颜色身份 */
+const glowColors = (g: GroupInfo) => [
+  `hsl(${g.hue} 78% 64%)`,
+  `hsl(${(g.hue + 44) % 360} 76% 66%)`,
+  `hsl(${(g.hue + 318) % 360} 72% 62%)`,
+]
 
 /** 左键单击弹出全屏详情浮层；修饰键/中键放行系统默认（新标签打开路由详情页） */
 function onCardClick(g: GroupInfo, e: MouseEvent) {
@@ -36,36 +42,46 @@ function onCardClick(g: GroupInfo, e: MouseEvent) {
       </header>
 
       <div class="group-grid">
-        <a
+        <BorderGlow
           v-for="(g, i) in groups"
           :key="g.code"
-          :href="groupRoute(g.code)"
-          class="group-card"
-          :style="deckStyle(g)"
+          class="group-glow"
           data-reveal
-          data-tilt
-          data-spot
-          @click="onCardClick(g, $event)"
+          :glow-color="`${g.hue} 78 62`"
+          :colors="glowColors(g)"
+          background-color="var(--surface)"
+          :border-radius="14"
+          :glow-radius="30"
+          :glow-intensity="1"
+          :edge-sensitivity="26"
+          :cone-spread="28"
         >
-          <div class="card-media">
-            <PlaceholderImage :label="g.image" ratio="16 / 9" />
-            <span class="card-no" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
-          </div>
+          <a
+            :href="groupRoute(g.code)"
+            class="group-card"
+            :style="deckStyle(g)"
+            @click="onCardClick(g, $event)"
+          >
+            <div class="card-media">
+              <PlaceholderImage :label="g.image" ratio="16 / 9" />
+              <span class="card-no" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
+            </div>
 
-          <div class="card-body">
-            <div class="card-top">
-              <span class="card-code">{{ g.code }}</span>
-              <span class="card-en">{{ g.en }}</span>
-              <span class="card-go">组别详情 <i aria-hidden="true">→</i></span>
+            <div class="card-body">
+              <div class="card-top">
+                <span class="card-code">{{ g.code }}</span>
+                <span class="card-en">{{ g.en }}</span>
+                <span class="card-go">组别详情 <i aria-hidden="true">→</i></span>
+              </div>
+              <h3 class="card-name">{{ g.name }}</h3>
+              <p class="card-desc">{{ g.d }}</p>
+              <div class="card-stack">
+                <span v-for="s in g.stack" :key="s" class="stack-tag">{{ s }}</span>
+              </div>
+              <p class="card-need"><span class="need-flag">招募</span>{{ g.need }}</p>
             </div>
-            <h3 class="card-name">{{ g.name }}</h3>
-            <p class="card-desc">{{ g.d }}</p>
-            <div class="card-stack">
-              <span v-for="s in g.stack" :key="s" class="stack-tag">{{ s }}</span>
-            </div>
-            <p class="card-need"><span class="need-flag">招募</span>{{ g.need }}</p>
-          </div>
-        </a>
+          </a>
+        </BorderGlow>
       </div>
     </div>
   </section>
@@ -83,21 +99,20 @@ function onCardClick(g: GroupInfo, e: MouseEvent) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(16px, 2.2vw, 26px);
 }
+/* 描边 / 底色 / 边缘发光交给 BorderGlow；组件根内联了 transform 做合成层，
+   所以位移用 translate 属性，与内联 transform 互不覆盖 */
+.group-glow { transition: translate 0.35s var(--ease-expo); }
+.group-glow:hover { translate: 0 -4px; }
+
 .group-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--line);
+  flex: 1;
   border-radius: var(--radius);
-  background: var(--surface);
   overflow: hidden;
-  transform-style: preserve-3d;
-  transition: border-color 0.3s, background 0.3s, transform 0.35s var(--ease-expo);
-}
-.group-card:hover {
-  border-color: hsl(var(--deck-hue, 158), 70%, 60%);
-  background: var(--surface-2);
-  transform: translateY(-5px);
+  color: inherit;
+  text-decoration: none;
 }
 
 .card-media { position: relative; border-bottom: 1px solid var(--line); }

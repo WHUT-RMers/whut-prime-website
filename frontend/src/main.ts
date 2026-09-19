@@ -4,6 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import App from './App.vue'
 import router from './router'
+import './tailwind.css'
 import './style.css'
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin)
