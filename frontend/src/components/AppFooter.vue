@@ -14,14 +14,15 @@ const navLinks = [
 ]
 
 /**
- * 联系我们（首页目录 06）：参照 wute.club 页脚摆法——单列竖排，小标签在上、数值在下，数值本身可点。
- * 队长手机号待补：把 value 填上、href 补成 'tel:<号码>' 即可（同经理手机）。
+ * 联系我们（首页目录 06）：摆法与字号参照 wute.club 页脚——单列竖排，
+ * 小标签在上、数值在下，数值本身可点（tel: / mailto:）。
+ * 队长手机号待补：拿到号码后把 value 写成 '蔡宇凡 · <号码>'、href 写成 'tel:<号码>' 即可。
  * 页脚是全站组件，所以这块联系方式每页页脚都能看到；#contact 锚点就在本组件上。
  */
 const contacts = [
-  { label: '队长手机', value: '待补充', href: '', note: '' },
-  { label: '经理手机', value: '13326243419', href: 'tel:13326243419', note: '微信同号' },
-  { label: '战队邮箱', value: 'whut_prime@foxmail.com', href: 'mailto:whut_prime@foxmail.com', note: '' },
+  { label: '车队队长', value: '蔡宇凡 · 待补充', href: '', note: '' },
+  { label: '车队经理', value: '卞彦博 · 13326243419', href: 'tel:13326243419', note: '微信同号' },
+  { label: '车队邮箱', value: 'whut_prime@foxmail.com', href: 'mailto:whut_prime@foxmail.com', note: '' },
 ]
 
 onMounted(() => {
@@ -116,23 +117,36 @@ onMounted(() => {
 .footer-line { color: var(--ink-dim); font-size: 0.95rem; max-width: 560px; }
 .footer-copy { font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.1em; color: var(--ink-faint); }
 
-/* ---- 联系我们：单列竖排，小标签在上、数值在下 ---- */
-.footer-contact { display: flex; flex-direction: column; gap: 20px; }
-.contact-title { font-size: 0.86rem; font-weight: 600; letter-spacing: 0.14em; color: var(--ink); }
-.contact-list { list-style: none; display: flex; flex-direction: column; gap: 20px; }
-.contact-list li { display: flex; flex-direction: column; gap: 8px; }
-.contact-k { font-size: 0.78rem; letter-spacing: 0.14em; color: var(--ink-faint); }
+/* ---- 联系我们：单列竖排，字号与间距对齐 wute.club 页脚 ---- */
+.footer-contact { display: flex; flex-direction: column; }
+.contact-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--ink-dim);
+  margin-bottom: 1.1rem;
+}
+.contact-list { list-style: none; display: flex; flex-direction: column; }
+.contact-list li { margin-bottom: 0.9rem; }
+.contact-list li:last-child { margin-bottom: 0; }
+.contact-k {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+  margin-bottom: 0.2rem;
+}
 .contact-v {
-  font-family: var(--mono);
-  font-size: 1.02rem;
-  color: var(--ink);
+  display: block;
+  font-size: 0.86rem;
+  color: var(--ink-dim);
   text-decoration: none;
   overflow-wrap: anywhere;
   transition: color 0.3s;
 }
 a.contact-v:hover { color: var(--accent); }
 .contact-v.pending { color: var(--ink-faint); }
-.contact-note { font-size: 0.78rem; color: var(--ink-faint); }
+.contact-note { display: block; margin-top: 0.2rem; font-size: 0.7rem; color: var(--ink-faint); }
 
 @media (max-width: 860px) {
   .footer-inner { grid-template-columns: minmax(0, 1fr); gap: 34px; }
