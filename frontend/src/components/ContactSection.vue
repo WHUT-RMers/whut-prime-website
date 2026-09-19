@@ -3,8 +3,8 @@ import { ref } from 'vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
 
 /**
- * 06 联系我们：只放三条联系通道。
- * 队长手机号待补：把 value 填上、href 补成 'tel:<号码>' 即可变成可点拨号（同经理手机）。
+ * 06 联系我们：参照 wute.club 页脚的摆法——小标签在上、数值在下，不用卡片框，数值本身可点。
+ * 队长手机号待补：把 value 填上、href 补成 'tel:<号码>' 即可（同经理手机）。
  */
 const root = ref<HTMLElement | null>(null)
 useScrollReveal(root, { blur: 8, stagger: 0.07 })
@@ -22,18 +22,12 @@ const contacts = [
       <p class="eyebrow" data-reveal>06 / 联系我们</p>
       <h2 class="contact-title" data-reveal>联系方式</h2>
 
-      <ul class="contact-grid">
+      <ul class="contact-list">
         <li v-for="c in contacts" :key="c.label" data-reveal>
-          <a v-if="c.href" class="contact-card" :href="c.href">
-            <span class="contact-k">{{ c.label }}</span>
-            <span class="contact-v">{{ c.value }}</span>
-            <span v-if="c.note" class="contact-note">{{ c.note }}</span>
-          </a>
-          <div v-else class="contact-card">
-            <span class="contact-k">{{ c.label }}</span>
-            <span class="contact-v pending">{{ c.value }}</span>
-            <span v-if="c.note" class="contact-note">{{ c.note }}</span>
-          </div>
+          <span class="contact-k">{{ c.label }}</span>
+          <a v-if="c.href" class="contact-v" :href="c.href">{{ c.value }}</a>
+          <span v-else class="contact-v pending">{{ c.value }}</span>
+          <span v-if="c.note" class="contact-note">{{ c.note }}</span>
         </li>
       </ul>
     </div>
@@ -44,50 +38,37 @@ const contacts = [
 .contact { padding: 0 0 var(--section-space); }
 .contact-title { margin-top: 22px; font-size: clamp(1.9rem, 4vw, 3.1rem); }
 
-.contact-grid {
+.contact-list {
   list-style: none;
-  margin-top: clamp(38px, 5vw, 54px);
+  margin-top: clamp(34px, 4.4vw, 48px);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(14px, 2vw, 18px);
+  gap: clamp(28px, 4vw, 64px);
 }
-.contact-card {
+.contact-list li {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  height: 100%;
-  padding: 28px 26px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: inherit;
-  text-decoration: none;
-  transition: border-color 0.3s, background 0.3s, transform 0.35s var(--ease-expo);
-}
-a.contact-card:hover {
-  border-color: var(--accent);
-  background: var(--surface-2);
-  transform: translateY(-4px);
+  min-width: 0;
 }
 .contact-k {
-  font-family: var(--mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.18em;
-  color: var(--accent);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
 }
 .contact-v {
   font-family: var(--mono);
-  font-size: 1.06rem;
+  font-size: clamp(1.02rem, 1.35vw, 1.3rem);
   color: var(--ink);
+  text-decoration: none;
   overflow-wrap: anywhere;
+  transition: color 0.3s;
 }
-.contact-v.pending { color: var(--ink-faint); letter-spacing: 0.12em; }
+a.contact-v:hover { color: var(--accent); }
+.contact-v.pending { color: var(--ink-faint); }
 .contact-note { font-size: 0.78rem; color: var(--ink-faint); }
 
-@media (max-width: 900px) {
-  .contact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 560px) {
-  .contact-grid { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 760px) {
+  .contact-list { grid-template-columns: minmax(0, 1fr); gap: 26px; }
 }
 </style>
