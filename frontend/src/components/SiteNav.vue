@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { gsap } from 'gsap'
 import { prefersReducedMotion } from '../utils/motion'
 import { useTheme } from '../utils/theme'
+import { siteNav } from '../data/nav'
 
 const route = useRoute()
 const nav = ref<HTMLElement | null>(null)
@@ -14,14 +15,8 @@ const scrolled = ref(false)
 const open = ref(false)
 const reduced = prefersReducedMotion()
 
-const links = [
-  { to: '/', label: '主页', no: '01' },
-  { to: '/news', label: '战队资讯', no: '02' },
-  { to: '/history', label: '战队荣誉', no: '03' },
-  { to: '/album', label: '战队相册', no: '04' },
-  { to: '/groups', label: '技术组别', no: '05' },
-  { to: '/cooperate', label: '商业合作', no: '06' },
-]
+/** 与页脚「导航」列共用 data/nav.ts 的清单 */
+const links = siteNav
 
 /**
  * vue-router 4 对平级路由（如 /groups 与 /groups/:code）不会自动标 active，

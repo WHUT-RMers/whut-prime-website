@@ -2,21 +2,14 @@
 import { onMounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { useScrollReveal } from '../composables/useGsapReveal'
+import { siteNav } from '../data/nav'
 
 const root = ref<HTMLElement | null>(null)
 useScrollReveal(root, { blur: 8 })
 
-const navLinks = [
-  { to: '/event', label: '赛事介绍' },
-  { to: '/history', label: '历史荣誉' },
-  { to: '/groups', label: '组别技术' },
-  { to: '/recruit', label: '投递简历' },
-]
-
 /**
  * 联系我们（首页目录 06）：摆法与字号参照 wute.club 页脚——单列竖排，
  * 小标签在上、数值在下，数值本身可点（tel: / mailto:）。
- * 三个条目都指向同一位/同一处：队长蔡宇凡、经理卞彦博、战队邮箱；电话条目带 tel: 可直接拨号。
  * 页脚是全站组件，所以这块联系方式每页页脚都能看到；#contact 锚点就在本组件上。
  */
 const contacts = [
@@ -41,22 +34,24 @@ onMounted(() => {
   <footer ref="root" class="footer">
     <span class="footer-mark" aria-hidden="true">PRIME</span>
     <div class="container footer-inner">
-      <div class="footer-main">
+      <div class="footer-brand-col">
         <div class="footer-brand" data-reveal>
           <img class="brand-mark" :src="'/static/mascot.png'" alt="" aria-hidden="true" />
           <span class="brand-name">WHUT·PRIME — ROBOMASTER</span>
         </div>
-        <nav class="footer-nav" data-reveal>
-          <RouterLink v-for="l in navLinks" :key="l.to" :to="l.to">{{ l.label }}</RouterLink>
-        </nav>
         <p class="footer-line" data-reveal>
           武汉理工大学机甲大师 PRIME 战队官网
         </p>
         <p class="footer-copy" data-reveal>© 2027 WHUT PRIME · 精研 覃思 笃志 力行</p>
       </div>
 
+      <nav class="footer-nav" aria-label="页脚导航">
+        <h2 class="col-title" data-reveal>导航</h2>
+        <RouterLink v-for="l in siteNav" :key="l.to" :to="l.to" data-reveal>{{ l.label }}</RouterLink>
+      </nav>
+
       <section id="contact" class="footer-contact" aria-label="联系我们">
-        <h2 class="contact-title" data-reveal>联系我们</h2>
+        <h2 class="col-title" data-reveal>联系我们</h2>
         <ul class="contact-list">
           <li v-for="c in contacts" :key="c.label" data-reveal>
             <span class="contact-k">{{ c.label }}</span>
@@ -92,14 +87,16 @@ onMounted(() => {
   pointer-events: none;
   will-change: transform, opacity;
 }
+
+/* 三列：品牌 / 导航 / 联系我们（列宽比参照 wute.club 页脚） */
 .footer-inner {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 40px clamp(48px, 8vw, 120px);
+  grid-template-columns: 1.6fr 0.9fr 1.3fr;
+  gap: 40px clamp(40px, 6vw, 96px);
   align-items: start;
 }
-.footer-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.footer-brand-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .footer-brand { display: flex; align-items: center; gap: 12px; }
 .brand-mark {
   width: 34px;
@@ -111,21 +108,32 @@ onMounted(() => {
   pointer-events: none;
 }
 .brand-name { font-family: var(--mono); letter-spacing: 0.14em; font-size: 0.86rem; }
-.footer-nav { display: flex; gap: 24px; flex-wrap: wrap; }
-.footer-nav a { font-size: 0.86rem; color: var(--ink-dim); transition: color 0.3s, letter-spacing 0.4s var(--ease-expo); }
-.footer-nav a:hover { color: var(--accent); letter-spacing: 0.1em; }
 .footer-line { color: var(--ink-dim); font-size: 0.95rem; max-width: 560px; }
 .footer-copy { font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.1em; color: var(--ink-faint); }
 
-/* ---- 联系我们：单列竖排，字号与间距对齐 wute.club 页脚 ---- */
-.footer-contact { display: flex; flex-direction: column; }
-.contact-title {
+/* 列标题：字号/字距与参考站页脚一致 */
+.col-title {
   font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.18em;
   color: var(--ink-dim);
   margin-bottom: 1.1rem;
 }
+
+/* 导航：竖排，行高与参考站页脚链接一致 */
+.footer-nav { display: flex; flex-direction: column; }
+.footer-nav a {
+  display: block;
+  font-size: 0.86rem;
+  line-height: 2;
+  color: var(--ink-dim);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.footer-nav a:hover { color: var(--accent); }
+
+/* ---- 联系我们：单列竖排，小标签在上、数值在下 ---- */
+.footer-contact { display: flex; flex-direction: column; }
 .contact-list { list-style: none; display: flex; flex-direction: column; }
 .contact-list li { margin-bottom: 0.9rem; }
 .contact-list li:last-child { margin-bottom: 0; }
