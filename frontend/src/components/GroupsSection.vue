@@ -1,238 +1,142 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { ref } from 'vue'
+import PlaceholderImage from './PlaceholderImage.vue'
 import { useScrollReveal } from '../composables/useGsapReveal'
 import { useMouseFx } from '../composables/useMouseFx'
-import { prefersReducedMotion } from '../utils/motion'
 import { groups, groupRoute, type GroupInfo } from '../data/groups'
 import { groupOverlay } from '../composables/useGroupOverlay'
 
+/**
+ * 03 技术组别：四个组按 2×2 排列（≤860px 收成单列）。
+ * 卡片结构参照 wute.club 的技术组别卡片——上图 + 组名 + 一句话，
+ * 额外保留我们的组别代码、技术栈标签与招募提示。
+ * 图片为占位：素材到位后把 <PlaceholderImage> 换成 <img src="/static/groups/xxx.jpg" /> 即可。
+ */
 const root = ref<HTMLElement | null>(null)
-const stage = ref<HTMLElement | null>(null)
-const track = ref<HTMLElement | null>(null)
-const prog = ref<HTMLElement | null>(null)
-
-useScrollReveal(root, { selector: '[data-reveal]', blur: 4, stagger: 0.09 })
+useScrollReveal(root, { blur: 4, stagger: 0.09 })
 useMouseFx(root)
 
 const deckStyle = (g: GroupInfo) => ({ '--deck-hue': String(g.hue) })
 
 /** 左键单击弹出全屏详情浮层；修饰键/中键放行系统默认（新标签打开路由详情页） */
-function onDeckClick(g: GroupInfo, e: MouseEvent) {
+function onCardClick(g: GroupInfo, e: MouseEvent) {
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
   e.preventDefault()
   groupOverlay.open(g)
 }
-
-let mm: gsap.MatchMedia | undefined
-
-onMounted(() => {
-  const el = root.value
-  if (!el || prefersReducedMotion()) return
-
-  mm = gsap.matchMedia()
-
-  /* 桌面端：pin + scrub 横向穿行 */
-  mm.add('(min-width: 1001px) and (prefers-reduced-motion: no-preference)', () => {
-    const tr = track.value
-    const st = stage.value
-    const pb = prog.value
-    if (!tr || !st) return
-
-    const getDist = () => Math.max(0, tr.scrollWidth - window.innerWidth)
-
-    gsap.to(tr, {
-      x: () => -getDist(),
-      ease: 'none',
-      scrollTrigger: {
-        trigger: st,
-        start: 'top top',
-        end: () => '+=' + getDist(),
-        scrub: 1,
-        pin: true,
-        anticipatePin: 1,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          if (pb) gsap.set(pb, { scaleX: self.progress })
-        },
-      },
-    })
-
-    gsap.utils.toArray<HTMLElement>('.deck-num').forEach((num, i) => {
-      gsap.fromTo(
-        num,
-        { xPercent: i % 2 ? 14 : -14 },
-        {
-          xPercent: i % 2 ? -14 : 14,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: num.closest('.group-deck'),
-            start: 'left 115%',
-            end: 'right -15%',
-            scrub: 0.8,
-          },
-        },
-      )
-    })
-  })
-
-  mm.add('(max-width: 1000px)', () => undefined)
-})
-
-onBeforeUnmount(() => {
-  mm?.revert()
-  void ScrollTrigger
-})
 </script>
 
 <template>
   <section id="groups" ref="root" class="groups">
-    <div ref="stage" class="groups-stage">
-      <header class="groups-head container">
+    <div class="container">
+      <header class="groups-head">
         <p class="eyebrow" data-reveal>03 / 技术组别</p>
         <h2 class="groups-title" data-reveal>四大组别与技术栈</h2>
         <p class="groups-lead" data-reveal>一个机器人从图纸到赛场，需要四双手。</p>
       </header>
 
-      <div ref="track" class="groups-track">
+      <div class="group-grid">
         <a
           v-for="(g, i) in groups"
           :key="g.code"
           :href="groupRoute(g.code)"
-          class="group-deck"
+          class="group-card"
           :style="deckStyle(g)"
+          data-reveal
           data-tilt
           data-spot
-          @click="onDeckClick(g, $event)"
+          @click="onCardClick(g, $event)"
         >
-          <span class="deck-num" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
-          <div class="deck-top">
-            <span class="deck-code">{{ g.code }}</span>
-            <span class="deck-en">{{ g.en }}</span>
-            <span class="deck-go">组别详情 <i aria-hidden="true">→</i></span>
+          <div class="card-media">
+            <PlaceholderImage :label="g.image" ratio="16 / 9" />
+            <span class="card-no" aria-hidden="true">{{ String(i + 1).padStart(2, '0') }}</span>
           </div>
-          <h3 class="deck-name">{{ g.name }}</h3>
-          <p class="deck-desc">{{ g.d }}</p>
-          <div class="deck-stack">
-            <span v-for="s in g.stack" :key="s" class="stack-tag">{{ s }}</span>
-          </div>
-          <p class="deck-need"><span class="need-flag">招募</span>{{ g.need }}</p>
-        </a>
 
-        <article class="group-end" data-tilt data-spot>
-          <span class="end-num" aria-hidden="true">GO</span>
-          <h3 class="end-title">找到你的组别</h3>
-          <p class="end-desc">让热爱，变成赛季的注脚——四大组别开放投递。</p>
-          <RouterLink to="/recruit" class="btn btn-primary" data-magnet>投递简历 <span aria-hidden="true">→</span></RouterLink>
-        </article>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="card-code">{{ g.code }}</span>
+              <span class="card-en">{{ g.en }}</span>
+              <span class="card-go">组别详情 <i aria-hidden="true">→</i></span>
+            </div>
+            <h3 class="card-name">{{ g.name }}</h3>
+            <p class="card-desc">{{ g.d }}</p>
+            <div class="card-stack">
+              <span v-for="s in g.stack" :key="s" class="stack-tag">{{ s }}</span>
+            </div>
+            <p class="card-need"><span class="need-flag">招募</span>{{ g.need }}</p>
+          </div>
+        </a>
       </div>
 
-      <div class="groups-progress container" aria-hidden="true">
-        <div class="gp-track"><span ref="prog"></span></div>
+      <div class="groups-cta" data-reveal>
+        <div>
+          <p class="cta-title">找到你的组别</p>
+          <p class="cta-desc">让热爱，变成赛季的注脚——四大组别开放投递。</p>
+        </div>
+        <RouterLink to="/recruit" class="btn btn-primary" data-magnet>
+          投递简历 <span aria-hidden="true">→</span>
+        </RouterLink>
       </div>
     </div>
   </section>
 </template>
 
 <style scoped>
-.groups-stage { position: relative; display: flex; flex-direction: column; overflow: hidden; }
-
-/* 头部与其余板块一致：占满 .container 左对齐，不做 max-width 收窄（否则
-   margin-inline: auto 会把头部居中，与下方轨道、进度条及全站头部错位） */
-.groups-head { padding-top: 110px; position: relative; z-index: 2; }
+.groups { padding: 0 0 var(--section-space); }
 .groups-title { margin-top: 22px; font-size: clamp(1.9rem, 4vw, 3.1rem); }
 .groups-lead { margin-top: 14px; color: var(--ink-dim); }
 
-/* ---------- 桌面：横向轨道 ---------- */
-@media (min-width: 1001px) {
-  .groups { padding-bottom: 0; }
-  .groups-stage {
-    height: calc(100vh - var(--nav-h));
-    min-height: 640px;
-    /* 与 01–03 区块统一：标题从区块顶部的标准留白开始，而非垂直居中。 */
-    justify-content: flex-start;
-    gap: 34px;
-  }
-  .groups-head { padding-top: clamp(90px, 10vw, 130px); }
-  .groups-track {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 22px;
-    padding: 0 max(24px, calc((100vw - var(--maxw)) / 2));
-    width: max-content;
-    will-change: transform;
-  }
-  .group-deck {
-    position: relative;
-    flex: 0 0 auto;
-    width: min(500px, 44vw);
-    height: min(420px, 52vh);
-    padding: 34px 32px;
-    border: 1px solid hsla(var(--deck-hue, 158), 55%, 62%, 0.35);
-    border-radius: var(--radius);
-    background: var(--surface);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transform-style: preserve-3d;
-    transition: border-color 0.3s, background 0.3s;
-  }
-  .group-deck:hover { border-color: hsl(var(--deck-hue, 158), 75%, 62%); background: var(--surface-2); }
-  .deck-num {
-    position: absolute;
-    right: 18px;
-    top: -28px;
-    font-family: var(--display);
-    font-size: 9rem;
-    line-height: 1;
-    color: transparent;
-    -webkit-text-stroke: 1px hsla(var(--deck-hue, 158), 80%, 70%, 0.22);
-    user-select: none;
-    pointer-events: none;
-    will-change: transform;
-  }
-  .group-end {
-    flex: 0 0 auto;
-    width: min(460px, 40vw);
-    height: min(420px, 52vh);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 18px;
-    padding: 40px;
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    background: rgba(45, 226, 166, 0.06);
-  }
-  .group-end:hover { background: rgba(45, 226, 166, 0.12); }
-  .end-num {
-    font-family: var(--display);
-    font-size: 4.6rem;
-    line-height: 1;
-    color: transparent;
-    -webkit-text-stroke: 1px var(--accent);
-  }
-  .end-title { font-size: 1.9rem; }
-  .end-desc { color: var(--ink-dim); max-width: 320px; }
-  .groups-progress { padding-bottom: 44px; }
+/* ---------- 四组 2×2 ---------- */
+.group-grid {
+  margin-top: clamp(38px, 5vw, 54px);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2.2vw, 26px);
+}
+.group-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: border-color 0.3s, background 0.3s, transform 0.35s var(--ease-expo);
+}
+.group-card:hover {
+  border-color: hsl(var(--deck-hue, 158), 70%, 60%);
+  background: var(--surface-2);
+  transform: translateY(-5px);
 }
 
-.deck-top { display: flex; align-items: center; gap: 14px; position: relative; }
-.deck-code {
+.card-media { position: relative; border-bottom: 1px solid var(--line); }
+.card-no {
+  position: absolute;
+  right: 16px;
+  bottom: -14px;
+  font-family: var(--display);
+  font-size: clamp(3.2rem, 5vw, 4.6rem);
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px hsla(var(--deck-hue, 158), 80%, 70%, 0.25);
+  user-select: none;
+  pointer-events: none;
+}
+
+.card-body { display: flex; flex-direction: column; flex: 1; padding: clamp(20px, 2.4vw, 28px); }
+.card-top { display: flex; align-items: center; gap: 12px; }
+.card-code {
   font-family: var(--mono);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   letter-spacing: 0.16em;
   color: hsl(var(--deck-hue, 158), 80%, 66%);
   border: 1px solid hsla(var(--deck-hue, 158), 65%, 60%, 0.4);
   border-radius: 6px;
   padding: 3px 10px;
 }
-.deck-en { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em; color: var(--ink-faint); }
-/* 「组别详情」入口：整卡可点，右上角给出跳转暗示 */
-.deck-go {
+.card-en { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em; color: var(--ink-faint); }
+.card-go {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
@@ -244,12 +148,13 @@ onBeforeUnmount(() => {
   opacity: 0.7;
   transition: opacity 0.3s, transform 0.35s var(--ease-expo);
 }
-.deck-go i { font-style: normal; transition: transform 0.35s var(--ease-expo); }
-.group-deck:hover .deck-go { opacity: 1; }
-.group-deck:hover .deck-go i { transform: translateX(4px); }
-.deck-name { margin-top: 26px; font-size: 1.8rem; position: relative; }
-.deck-desc { margin-top: 12px; font-size: 0.92rem; color: var(--ink-dim); position: relative; }
-.deck-stack { margin-top: auto; padding-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; position: relative; }
+.card-go i { font-style: normal; transition: transform 0.35s var(--ease-expo); }
+.group-card:hover .card-go { opacity: 1; }
+.group-card:hover .card-go i { transform: translateX(4px); }
+
+.card-name { margin-top: 18px; font-size: clamp(1.35rem, 2.2vw, 1.75rem); }
+.card-desc { margin-top: 10px; font-size: 0.92rem; color: var(--ink-dim); }
+.card-stack { margin-top: auto; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
 .stack-tag {
   font-family: var(--mono);
   font-size: 0.68rem;
@@ -261,7 +166,7 @@ onBeforeUnmount(() => {
   transition: border-color 0.25s, color 0.25s;
 }
 .stack-tag:hover { border-color: hsl(var(--deck-hue, 158), 70%, 62%); color: var(--ink); }
-.deck-need { margin-top: 16px; font-size: 0.86rem; color: var(--ink-dim); position: relative; }
+.card-need { margin-top: 16px; font-size: 0.86rem; color: var(--ink-dim); }
 .need-flag {
   font-family: var(--mono);
   font-size: 0.66rem;
@@ -273,90 +178,26 @@ onBeforeUnmount(() => {
   margin-right: 10px;
 }
 
-.groups-progress { position: relative; z-index: 2; }
-.gp-track { height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
-.gp-track span {
-  display: block;
-  height: 100%;
-  transform: scaleX(0);
-  transform-origin: left;
-  background: var(--accent);
+/* ---------- 底部投递条 ---------- */
+.groups-cta {
+  margin-top: clamp(24px, 3.4vw, 40px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding: 26px clamp(20px, 3vw, 34px);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: rgba(45, 226, 166, 0.06);
+  transition: background 0.3s;
 }
+.groups-cta:hover { background: rgba(45, 226, 166, 0.12); }
+.cta-title { font-size: 1.25rem; }
+.cta-desc { margin-top: 8px; font-size: 0.92rem; color: var(--ink-dim); }
 
-/* ---------- 移动端：手势横向轨道 ---------- */
-@media (max-width: 1000px) {
-  .groups { padding-bottom: 0; }
-  .groups-stage { padding: 90px 0 100px; gap: 26px; }
-  .groups-track {
-    display: flex;
-    width: 100%;
-    gap: 14px;
-    margin-top: 22px;
-    padding: 0 var(--page-gutter) 14px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: var(--page-gutter);
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .groups-track::-webkit-scrollbar { display: none; }
-  .group-deck {
-    position: relative;
-    flex: 0 0 min(82vw, 500px);
-    min-height: 390px;
-    padding: 26px 24px;
-    border: 1px solid hsla(var(--deck-hue, 158), 55%, 62%, 0.35);
-    border-radius: var(--radius);
-    background: var(--surface);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-  }
-  .deck-num {
-    position: absolute;
-    right: 16px;
-    top: -18px;
-    font-family: var(--display);
-    font-size: 5.6rem;
-    color: transparent;
-    -webkit-text-stroke: 1px hsla(var(--deck-hue, 158), 80%, 70%, 0.18);
-    pointer-events: none;
-  }
-  .group-end {
-    flex: 0 0 min(82vw, 500px);
-    min-height: 390px;
-    padding: 30px 24px;
-    border: 1px solid var(--accent);
-    border-radius: var(--radius);
-    background: rgba(45, 226, 166, 0.06);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 14px;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-  }
-  .end-title { font-size: 1.4rem; }
-  .end-desc { color: var(--ink-dim); }
-  .groups-progress { display: none; }
-}
-
-@media (max-width: 560px) {
-  .groups-stage { padding: 76px 0 90px; }
-  .groups-track { margin-top: 18px; gap: 12px; padding-bottom: 12px; }
-  .group-deck { flex-basis: 86vw; min-height: 372px; padding: 22px 18px; }
-  .deck-top { gap: 9px; flex-wrap: wrap; }
-  .deck-en { flex: 1 1 100%; }
-  .deck-name { margin-top: 18px; font-size: 1.55rem; }
-  .deck-desc { line-height: 1.8; }
-  .deck-need { display: flex; align-items: flex-start; line-height: 1.7; }
-  .need-flag { flex: 0 0 auto; margin-top: 2px; }
-  .group-end { flex-basis: 86vw; min-height: 372px; padding: 26px 18px; }
-  .group-end .btn { width: 100%; }
+@media (max-width: 860px) {
+  .group-grid { grid-template-columns: minmax(0, 1fr); }
+  .groups-cta .btn { width: 100%; justify-content: center; }
 }
 </style>

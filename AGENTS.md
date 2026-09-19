@@ -70,17 +70,17 @@ npm run build        # 产物到 frontend/dist
 
 | 组件 | 职责 |
 |---|---|
-| `SiteNav.vue` | 固定导航：六大板块锚点 + 加入战队 CTA |
+| `SiteNav.vue` | 固定导航：六大板块路由（主页 / 战队资讯 / 战队荣誉 / 战队相册 / 技术组别 / 商业合作）+ 「加入我们」CTA |
 | `HeroSection.vue` | 首屏编排：轮播文案（`data/hero.ts`）+ 右侧 HUD + 底部数据条 + 滚动提示 |
 | `HeroCarousel.vue` | **首屏全屏大图轮播引擎**：交叉淡入 + 图片呼吸（scale 1→1.06 正弦往复）、自动轮播（仅标签页隐藏/滚出视口时停，不做悬停暂停）、刻度/箭头/触摸滑动/方向键、carousel 无障碍语义；`slide.image` 留空时渲染扁平几何占位面板 |
 | `MarqueeBand.vue` | 兵种关键词无限滚动 |
-| `EventSection.vue` | 01 赛事介绍：要点 + 占位图 |
-| `NewsSection.vue` | 02 战队资讯：新闻卡片（日期/分类/占位图） |
-| `HistorySection.vue` | 03 历史与荣誉：时间线（scrub 生长）+ 荣誉墙 + 计数动画 |
-| `GroupsSection.vue` | 04 组别介绍：机械 MEC / 电控 ELC / 算法 ALG / 运营 OPR（⚠️ 硬件组已移除，勿加回） |
-| `RecruitSection.vue` | 05 简历投递：表单（demo 仅前端提示，未接后端） |
-| `CooperateSection.vue` | 06 商业合作：合作方向 + 合作邮箱 |
-| `AppFooter.vue` | 页脚、站点声明 |
+| `TocNav.vue` | 首页左侧目录：六项锚点（末项 `#contact` 指向全站页脚的联系方式）；滚过首屏才滑入、滚回首屏收回，当前项按视口 45% 线实时判定、滚到页底点亮末项 |
+| `EventSection.vue` | 01 赛事简介：要点 + 占位图 |
+| `HistorySection.vue` | 02 战队简介：时间线（scrub 生长）+ 荣誉墙 + 计数动画 |
+| `GroupsSection.vue` | 03 技术组别：四组 **2×2 卡片栅格**（机械 MEC / 电控 ELC / 视觉算法 ALG / 运营 OPR，⚠️ 硬件组已移除，勿加回），卡片为「占位图 + 组名 + 一句话 + 技术栈 + 招募」 |
+| `AlbumSection.vue` | 04 战队相册（首页）：标题区 + 占位相册；与 `views/AlbumView.vue`（/album 页）共用 `AlbumGallery.vue`（6 栅格占位） |
+| `CooperateSection.vue` | 05 商务赞助：招商说明 + 赞助层级 + 赞助伙伴 |
+| `AppFooter.vue` | 页脚（全站）：品牌 / 导航 / 站点声明 / 版权 + **联系我们**（车队队长 / 车队经理 / 车队邮箱，单列竖排，锚点 `#contact`） |
 | `PlaceholderImage.vue` | **图片占位组件**：写 `<PlaceholderImage label="..." ratio="16/9" />`，素材到位后替换为 `<img>` 即可 |
 
 ## 6. 设计系统（frontend/src/style.css）
@@ -98,7 +98,7 @@ npm run build        # 产物到 frontend/dist
 
 - 路由切换为**方向感知滑动过场**（App.vue）：旧页沿导航方向滑出（0.4s power3.inOut），新页从反侧滑入（0.55s expo.out）；方向由导航顺序数组决定。注意 `:key` 必须挂在 `<component>` 上而非 `<Transition>` 上，否则 leave/enter 钩子不触发。
 - 路由已全部**同步加载**（无懒加载），保证切页零空窗。
-- 桌面端（≥1001px）组别板块为 **pin + scrub 横向穿行**（GroupsSection，gsap.matchMedia 隔离，移动端退化为纵向堆叠）。
+- 组别板块为 **四组 2×2 卡片栅格**（GroupsSection 已移除旧的 pin + 横向穿行；≥861px 两列、窄屏单列），别再往回加 pin/scrub。
 - 跑马灯速率与**滚动速度联动**（MarqueeBand，ScrollTrigger.getVelocity → timeScale）。
 - 首屏大图轮播（HeroCarousel）：自动轮播由 GSAP tween 驱动（底部进度条与计时同步，6.5s/屏），图片呼吸为独立 yoyo tween（5s 单程 + 无限 repeat），与逐字入场同屏编排；**首屏铺满全屏，故不做悬停暂停**（否则鼠标一动就停），只在标签页隐藏/滚出视口时 pause·resume；`prefers-reduced-motion` 下不自动播放、不呼吸。
 
