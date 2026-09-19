@@ -72,7 +72,7 @@ npm run build        # 产物到 frontend/dist
 |---|---|
 | `SiteNav.vue` | 固定导航：六大板块路由（主页 / 战队资讯 / 战队荣誉 / 战队相册 / 技术组别 / 商业合作）+ 「加入我们」CTA |
 | `HeroSection.vue` | 首屏编排：轮播文案（`data/hero.ts`）+ 右侧 HUD + 底部数据条 + 滚动提示 |
-| `HeroCarousel.vue` | **首屏全屏大图轮播引擎**：交叉淡入 + 图片呼吸（scale 1→1.06 正弦往复）、自动轮播（仅标签页隐藏/滚出视口时停，不做悬停暂停）、刻度/箭头/触摸滑动/方向键、carousel 无障碍语义；`slide.image` 留空时渲染扁平几何占位面板 |
+| `HeroCarousel.vue` | **首屏全屏大图轮播引擎**：交叉淡入 + 图片呼吸（scale 1→1.06 正弦往复）、自动轮播（仅标签页隐藏/滚出视口时停，不做悬停暂停）、左右箭头/触摸滑动/方向键、carousel 无障碍语义（刻度指示器已移除，首屏只保留 3 屏）；`slide.image` 留空时渲染扁平几何占位面板 |
 | `MarqueeBand.vue` | 兵种关键词无限滚动 |
 | `TocNav.vue` | 首页左侧目录：六项锚点（末项 `#contact` 指向全站页脚的联系方式）；滚过首屏才滑入、滚回首屏收回，当前项按视口 45% 线实时判定、滚到页底点亮末项 |
 | `EventSection.vue` | 01 赛事简介：要点 + 占位图 |
@@ -80,7 +80,7 @@ npm run build        # 产物到 frontend/dist
 | `GroupsSection.vue` | 03 技术组别：四组 **2×2 卡片栅格**（机械 MEC / 电控 ELC / 视觉算法 ALG / 运营 OPR，⚠️ 硬件组已移除，勿加回），卡片为「占位图 + 组名 + 一句话 + 技术栈 + 招募」 |
 | `AlbumSection.vue` | 04 战队相册（首页）：标题区 + 占位相册；与 `views/AlbumView.vue`（/album 页）共用 `AlbumGallery.vue`（6 栅格占位） |
 | `CooperateSection.vue` | 05 商务赞助：招商说明 + 赞助层级 + 赞助伙伴 |
-| `AppFooter.vue` | 页脚（全站）：品牌 / 导航 / 站点声明 / 版权 + **联系我们**（车队队长 / 车队经理 / 车队邮箱，单列竖排，锚点 `#contact`） |
+| `AppFooter.vue` | 页脚（全站）三列：品牌 + 站点说明 + 版权 ｜ **导航**（竖排六项，与顶部共用 `data/nav.ts`）｜ **联系我们**（车队队长 / 车队经理 / 车队邮箱，单列竖排，锚点 `#contact`） |
 | `PlaceholderImage.vue` | **图片占位组件**：写 `<PlaceholderImage label="..." ratio="16/9" />`，素材到位后替换为 `<img>` 即可 |
 
 ## 6. 设计系统（frontend/src/style.css）

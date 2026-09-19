@@ -262,20 +262,6 @@ defineExpose({ go })
 
     <div class="hero-controls">
       <div class="container hero-controls-inner">
-        <div class="ctrl-ticks" role="group" aria-label="选择轮播屏">
-          <button
-            v-for="(slide, i) in slides"
-            :key="slide.id"
-            type="button"
-            class="tick"
-            :class="{ 'is-active': i === active }"
-            :aria-current="i === active ? 'true' : undefined"
-            :aria-label="`第 ${i + 1} 屏：${slide.tag || slide.id}`"
-            @click="go(i)"
-          >
-            <span></span>
-          </button>
-        </div>
         <div class="ctrl-arrows">
           <button type="button" class="sarrow sarrow-prev" aria-label="上一屏" @click="go(active - 1)">
             <span aria-hidden="true"></span>
@@ -547,28 +533,6 @@ defineExpose({ go })
 }
 .hero-controls-inner > * { pointer-events: auto; }
 
-.ctrl-ticks { display: flex; align-items: center; gap: 8px; }
-.tick {
-  width: 28px;
-  height: 20px;
-  padding: 0;
-  border: 0;
-  background: none;
-  display: grid;
-  place-items: center;
-}
-.tick span {
-  display: block;
-  width: 100%;
-  height: 3px;
-  background: var(--hero-line-strong);
-  transition: background 0.3s, transform 0.4s var(--ease-expo);
-  transform-origin: left;
-}
-.tick:hover span { background: var(--hero-ink-dim); }
-.tick.is-active { width: 44px; }
-.tick.is-active span { background: var(--accent); }
-
 .ctrl-arrows { display: flex; gap: 8px; }
 .sarrow {
   width: 42px;
@@ -640,16 +604,13 @@ defineExpose({ go })
   }
   .slide-inner { padding-top: calc(var(--nav-h) + 24px); padding-bottom: 168px; }
   .hero-controls { bottom: 92px; }
-  .hero-controls-inner { justify-content: space-between; gap: 12px; }
+  .hero-controls-inner { justify-content: flex-end; gap: 12px; }
   .art-ring { right: -14%; width: 74vw; }
   .art-bars { right: -22%; }
   .art-no { right: -2%; font-size: clamp(7rem, 34vw, 12rem); }
   .slide-marks { padding-top: calc(var(--nav-h) + 16px); }
   .art-note { display: none; }
   .sarrow { width: 40px; height: 40px; }
-  .ctrl-ticks { gap: 6px; }
-  .tick { width: 22px; }
-  .tick.is-active { width: 34px; }
 }
 
 @media (orientation: landscape) and (max-height: 620px) {
