@@ -67,16 +67,6 @@ function onCardClick(g: GroupInfo, e: MouseEvent) {
           </div>
         </a>
       </div>
-
-      <div class="groups-cta" data-reveal>
-        <div>
-          <p class="cta-title">找到你的组别</p>
-          <p class="cta-desc">让热爱，变成赛季的注脚——四大组别开放投递。</p>
-        </div>
-        <RouterLink to="/recruit" class="btn btn-primary" data-magnet>
-          投递简历 <span aria-hidden="true">→</span>
-        </RouterLink>
-      </div>
     </div>
   </section>
 </template>
@@ -178,26 +168,7 @@ function onCardClick(g: GroupInfo, e: MouseEvent) {
   margin-right: 10px;
 }
 
-/* ---------- 底部投递条 ---------- */
-.groups-cta {
-  margin-top: clamp(24px, 3.4vw, 40px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 22px;
-  flex-wrap: wrap;
-  padding: 26px clamp(20px, 3vw, 34px);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
-  background: rgba(45, 226, 166, 0.06);
-  transition: background 0.3s;
-}
-.groups-cta:hover { background: rgba(45, 226, 166, 0.12); }
-.cta-title { font-size: 1.25rem; }
-.cta-desc { margin-top: 8px; font-size: 0.92rem; color: var(--ink-dim); }
-
 @media (max-width: 860px) {
   .group-grid { grid-template-columns: minmax(0, 1fr); }
-  .groups-cta .btn { width: 100%; justify-content: center; }
 }
 </style>
