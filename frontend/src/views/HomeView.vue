@@ -6,7 +6,6 @@ import EventSection from '../components/EventSection.vue'
 import AlbumSection from '../components/AlbumSection.vue'
 import HistorySection from '../components/HistorySection.vue'
 import GroupsSection from '../components/GroupsSection.vue'
-import ContactSection from '../components/ContactSection.vue'
 import CooperateSection from '../components/CooperateSection.vue'
 </script>
 
@@ -20,6 +19,5 @@ import CooperateSection from '../components/CooperateSection.vue'
     <GroupsSection />
     <AlbumSection />
     <CooperateSection />
-    <ContactSection />
   </div>
 </template>

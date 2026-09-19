@@ -7,7 +7,10 @@ import { prefersReducedMotion } from '../utils/motion'
 const root = ref<HTMLElement | null>(null)
 const railFill = ref<HTMLElement | null>(null)
 
-/** 顺序与首页板块排列一致（改板块顺序时这里要同步） */
+/**
+ * 顺序与首页板块排列一致（改板块顺序时这里要同步）。
+ * 最后一项 #contact 不在首页板块里，指向全站页脚那块联系方式。
+ */
 const items = [
   { id: 'event', no: '01', label: '赛事简介' },
   { id: 'history', no: '02', label: '战队简介' },
@@ -79,6 +82,10 @@ function update() {
   for (const s of sections) {
     if (s.el.getBoundingClientRect().top <= line) current = s.id
   }
+  // 末项（#contact）是页脚里的联系方式：页脚比一屏矮得多，永远越不过校准线，
+  // 所以滚到页面底部时直接把它点亮
+  const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4
+  if (atBottom && sections.length) current = sections[sections.length - 1].id
   if (current && current !== activeId.value) activeId.value = current
 }
 

@@ -13,6 +13,17 @@ const navLinks = [
   { to: '/recruit', label: '投递简历' },
 ]
 
+/**
+ * 联系我们（首页目录 06）：参照 wute.club 页脚摆法——单列竖排，小标签在上、数值在下，数值本身可点。
+ * 队长手机号待补：把 value 填上、href 补成 'tel:<号码>' 即可（同经理手机）。
+ * 页脚是全站组件，所以这块联系方式每页页脚都能看到；#contact 锚点就在本组件上。
+ */
+const contacts = [
+  { label: '队长手机', value: '待补充', href: '', note: '' },
+  { label: '经理手机', value: '13326243419', href: 'tel:13326243419', note: '微信同号' },
+  { label: '战队邮箱', value: 'whut_prime@foxmail.com', href: 'mailto:whut_prime@foxmail.com', note: '' },
+]
+
 onMounted(() => {
   const mm = gsap.matchMedia()
   mm.add('(prefers-reduced-motion: no-preference)', () => {
@@ -29,17 +40,31 @@ onMounted(() => {
   <footer ref="root" class="footer">
     <span class="footer-mark" aria-hidden="true">PRIME</span>
     <div class="container footer-inner">
-      <div class="footer-brand" data-reveal>
-        <img class="brand-mark" :src="'/static/mascot.png'" alt="" aria-hidden="true" />
-        <span class="brand-name">WHUT·PRIME — ROBOMASTER</span>
+      <div class="footer-main">
+        <div class="footer-brand" data-reveal>
+          <img class="brand-mark" :src="'/static/mascot.png'" alt="" aria-hidden="true" />
+          <span class="brand-name">WHUT·PRIME — ROBOMASTER</span>
+        </div>
+        <nav class="footer-nav" data-reveal>
+          <RouterLink v-for="l in navLinks" :key="l.to" :to="l.to">{{ l.label }}</RouterLink>
+        </nav>
+        <p class="footer-line" data-reveal>
+          武汉理工大学机甲大师 PRIME 战队官网 · 2027 赛季
+        </p>
+        <p class="footer-copy" data-reveal>© 2027 WHUT PRIME · 精研 覃思 笃志 力行</p>
       </div>
-      <nav class="footer-nav" data-reveal>
-        <RouterLink v-for="l in navLinks" :key="l.to" :to="l.to">{{ l.label }}</RouterLink>
-      </nav>
-      <p class="footer-line" data-reveal>
-        武汉理工大学机甲大师 PRIME 战队官网 · 2027 赛季
-      </p>
-      <p class="footer-copy" data-reveal>© 2027 WHUT PRIME · 精研 覃思 笃志 力行</p>
+
+      <section id="contact" class="footer-contact" aria-label="联系我们">
+        <h2 class="contact-title" data-reveal>联系我们</h2>
+        <ul class="contact-list">
+          <li v-for="c in contacts" :key="c.label" data-reveal>
+            <span class="contact-k">{{ c.label }}</span>
+            <a v-if="c.href" class="contact-v" :href="c.href">{{ c.value }}</a>
+            <span v-else class="contact-v pending">{{ c.value }}</span>
+            <span v-if="c.note" class="contact-note">{{ c.note }}</span>
+          </li>
+        </ul>
+      </section>
     </div>
   </footer>
 </template>
@@ -66,7 +91,14 @@ onMounted(() => {
   pointer-events: none;
   will-change: transform, opacity;
 }
-.footer-inner { position: relative; display: flex; flex-direction: column; gap: 18px; }
+.footer-inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 40px clamp(48px, 8vw, 120px);
+  align-items: start;
+}
+.footer-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .footer-brand { display: flex; align-items: center; gap: 12px; }
 .brand-mark {
   width: 34px;
@@ -78,26 +110,31 @@ onMounted(() => {
   pointer-events: none;
 }
 .brand-name { font-family: var(--mono); letter-spacing: 0.14em; font-size: 0.86rem; }
-.footer-nav { display: flex; gap: 24px; }
+.footer-nav { display: flex; gap: 24px; flex-wrap: wrap; }
 .footer-nav a { font-size: 0.86rem; color: var(--ink-dim); transition: color 0.3s, letter-spacing 0.4s var(--ease-expo); }
 .footer-nav a:hover { color: var(--accent); letter-spacing: 0.1em; }
 .footer-line { color: var(--ink-dim); font-size: 0.95rem; max-width: 560px; }
-.footer-copy { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; color: var(--ink-faint); }
+.footer-copy { font-family: var(--mono); font-size: 0.76rem; letter-spacing: 0.1em; color: var(--ink-faint); }
 
-@media (max-width: 700px) {
-  .footer { padding: 44px 0 max(48px, env(safe-area-inset-bottom)); }
-  .footer-inner { gap: 16px; }
-  .footer-brand { align-items: flex-start; }
-  .footer-nav { gap: 8px 18px; flex-wrap: wrap; }
-  .footer-nav a { min-height: 42px; display: inline-flex; align-items: center; }
-  .footer-line { max-width: 30em; }
-  .footer-mark { font-size: clamp(7rem, 34vw, 11rem); }
+/* ---- 联系我们：单列竖排，小标签在上、数值在下 ---- */
+.footer-contact { display: flex; flex-direction: column; gap: 20px; }
+.contact-title { font-size: 0.86rem; font-weight: 600; letter-spacing: 0.14em; color: var(--ink); }
+.contact-list { list-style: none; display: flex; flex-direction: column; gap: 20px; }
+.contact-list li { display: flex; flex-direction: column; gap: 8px; }
+.contact-k { font-size: 0.78rem; letter-spacing: 0.14em; color: var(--ink-faint); }
+.contact-v {
+  font-family: var(--mono);
+  font-size: 1.02rem;
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: color 0.3s;
 }
+a.contact-v:hover { color: var(--accent); }
+.contact-v.pending { color: var(--ink-faint); }
+.contact-note { font-size: 0.78rem; color: var(--ink-faint); }
 
-@media (max-width: 420px) {
-  .brand-name { font-size: 0.68rem; line-height: 1.6; }
-  .footer-nav { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
-  .footer-nav a { border-bottom: 1px solid var(--line); }
-  .footer-line, .footer-copy { font-size: 0.68rem; }
+@media (max-width: 860px) {
+  .footer-inner { grid-template-columns: minmax(0, 1fr); gap: 34px; }
 }
 </style>
