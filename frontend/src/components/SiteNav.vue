@@ -17,9 +17,9 @@ const reduced = prefersReducedMotion()
 const links = [
   { to: '/', label: '主页', no: '01' },
   { to: '/news', label: '战队资讯', no: '02' },
-  { to: '/history', label: '历史荣誉', no: '03' },
-  { to: '/groups', label: '组别技术', no: '04' },
-  { to: '/recruit', label: '投递简历', no: '05' },
+  { to: '/history', label: '战队荣誉', no: '03' },
+  { to: '/album', label: '战队相册', no: '04' },
+  { to: '/groups', label: '技术组别', no: '05' },
   { to: '/cooperate', label: '商业合作', no: '06' },
 ]
 
@@ -123,7 +123,7 @@ function closeDrawer() {
           </svg>
         </button>
         <RouterLink to="/recruit" class="btn btn-primary nav-cta" data-magnet>
-          加入战队 <i class="cta-dot" aria-hidden="true"></i>
+          加入我们 <i class="cta-dot" aria-hidden="true"></i>
         </RouterLink>
         <button
           class="nav-burger"
@@ -152,7 +152,7 @@ function closeDrawer() {
         </RouterLink>
       </nav>
       <RouterLink to="/recruit" class="btn btn-primary drawer-cta" @click="open = false">
-        加入战队
+        加入我们
       </RouterLink>
     </div>
   </header>
