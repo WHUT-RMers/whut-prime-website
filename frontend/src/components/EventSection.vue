@@ -71,7 +71,7 @@ onMounted(() => {
   <section id="event" ref="root" class="event">
     <div class="container">
       <div class="event-head">
-        <p class="eyebrow" data-reveal>01 / 赛事介绍</p>
+        <p class="eyebrow" data-reveal>01 / 赛事简介</p>
         <h2 class="event-title" data-reveal>RoboMaster 机甲大师高校系列赛</h2>
         <p class="event-lead" data-reveal>
           作为全国大学生机器人大赛旗下赛事之一，是专为全球科技爱好者打造的机器人竞技与

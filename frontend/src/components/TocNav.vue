@@ -7,13 +7,14 @@ import { prefersReducedMotion } from '../utils/motion'
 const root = ref<HTMLElement | null>(null)
 const railFill = ref<HTMLElement | null>(null)
 
+/** 顺序与首页板块排列一致（改板块顺序时这里要同步） */
 const items = [
-  { id: 'event', no: '01', label: '赛事' },
-  { id: 'news', no: '02', label: '资讯' },
-  { id: 'history', no: '03', label: '历史' },
-  { id: 'groups', no: '04', label: '组别' },
-  { id: 'recruit', no: '05', label: '投递' },
-  { id: 'cooperate', no: '06', label: '合作' },
+  { id: 'event', no: '01', label: '赛事简介' },
+  { id: 'history', no: '02', label: '战队简介' },
+  { id: 'groups', no: '03', label: '技术组别' },
+  { id: 'news', no: '04', label: '战队相册' },
+  { id: 'cooperate', no: '05', label: '商务赞助' },
+  { id: 'recruit', no: '06', label: '联系我们' },
 ]
 
 const activeId = ref('')
@@ -23,6 +24,8 @@ let cleanup: (() => void) | undefined
 /** 目录当前是否已出现（首屏之下才显示） */
 let shown = false
 let rafPending = false
+/** 板块锚点：挂载时取一次，避免每帧查询 DOM */
+let sections: { id: string; el: HTMLElement }[] = []
 
 /**
  * 出现时机：首屏（HeroSection 全屏大图）基本滚出视口后才滑入，滚回首屏则收回。
@@ -54,12 +57,29 @@ function setShown(on: boolean) {
   })
 }
 
+/**
+ * 当前板块：取最后一个顶部越过视口 45% 线的板块。
+ * 这里不走 ScrollTrigger 逐段监听——首页「技术组别」是 pin + 横向穿行，它的 pin spacer 会把
+ * 后面几段整体下推，凡在它之前创建的触发点位置全部过期（历史 bug：滚到 05/06 仍高亮 03）。
+ * 按实时几何位置判定则不受影响：pin 期间该板块 rect.top 恒定在校准线之上，天然保持选中。
+ */
+const ACTIVE_LINE = 0.45
+
 function update() {
   rafPending = false
+
   const next = window.scrollY > gateY()
-  if (next === shown) return
-  shown = next
-  setShown(shown)
+  if (next !== shown) {
+    shown = next
+    setShown(shown)
+  }
+
+  const line = window.innerHeight * ACTIVE_LINE
+  let current = ''
+  for (const s of sections) {
+    if (s.el.getBoundingClientRect().top <= line) current = s.id
+  }
+  if (current && current !== activeId.value) activeId.value = current
 }
 
 /** 滚动 / 尺寸变化统一走 rAF 节流（显隐阈值依赖首屏高度，窗口变化后需重算） */
@@ -75,20 +95,12 @@ onMounted(() => {
   // 首帧直接落到目标状态，避免刷新在页面中部时出现一次多余的入场动画
   if (el) gsap.set(el, shown ? { autoAlpha: 1, x: 0 } : { autoAlpha: 0, x: reduced ? 0 : -18 })
 
-  const triggers = items
+  sections = items
     .map((it) => {
       const node = document.getElementById(it.id)
-      if (!node) return null
-      return ScrollTrigger.create({
-        trigger: node,
-        start: 'top 45%',
-        end: 'bottom 45%',
-        onToggle: (self) => {
-          if (self.isActive) activeId.value = it.id
-        },
-      })
+      return node ? { id: it.id, el: node } : null
     })
-    .filter((t): t is ScrollTrigger => t !== null)
+    .filter((s): s is { id: string; el: HTMLElement } => s !== null)
 
   /* 章节进度光柱 */
   const st = ScrollTrigger.create({
@@ -101,11 +113,11 @@ onMounted(() => {
 
   window.addEventListener('scroll', schedule, { passive: true })
   window.addEventListener('resize', schedule)
+  update() // 首帧直接落位：显隐不做补动画，当前板块也一次算准
 
   cleanup = () => {
     window.removeEventListener('scroll', schedule)
     window.removeEventListener('resize', schedule)
-    triggers.forEach((t) => t.kill())
     st.kill()
     if (root.value) gsap.killTweensOf(root.value)
   }

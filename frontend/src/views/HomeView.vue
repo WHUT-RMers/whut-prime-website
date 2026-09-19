@@ -16,10 +16,10 @@ import CooperateSection from '../components/CooperateSection.vue'
     <HeroSection />
     <MarqueeBand />
     <EventSection />
-    <NewsSection />
     <HistorySection />
     <GroupsSection />
-    <RecruitSection />
+    <NewsSection />
     <CooperateSection />
+    <RecruitSection />
   </div>
 </template>

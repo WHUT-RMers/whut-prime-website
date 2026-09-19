@@ -100,7 +100,7 @@ onMounted(() => {
 <template>
   <section id="history" ref="root" class="history">
     <div class="container">
-      <p class="eyebrow" data-reveal>03 / 历史与荣誉</p>
+      <p class="eyebrow" data-reveal>02 / 战队简介</p>
       <h2 class="history-title" data-reveal>四年，从成立到屡获殊荣</h2>
 
       <div class="history-layout">

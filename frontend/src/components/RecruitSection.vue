@@ -11,7 +11,7 @@ useScrollReveal(root, { blur: 8, stagger: 0.07 })
   <section id="recruit" ref="root" class="recruit">
     <div class="container recruit-inner">
       <div class="recruit-intro" data-reveal>
-        <p class="eyebrow">05 / 简历投递</p>
+        <p class="eyebrow">06 / 联系我们</p>
         <h2 class="recruit-title">加入 PRIME</h2>
         <p class="recruit-lead">
           每年九月初招新开启，春夏赛季开放补录。零基础没关系，

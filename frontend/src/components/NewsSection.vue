@@ -17,7 +17,7 @@ onMounted(async () => { try { const featured = await api.news(`?featured=1&limit
 
 <template>
   <section id="news" ref="root" class="news"><div class="container">
-    <div class="news-head"><p class="eyebrow" data-reveal>02 / 战队资讯</p><h2 class="news-title" data-reveal>最新动态</h2></div>
+    <div class="news-head"><p class="eyebrow" data-reveal>04 / 战队相册</p><h2 class="news-title" data-reveal>最新动态</h2></div>
     <p v-if="loading" class="news-state">正在获取最新资讯…</p><p v-else-if="!shown.length" class="news-state">资讯正在整理中，敬请期待。</p>
     <div v-else class="news-grid" :class="{ fewer: shown.length <= 2 }"><article v-for="n in shown" :key="n.slug" class="news-card" data-reveal data-tilt data-spot>
       <RouterLink :to="`/news/${n.slug}`" class="news-inner"><div class="news-media"><NewsCoverCarousel :images="n.cover_images" :title="n.title" :image-focus="n.image_focus" /></div><div class="news-body"><div class="news-meta"><span class="news-tag">{{ n.category }}</span><time>{{ n.published_at?.slice(0, 10) }}</time></div><h3>{{ n.title }}</h3><p>{{ n.summary }}</p><span class="news-more">阅读全文 →</span></div></RouterLink>

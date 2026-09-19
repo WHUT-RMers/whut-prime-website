@@ -48,7 +48,7 @@ const sponsors = [
 <template>
   <section id="cooperate" ref="root" class="cooperate">
     <div class="container">
-      <p class="eyebrow" data-reveal>06 / 商业合作</p>
+      <p class="eyebrow" data-reveal>05 / 商务赞助</p>
       <h2 class="cooperate-title" data-reveal>2027 赛季招商开启</h2>
       <p class="cooperate-lead" data-reveal>
         凡是严格遵守国家法律法规、恪守商业诚信、合规合法经营的企业及社会组织，
