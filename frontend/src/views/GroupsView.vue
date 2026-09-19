@@ -69,11 +69,6 @@ function onGroupClick(g: GroupInfo, e: MouseEvent) {
           <p class="group-more">查看组别详情 <span class="group-more-arrow" aria-hidden="true">→</span></p>
         </div>
       </a>
-
-      <div class="cta-row" data-reveal>
-        <p class="cta-text">找到属于你的组别了吗？</p>
-        <RouterLink to="/recruit" class="btn btn-primary">投递简历 <span aria-hidden="true">→</span></RouterLink>
-      </div>
     </div>
   </div>
 </template>
@@ -175,20 +170,6 @@ function onGroupClick(g: GroupInfo, e: MouseEvent) {
 .group-more-arrow { transition: transform 0.35s var(--ease-expo); }
 .group:hover .group-more-arrow { transform: translateX(5px); }
 
-.cta-row {
-  margin-top: 70px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  flex-wrap: wrap;
-  border: 1px solid rgba(45, 226, 166, 0.3);
-  border-radius: 18px;
-  padding: 40px 32px;
-  background: rgba(45, 226, 166, 0.04);
-}
-.cta-text { font-size: 1.15rem; }
-
 @media (max-width: 880px) {
   .group { grid-template-columns: 1fr; padding: 24px; gap: 24px; }
   .group-media { max-width: 520px; }
@@ -203,7 +184,5 @@ function onGroupClick(g: GroupInfo, e: MouseEvent) {
   .task-list li { padding: 7px 11px; }
   .group-need { display: flex; align-items: flex-start; line-height: 1.7; }
   .need-flag { flex: 0 0 auto; margin-top: 2px; }
-  .cta-row { margin-top: 52px; padding: 28px 18px; text-align: center; }
-  .cta-row .btn { width: 100%; }
 }
 </style>
